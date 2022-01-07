@@ -117,6 +117,7 @@ func (ctrl *Controller) SetupRouter(logger gin.HandlerFunc) *gin.Engine {
 		ops.POST("delete-orphans", ctrl.DeleteOrphans)
 		ops.POST("list-broken-metadata", ctrl.ListBrokenMetadata)
 		ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadata)
+		ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
 	}
 	return router
 }

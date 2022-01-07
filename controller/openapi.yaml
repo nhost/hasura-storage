@@ -576,3 +576,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /ops/list-not-uploaded:
+    post:
+      summary: Lists files that haven't been uploaded
+      description: That is, metadata that has isUploaded = false
+      tags:
+        - operations
+      security:
+        - hasuraJWT: []
+      responses:
+        '200':
+          description: Successfully checked files not uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileSummary'
+        default:
+          description: En error occured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
