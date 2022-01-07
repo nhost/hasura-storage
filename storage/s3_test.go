@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/google/go-cmp/cmp"
 	"github.com/nhost/hasura-storage/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -60,6 +61,36 @@ func TestDeleteFile(t *testing.T) {
 			err := s3.DeleteFile(tc.filepath)
 			if err != nil {
 				t.Error(err)
+			}
+		})
+	}
+}
+
+func TestListFiles(t *testing.T) {
+	cases := []struct {
+		name     string
+		expected []string
+	}{
+		{
+			name: "success",
+			expected: []string{
+				"default/asd",
+			},
+		},
+	}
+	s3 := getS3()
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			tc := tc
+			got, err := s3.ListFiles()
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !cmp.Equal(got, tc.expected) {
+				t.Error(cmp.Diff(got, tc.expected))
 			}
 		})
 	}
