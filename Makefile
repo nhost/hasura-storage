@@ -93,8 +93,8 @@ dev-jwt:
 
 .PHONY: dev-s3-access-key
 dev-s3-access-key:
-	@docker exec -it minio bash -c 'echo $$MINIO_ROOT_USER'
+	@docker exec -i minio bash -c 'echo $$MINIO_ROOT_USER'
 
 .PHONY: dev-s3-secret-key
 dev-s3-secret-key:
-	@docker exec -it minio bash -c 'echo $$MINIO_ROOT_PASSWORD'
+	@docker exec -i minio bash -c 'echo $$MINIO_ROOT_PASSWORD'
