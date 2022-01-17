@@ -27,7 +27,7 @@ func ApplyPostgresMigration(postgresURL string) error {
 
 	source, err := iofs.New(postgresMigrations, "postgres")
 	if err != nil {
-		return fmt.Errorf("problem creating mirgations source: %w", err)
+		return fmt.Errorf("problem creating migrations source: %w", err)
 	}
 
 	migration, err := migrate.NewWithInstance("iofs", source, "postgres", driver)
