@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/metadata"
-	"github.com/nhost/hasura-storage/migrations"
 	"github.com/nhost/hasura-storage/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -40,35 +39,6 @@ func getContentStorage(s3Endpoint, region, s3AccessKey, s3SecretKey, bucket stri
 	return st
 }
 
-func applymigrations(
-	postgresMigrations bool,
-	postgresSource string,
-	hasuraMetadata bool,
-	hasruraEndpoint string,
-	hasuraSecret string,
-	logger *logrus.Logger,
-) {
-	if postgresMigrations {
-		if postgresSource == "" {
-			logger.Error("you need to specify --postgres-migrations-source")
-			os.Exit(1)
-		}
-		logger.Info("applying postgres migrations")
-		if err := migrations.ApplyPostgresMigration(postgresSource); err != nil {
-			logger.Errorf("problem applying postgres migrations: %s", err.Error())
-			os.Exit(1)
-		}
-	}
-
-	if hasuraMetadata {
-		logger.Info("applying hasura metadata")
-		if err := migrations.ApplyHasuraMetadata(hasruraEndpoint, hasuraSecret, logger); err != nil {
-			logger.Errorf("problem applying hasura metadata: %s", err.Error())
-			os.Exit(1)
-		}
-	}
-}
-
 func main() {
 	initFlags()
 	if viper.GetBool("version") {
@@ -92,19 +62,17 @@ func main() {
 
 	logger.WithFields(
 		logrus.Fields{
-			"debug":               viper.GetBool("debug"),
-			"bind":                viper.GetString("bind"),
-			"graphql_endpoint":    viper.GetString("graphql_endpoint"),
-			"postgres-migrations": viper.GetBool("postgres-migrations"),
-			"hasura-metadata":     viper.GetBool("hasura-metadata"),
-			"s3_endpoint":         viper.GetString("s3_endpoint"),
-			"s3_region":           viper.GetString("s3_region"),
-			"s3_bucket":           viper.GetString("s3_bucket"),
+			"debug":            viper.GetBool("debug"),
+			"bind":             viper.GetString("bind"),
+			"graphql_endpoint": viper.GetString("graphql_endpoint"),
+			"s3_endpoint":      viper.GetString("s3_endpoint"),
+			"s3_region":        viper.GetString("s3_region"),
+			"s3_bucket":        viper.GetString("s3_bucket"),
 		},
 	).Debug("parameters")
 
 	metadataStorage := getMetadataStorage(
-		viper.GetString("graphql_endpoint") + "/graphql",
+		viper.GetString("graphql_endpoint"),
 	)
 
 	contentStorage := getContentStorage(
@@ -113,15 +81,6 @@ func main() {
 		viper.GetString("s3_access_key"),
 		viper.GetString("s3_secret_key"),
 		viper.GetString("s3_bucket"),
-		logger,
-	)
-
-	applymigrations(
-		viper.GetBool("postgres-migrations"),
-		viper.GetString("postgres-migrations-source"),
-		viper.GetBool("hasura-metadata"),
-		viper.GetString("graphql_endpoint"),
-		viper.GetString("hasura-metadata-admin-secret"),
 		logger,
 	)
 
