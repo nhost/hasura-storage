@@ -127,4 +127,17 @@ BEGIN
   END IF;
 END $$;
 
+INSERT INTO storage.files (id, created_at, updated_at, bucket_id, name, size, mime_type, etag, is_uploaded, uploaded_by_user_id)
+  VALUES (
+    '57bddc2b-fdc6-4af2-9dba-5ee689936619',
+    '2022-01-04T16:47:37.762868+00:00',
+    '2022-01-04T16:47:37.762868+00:00',
+    'default',
+    'some-file.txt',
+    17,
+    'text/plain; charset=utf-8',
+    '"nbdfgyrejhg324hjgadnbv"',
+    true,
+    'a3dcdb8f-d1c7-4cfb-829b-57881633dadc'
+);
 COMMIT;
