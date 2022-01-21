@@ -27,11 +27,15 @@ issues:
     - path: controller/version.go
       linters:
         - gochecknoglobals
-    - path: controller/get_file_test.go  # this needs to be removed eventually
-      linters:
-        - typecheck
     - path: _test\.go
       linters:
         - funlen
         - ireturn
         - varnamelen
+    - text: "ReadAll not declared by package io"  # needs to go away
+      linters:
+        - typecheck
+    - text: "New not declared by package iofs"    # needs to go away
+      linters:
+        - typecheck
+
