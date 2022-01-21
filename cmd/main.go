@@ -23,7 +23,9 @@ func getMetadataStorage(endpoint string) *metadata.Hasura {
 	return metadata.NewHasura(endpoint, metadata.ForWardHeadersAuthorizer)
 }
 
-func getContentStorage(s3Endpoint, region, s3AccessKey, s3SecretKey, bucket, rootFolder string, logger *logrus.Logger) *storage.S3 {
+func getContentStorage(
+	s3Endpoint, region, s3AccessKey, s3SecretKey, bucket, rootFolder string, logger *logrus.Logger,
+) *storage.S3 {
 	config := &aws.Config{ // nolint: exhaustivestruct
 		Credentials:      credentials.NewStaticCredentials(s3AccessKey, s3SecretKey, ""),
 		Endpoint:         aws.String(s3Endpoint),

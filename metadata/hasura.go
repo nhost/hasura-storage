@@ -84,19 +84,6 @@ func (md BucketMetadata) ToControllerType() controller.BucketMetadata {
 	}
 }
 
-func (md BucketMetadata) ToControllerType() controller.BucketMetadata {
-	return controller.BucketMetadata{
-		ID:                   string(md.ID),
-		MinUploadFile:        int(md.MinUploadFile),
-		MaxUploadFile:        int(md.MaxUploadFile),
-		PresignedURLsEnabled: bool(md.PresignedURLsEnabled),
-		DownloadExpiration:   int(md.DownloadExpiration),
-		CreatedAt:            string(md.CreatedAt),
-		UpdatedAt:            string(md.UpdatedAt),
-		CacheControl:         string(md.CacheControl),
-	}
-}
-
 type FileMetadata struct {
 	ID               graphql.String  `graphql:"id"`
 	Name             graphql.String  `graphql:"name"`
@@ -108,21 +95,6 @@ type FileMetadata struct {
 	IsUploaded       graphql.Boolean `graphql:"isUploaded"`
 	MimeType         graphql.String  `graphql:"mimeType"`
 	UploadedByUserID graphql.String  `graphql:"uploadedByUserId"`
-}
-
-func (md FileMetadata) ToControllerType() controller.FileMetadata {
-	return controller.FileMetadata{
-		ID:               string(md.ID),
-		Name:             string(md.Name),
-		Size:             int64(md.Size),
-		BucketID:         string(md.BucketID),
-		ETag:             string(md.ETag),
-		CreatedAt:        string(md.CreatedAt),
-		UpdatedAt:        string(md.UpdatedAt),
-		IsUploaded:       bool(md.IsUploaded),
-		MimeType:         string(md.MimeType),
-		UploadedByUserID: string(md.UploadedByUserID),
-	}
 }
 
 func (md FileMetadata) ToControllerType() controller.FileMetadata {
