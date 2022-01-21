@@ -18,7 +18,7 @@ linters:
       - scopelint  # deprecated
       - interfacer  # deprecated
       - golint  # deprecated
-      - typechk # lots of false positives, requires investigation
+      - typecheck
 
 issues:
   exclude-rules:
