@@ -81,7 +81,7 @@ func checkConditionals( // nolint: cyclop
 	}
 
 	if len(headers.IfNoneMatch) > 0 && etagFound(fileMetadata.ETag, headers.IfNoneMatch) {
-		return http.StatusPreconditionFailed, nil
+		return http.StatusNotModified, nil
 	}
 
 	if headers.IfModifiedSince != "" {
