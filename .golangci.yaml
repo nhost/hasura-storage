@@ -32,10 +32,13 @@ issues:
         - funlen
         - ireturn
         - varnamelen
-    - text: "ReadAll not declared by package io"  # needs to go away
+    - text: "NopCloser not declared by package io" # needs to go away
       linters:
         - typecheck
-    - text: "New not declared by package iofs"    # needs to go away
+    - text: "ReadAll not declared by package io"   # needs to go away
+      linters:
+        - typecheck
+    - text: "New not declared by package iofs"     # needs to go away
       linters:
         - typecheck
 
