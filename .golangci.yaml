@@ -18,6 +18,7 @@ linters:
       - scopelint  # deprecated
       - interfacer  # deprecated
       - golint  # deprecated
+      - typechk # lots of false positives, requires investigation
 
 issues:
   exclude-rules:
@@ -35,13 +36,3 @@ issues:
         - funlen
         - ireturn
         - varnamelen
-    - text: "NopCloser not declared by package io" # needs to go away
-      linters:
-        - typecheck
-    - text: "ReadAll not declared by package io"   # needs to go away
-      linters:
-        - typecheck
-    - text: "New not declared by package iofs"     # needs to go away
-      linters:
-        - typecheck
-
