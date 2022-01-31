@@ -14,6 +14,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.9.0
+	golang.org/x/image v0.0.0-20210216034530-4410531fe030
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
 )
 

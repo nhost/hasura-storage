@@ -27,11 +27,14 @@
           ];
         };
 
-        buildInputs = [ ];
+        buildInputs = with pkgs; [
+          imagemagick
+        ];
 
         nativeBuildInputs = with pkgs; [
           go
           clang
+          pkg-config
         ];
 
         name = "hasura-storage";
@@ -85,7 +88,7 @@
               nativeBuildInputs = with pkgs; [
                 docker-client
                 docker-compose
-              ] ++ nativeBuildInputs;
+              ] ++ buildInputs ++ nativeBuildInputs;
             }
             ''
               export GOCACHE=$TMPDIR/.cache/go-build
@@ -131,14 +134,10 @@
               tag = version;
               created = "now";
               contents = [
-                pkgs.cacert
-              ];
+              ] ++ buildInputs;
               config = {
                 Entrypoint = [
-                  "${pkgs.callPackage ./nix/hasura-storage.nix {
-                      inherit name version ldflags tags buildInputs nativeBuildInputs;
-                      GOOS = "linux";
-                    }}/bin/hasura-storage"
+                  "${self.packages.${system}.hasuraStorage}/bin/hasura-storage"
                 ];
               };
             };
