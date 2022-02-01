@@ -200,10 +200,6 @@ go.uber.org/atomic
 # golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 ## explicit; go 1.17
 golang.org/x/crypto/sha3
-# golang.org/x/image v0.0.0-20210216034530-4410531fe030
-## explicit; go 1.12
-golang.org/x/image/draw
-golang.org/x/image/math/f64
 # golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
 ## explicit; go 1.17
 golang.org/x/net/context

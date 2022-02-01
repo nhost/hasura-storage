@@ -3,16 +3,13 @@ package image_test
 import (
 	"context"
 	"crypto/sha256"
-	"fmt"
-	stdlibImage "image"
-	"image/jpeg"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/nhost/hasura-storage/image"
-	"golang.org/x/image/draw"
+	// "golang.org/x/image/draw"
 )
 
 func TestManipulate(t *testing.T) {
@@ -102,26 +99,26 @@ func TestManipulate(t *testing.T) {
 }
 
 // for benchmarking.
-func resizePureGo(orig io.Reader, modified io.Writer, newSizeX, newSizeY int) error {
-	// Decode the image (from PNG to image.Image):
-	src, err := jpeg.Decode(orig)
-	if err != nil {
-		return fmt.Errorf("problem decoding image: %w", err)
-	}
+// func resizePureGo(orig io.Reader, modified io.Writer, newSizeX, newSizeY int) error {
+// 	// Decode the image (from PNG to image.Image):
+// 	src, err := jpeg.Decode(orig)
+// 	if err != nil {
+// 		return fmt.Errorf("problem decoding image: %w", err)
+// 	}
 
-	dst := stdlibImage.NewRGBA(
-		stdlibImage.Rect(0, 0, newSizeX, newSizeY),
-	)
+// 	dst := stdlibImage.NewRGBA(
+// 		stdlibImage.Rect(0, 0, newSizeX, newSizeY),
+// 	)
 
-	draw.ApproxBiLinear.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
+// 	draw.ApproxBiLinear.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
 
-	// Encode to `output`:
-	if err := jpeg.Encode(modified, dst, &jpeg.Options{Quality: 100}); err != nil {
-		return fmt.Errorf("problem encoding image: %w", err)
-	}
+// 	// Encode to `output`:
+// 	if err := jpeg.Encode(modified, dst, &jpeg.Options{Quality: 100}); err != nil {
+// 		return fmt.Errorf("problem encoding image: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func BenchmarkManipulate(b *testing.B) {
 	for i := 0; i < 100; i++ {
@@ -137,30 +134,30 @@ func BenchmarkManipulate(b *testing.B) {
 	}
 }
 
-func BenchmarkManipulatePureGo(b *testing.B) {
-	for i := 0; i < 100; i++ {
-		orig, err := os.Open("testdata/nhost.jpg")
-		if err != nil {
-			b.Fatal(err)
-		}
-		defer orig.Close()
+// func BenchmarkManipulatePureGo(b *testing.B) {
+// 	for i := 0; i < 100; i++ {
+// 		orig, err := os.Open("testdata/nhost.jpg")
+// 		if err != nil {
+// 			b.Fatal(err)
+// 		}
+// 		defer orig.Close()
 
-		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
+// 		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
+// 			b.Fatal(err)
+// 		}
+// 	}
+// }
 
-func BenchmarkManipulateMagicWand(b *testing.B) {
-	for i := 0; i < 100; i++ {
-		orig, err := os.Open("testdata/nhost.jpg")
-		if err != nil {
-			b.Fatal(err)
-		}
-		defer orig.Close()
+// func BenchmarkManipulateMagicWand(b *testing.B) {
+// 	for i := 0; i < 100; i++ {
+// 		orig, err := os.Open("testdata/nhost.jpg")
+// 		if err != nil {
+// 			b.Fatal(err)
+// 		}
+// 		defer orig.Close()
 
-		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
+// 		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
+// 			b.Fatal(err)
+// 		}
+// 	}
+// }
