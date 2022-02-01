@@ -82,15 +82,15 @@ func getImageManipulationOptions(ctx *gin.Context, mimeType string) ([]image.Opt
 	return opts, nil
 }
 
-type P struct {
+type FakeReadCloserWrapper struct {
 	*bytes.Reader
 }
 
-func NewP(b []byte) *P {
-	return &P{bytes.NewReader(b)}
+func NewP(b []byte) *FakeReadCloserWrapper {
+	return &FakeReadCloserWrapper{bytes.NewReader(b)}
 }
 
-func (p *P) Close() error {
+func (p *FakeReadCloserWrapper) Close() error {
 	return nil
 }
 
