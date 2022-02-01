@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,7 +31,16 @@ func getQueryInt(ctx *gin.Context, param string) (int, bool, *APIError) {
 	return x, true, nil
 }
 
-func getImageManipulationOptions(ctx *gin.Context) ([]image.Options, *APIError) {
+func isImage(mimeType string) bool {
+	for _, supported := range []string{"image/webp", "image/png", "image/jpeg"} {
+		if mimeType == supported {
+			return true
+		}
+	}
+	return false
+}
+
+func getImageManipulationOptions(ctx *gin.Context, mimeType string) ([]image.Options, *APIError) { // nolint: cyclop
 	opts := make([]image.Options, 0, 3) // nolint: gomnd
 	// newSizeX, y, q, b
 	newSizeX, okX, err := getQueryInt(ctx, "x")
@@ -62,6 +70,13 @@ func getImageManipulationOptions(ctx *gin.Context) ([]image.Options, *APIError) 
 	}
 	if ok {
 		opts = append(opts, image.WithBlur(b))
+	}
+
+	if len(opts) > 0 && !isImage(mimeType) {
+		return nil, BadDataError(
+			fmt.Errorf("image manipulation features are not supported for '%s'", mimeType), // nolint: goerr113
+			fmt.Sprintf("image manipulation features are not supported for '%s'", mimeType),
+		)
 	}
 
 	return opts, nil
@@ -102,16 +117,13 @@ func (ctrl *Controller) modifyImage(
 		return nil, "", 0, InternalServerError(err)
 	}
 
-	etag := fmt.Sprintf(
-		"\"%s\"",
-		base64.StdEncoding.EncodeToString(hash.Sum(nil)),
-	)
+	etag := fmt.Sprintf("\"%x\"", hash.Sum(nil))
 
 	return image, etag, buf.Len(), nil
 }
 
 func (ctrl *Controller) getFileImage(
-	ctx context.Context, fileMetadata FileMetadataWithBucket, opts ...image.Options,
+	ctx context.Context, fileMetadata *FileMetadataWithBucket, opts ...image.Options,
 ) (io.ReadCloser, *APIError) {
 	filepath := fmt.Sprintf("%s/%s", fileMetadata.BucketID, fileMetadata.ID)
 	var src io.ReadCloser
@@ -146,12 +158,12 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
 		return 0, apiErr
 	}
 
-	opts, apiErr := getImageManipulationOptions(ctx)
+	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
 		return 0, apiErr
 	}
 
-	object, apiErr := ctrl.getFileImage(ctx.Request.Context(), fileMetadata, opts...)
+	object, apiErr := ctrl.getFileImage(ctx.Request.Context(), &fileMetadata, opts...)
 	if apiErr != nil {
 		return 0, apiErr
 	}

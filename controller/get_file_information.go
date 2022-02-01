@@ -139,7 +139,7 @@ func (ctrl *Controller) getFileInformationProcess(ctx *gin.Context) (int, *APIEr
 		return 0, apiErr
 	}
 
-	opts, apiErr := getImageManipulationOptions(ctx)
+	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
 		return 0, apiErr
 	}
