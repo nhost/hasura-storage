@@ -40,7 +40,7 @@ build:  ## Build application and places the binary under ./result/bin
 .PHONY: build-docker-image
 build-docker-image:  ## Build docker container
 	@echo $(VERSION) > VERSION
-ifeq ($(shell uname), "Linux")
+ifeq ($(shell uname), Linux)
 	nix build .\#dockerImage --print-build-logs
 	docker load -q < result
 else
