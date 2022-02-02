@@ -17,18 +17,19 @@ import (
 )
 
 const (
-	bind                      = "bind"
-	graphqlEndpoint           = "graphql_endpoint"
-	s3Endpoint                = "s3_endpoint"
-	s3AccessKey               = "s3_access_key"
-	s3SecretKey               = "s3_secret_key" // nolint: gosec
-	s3Region                  = "s3_region"
-	s3Bucket                  = "s3_bucket"
-	s3RootFolder              = "s3_root_folder"
-	postgresMigrations        = "postgres-migrations"
-	postgresMigrationsSource  = "postgres-migrations-source"
-	hasuraMetadata            = "hasura-metadata"
-	hasuraMetadataAdminSecret = "hasura-metadata-admin-secret" // nolint: gosec
+	bindFlag                      = "bind"
+	trustedProxiesFlag            = "trusted-proxies"
+	graphqlEndpointFlag           = "graphql_endpoint"
+	s3EndpointFlag                = "s3_endpoint"
+	s3AccessKeyFlag               = "s3_access_key"
+	s3SecretKeyFlag               = "s3_secret_key" // nolint: gosec
+	s3RegionFlag                  = "s3_region"
+	s3BucketFlag                  = "s3_bucket"
+	s3RootFolderFlag              = "s3_root_folder"
+	postgresMigrationsFlag        = "postgres-migrations"
+	postgresMigrationsSourceFlag  = "postgres-migrations-source"
+	hasuraMetadataFlag            = "hasura-metadata"
+	hasuraMetadataAdminSecretFlag = "hasura-metadata-admin-secret" // nolint: gosec
 )
 
 func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
@@ -65,16 +66,17 @@ func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
 func getGin(
 	metadataStorage controller.MetadataStorage,
 	contentStorage controller.ContentStorage,
+	trustedProxies []string,
 	logger *logrus.Logger,
 	debug bool,
-) *gin.Engine {
+) (*gin.Engine, error) {
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	ctrl := controller.New(metadataStorage, contentStorage, logger)
 
-	return ctrl.SetupRouter(ginLogger(logger))
+	return ctrl.SetupRouter(trustedProxies, ginLogger(logger)) // nolint: wrapcheck
 }
 
 func getMetadataStorage(endpoint string) *metadata.Hasura {
@@ -132,39 +134,47 @@ func applymigrations(
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
-	addStringFlag(serveCmd.Flags(), bind, ":8000", "bind the service to this address")
+	{
+		addStringFlag(serveCmd.Flags(), bindFlag, ":8000", "bind the service to this address")
+		addStringArrayFlag(
+			serveCmd.Flags(),
+			trustedProxiesFlag,
+			[]string{},
+			"Trust this proxies only. Can be passed many times",
+		)
+	}
 
 	{
 		addStringFlag(
 			serveCmd.Flags(),
-			graphqlEndpoint,
+			graphqlEndpointFlag,
 			"",
 			"Use this endpoint when connecting using graphql as metadata storage",
 		)
 	}
 
 	{
-		addStringFlag(serveCmd.Flags(), s3Endpoint, "", "S3 Endpoint")
-		addStringFlag(serveCmd.Flags(), s3AccessKey, "", "S3 Access key")
-		addStringFlag(serveCmd.Flags(), s3SecretKey, "", "S3 Secret key")
-		addStringFlag(serveCmd.Flags(), s3Region, "", "S3 region")
-		addStringFlag(serveCmd.Flags(), s3Bucket, "", "S3 bucket")
-		addStringFlag(serveCmd.Flags(), s3RootFolder, "", "All buckets will be created inside this root")
+		addStringFlag(serveCmd.Flags(), s3EndpointFlag, "", "S3 Endpoint")
+		addStringFlag(serveCmd.Flags(), s3AccessKeyFlag, "", "S3 Access key")
+		addStringFlag(serveCmd.Flags(), s3SecretKeyFlag, "", "S3 Secret key")
+		addStringFlag(serveCmd.Flags(), s3RegionFlag, "", "S3 region")
+		addStringFlag(serveCmd.Flags(), s3BucketFlag, "", "S3 bucket")
+		addStringFlag(serveCmd.Flags(), s3RootFolderFlag, "", "All buckets will be created inside this root")
 	}
 
 	{
-		addBoolFlag(serveCmd.Flags(), postgresMigrations, false, "Apply Postgres migrations")
+		addBoolFlag(serveCmd.Flags(), postgresMigrationsFlag, false, "Apply Postgres migrations")
 		addStringFlag(
 			serveCmd.Flags(),
-			postgresMigrationsSource,
+			postgresMigrationsSourceFlag,
 			"",
 			"postgres connection, i.e. postgres://user@pass:localhost:5432/mydb",
 		)
 	}
 
 	{
-		addBoolFlag(serveCmd.Flags(), hasuraMetadata, false, "Apply Hasura's metadata")
-		addStringFlag(serveCmd.Flags(), hasuraMetadataAdminSecret, "", "")
+		addBoolFlag(serveCmd.Flags(), hasuraMetadataFlag, false, "Apply Hasura's metadata")
+		addStringFlag(serveCmd.Flags(), hasuraMetadataAdminSecretFlag, "", "")
 	}
 }
 
@@ -176,7 +186,7 @@ var serveCmd = &cobra.Command{
 
 		logger.Info("storage version ", controller.Version())
 
-		if viper.GetBool(debug) {
+		if viper.GetBool(debugFlag) {
 			logger.SetLevel(logrus.DebugLevel)
 			gin.SetMode(gin.DebugMode)
 		} else {
@@ -186,43 +196,51 @@ var serveCmd = &cobra.Command{
 
 		logger.WithFields(
 			logrus.Fields{
-				"debug":               viper.GetBool(debug),
-				"bind":                viper.GetString(bind),
-				"graphql_endpoint":    viper.GetString(graphqlEndpoint),
-				"postgres-migrations": viper.GetBool(postgresMigrations),
-				"hasura-metadata":     viper.GetBool(hasuraMetadata),
-				"s3_endpoint":         viper.GetString(s3Endpoint),
-				"s3_region":           viper.GetString(s3Region),
-				"s3_bucket":           viper.GetString(s3Bucket),
-				"s3_root_folder":      viper.GetString(s3RootFolder),
+				"debug":               viper.GetBool(debugFlag),
+				"bind":                viper.GetString(bindFlag),
+				"trusted-proxies":     viper.GetStringSlice(trustedProxiesFlag),
+				"graphql_endpoint":    viper.GetString(graphqlEndpointFlag),
+				"postgres-migrations": viper.GetBool(postgresMigrationsFlag),
+				"hasura-metadata":     viper.GetBool(hasuraMetadataFlag),
+				"s3_endpoint":         viper.GetString(s3EndpointFlag),
+				"s3_region":           viper.GetString(s3RegionFlag),
+				"s3_bucket":           viper.GetString(s3BucketFlag),
+				"s3_root_folder":      viper.GetString(s3RootFolderFlag),
 			},
 		).Debug("parameters")
 
 		contentStorage := getContentStorage(
-			viper.GetString(s3Endpoint),
-			viper.GetString(s3Region),
-			viper.GetString(s3AccessKey),
-			viper.GetString(s3SecretKey),
-			viper.GetString(s3Bucket),
-			viper.GetString(s3RootFolder),
+			viper.GetString(s3EndpointFlag),
+			viper.GetString(s3RegionFlag),
+			viper.GetString(s3AccessKeyFlag),
+			viper.GetString(s3SecretKeyFlag),
+			viper.GetString(s3BucketFlag),
+			viper.GetString(s3RootFolderFlag),
 			logger,
 		)
 
 		applymigrations(
-			viper.GetBool(postgresMigrations),
-			viper.GetString(postgresMigrationsSource),
-			viper.GetBool(hasuraMetadata),
-			viper.GetString(graphqlEndpoint),
-			viper.GetString(hasuraMetadataAdminSecret),
+			viper.GetBool(postgresMigrationsFlag),
+			viper.GetString(postgresMigrationsSourceFlag),
+			viper.GetBool(hasuraMetadataFlag),
+			viper.GetString(graphqlEndpointFlag),
+			viper.GetString(hasuraMetadataAdminSecretFlag),
 			logger,
 		)
 
 		metadataStorage := getMetadataStorage(
-			viper.GetString(graphqlEndpoint) + "/graphql",
+			viper.GetString(graphqlEndpointFlag) + "/graphql",
 		)
-		r := getGin(metadataStorage, contentStorage, logger, viper.GetBool(debug))
+		router, err := getGin(
+			metadataStorage,
+			contentStorage,
+			viper.GetStringSlice(trustedProxiesFlag),
+			logger,
+			viper.GetBool(debugFlag),
+		)
+		cobra.CheckErr(err)
 
 		logger.Info("starting server")
-		logger.Error(r.Run(viper.GetString(bind)))
+		logger.Error(router.Run(viper.GetString(bindFlag)))
 	},
 }

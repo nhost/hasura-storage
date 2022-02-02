@@ -19,3 +19,10 @@ func addStringFlag(flags *pflag.FlagSet, name string, defaultValue string, help 
 		cobra.CheckErr(err)
 	}
 }
+
+func addStringArrayFlag(flags *pflag.FlagSet, name string, defaultValue []string, help string) {
+	flags.StringArray(name, defaultValue, help)
+	if err := viper.BindPFlag(name, flags.Lookup(name)); err != nil {
+		cobra.CheckErr(err)
+	}
+}

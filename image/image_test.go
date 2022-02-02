@@ -55,9 +55,9 @@ func TestManipulate(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got := hasher.Sum(nil)
-			if !cmp.Equal(got, tc.hash) {
-				t.Error(cmp.Diff(got, tc.hash))
+			got := fmt.Sprintf("%x", hasher.Sum(nil))
+			if !cmp.Equal(got, tc.sum) {
+				t.Error(cmp.Diff(got, tc.sum))
 			}
 		})
 	}

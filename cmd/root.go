@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	name   = "hasura-storage"
-	debug  = "debug"
-	config = "config"
+	name       = "hasura-storage"
+	debugFlag  = "debug"
+	configFlag = "config"
 )
 
 var (
@@ -34,8 +34,8 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().String(config, "", "use this configuration file")
-	addBoolFlag(rootCmd.PersistentFlags(), debug, false, "enable debug messages")
+	rootCmd.PersistentFlags().String(configFlag, "", "use this configuration file")
+	addBoolFlag(rootCmd.PersistentFlags(), debugFlag, false, "enable debug messages")
 }
 
 func initConfig() {
