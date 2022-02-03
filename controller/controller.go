@@ -101,12 +101,12 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 
 	router.GET("/healthz", ctrl.Health)
 
-	apiV1 := router.Group("/api/v1")
+	apiRoot := router.Group("/v1/storage")
 	{
-		apiV1.GET("/openapi.yaml", ctrl.OpenAPI)
-		apiV1.GET("/version", ctrl.Version)
+		apiRoot.GET("/openapi.yaml", ctrl.OpenAPI)
+		apiRoot.GET("/version", ctrl.Version)
 	}
-	files := apiV1.Group("/files")
+	files := apiRoot.Group("/files")
 	{
 		files.POST("/", ctrl.UploadFile)
 		files.GET("/:id", ctrl.GetFile)
@@ -116,7 +116,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		files.GET("/:id/presignedurl", ctrl.GetFilePresignedURL)
 	}
 
-	ops := apiV1.Group("/ops")
+	ops := apiRoot.Group("/ops")
 	{
 		ops.POST("list-orphans", ctrl.ListOrphans)
 		ops.POST("delete-orphans", ctrl.DeleteOrphans)
