@@ -6,9 +6,11 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -65,7 +67,7 @@ func TestDeleteFile(t *testing.T) {
 
 	_, apiErr := s3.PutFile(f, "s3_test.go", "text")
 	if apiErr != nil {
-		t.Fatal(err)
+		t.Fatal(apiErr)
 	}
 
 	if !findFile(t, s3, "a-root-folder", "s3_test.go") {
@@ -129,6 +131,56 @@ func TestListFiles(t *testing.T) {
 				if !strings.HasPrefix(f, "f215cf48-7458-4596-9aa5-2159fc6a3caf/default/") {
 					t.Errorf("found extraneous file: %s", f)
 				}
+			}
+		})
+	}
+}
+
+func TestGetFilePresignedURL(t *testing.T) {
+	t.Parallel()
+
+	s3 := getS3()
+
+	f, err := os.Open("s3_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, apiErr := s3.PutFile(f, "s3_test.go", "text")
+	if apiErr != nil {
+		t.Fatal(apiErr)
+	}
+
+	if !findFile(t, s3, "a-root-folder", "s3_test.go") {
+		t.Fatal("couldn't find test file")
+	}
+
+	cases := []struct {
+		name     string
+		filepath string
+	}{
+		{
+			name:     "success",
+			filepath: "s3_test.go",
+		},
+		{
+			name:     "file not found",
+			filepath: "/default/qwenmzxcxzcsadsad",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc := tc
+			url, err := s3.CreatePresignedURL(tc.filepath, time.Minute, controller.GetObjectMethod)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if url == "" {
+				t.Error("expected a url back but got nothing")
 			}
 		})
 	}

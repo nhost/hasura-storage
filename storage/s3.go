@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/nhost/hasura-storage/controller"
@@ -76,13 +77,31 @@ func (s *S3) GetFile(filepath string) (io.ReadCloser, *controller.APIError) {
 	return object.Body, nil
 }
 
-func (s *S3) CreatePresignedURL(filepath string, expire time.Duration) (string, *controller.APIError) {
-	request, _ := s.session.GetObjectRequest(
-		&s3.GetObjectInput{ // nolint:exhaustivestruct
-			Bucket: s.bucket,
-			Key:    aws.String(s.rootFolder + "/" + filepath),
-		},
-	)
+func (s *S3) CreatePresignedURL(filepath string, expire time.Duration, method controller.PresignedURLMethod) (string, *controller.APIError) {
+	var request *request.Request
+	switch method {
+	case controller.GetObjectMethod:
+		request, _ = s.session.GetObjectRequest(
+			&s3.GetObjectInput{ // nolint:exhaustivestruct
+				Bucket: s.bucket,
+				Key:    aws.String(s.rootFolder + "/" + filepath),
+			},
+		)
+	case controller.PutObjectMethod:
+		request, _ = s.session.PutObjectRequest(
+			&s3.PutObjectInput{ // nolint:exhaustivestruct
+				Bucket: s.bucket,
+				Key:    aws.String(s.rootFolder + "/" + filepath),
+			},
+		)
+	case controller.HeadObjectMethod:
+		request, _ = s.session.HeadObjectRequest(
+			&s3.HeadObjectInput{ // nolint:exhaustivestruct
+				Bucket: s.bucket,
+				Key:    aws.String(s.rootFolder + "/" + filepath),
+			},
+		)
+	}
 
 	url, err := request.Presign(expire)
 	if err != nil {

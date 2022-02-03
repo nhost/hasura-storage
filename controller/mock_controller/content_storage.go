@@ -37,18 +37,18 @@ func (m *MockContentStorage) EXPECT() *MockContentStorageMockRecorder {
 }
 
 // CreatePresignedURL mocks base method.
-func (m *MockContentStorage) CreatePresignedURL(arg0 string, arg1 time.Duration) (string, *controller.APIError) {
+func (m *MockContentStorage) CreatePresignedURL(arg0 string, arg1 time.Duration, arg2 controller.PresignedURLMethod) (string, *controller.APIError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePresignedURL", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreatePresignedURL", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(*controller.APIError)
 	return ret0, ret1
 }
 
 // CreatePresignedURL indicates an expected call of CreatePresignedURL.
-func (mr *MockContentStorageMockRecorder) CreatePresignedURL(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockContentStorageMockRecorder) CreatePresignedURL(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePresignedURL", reflect.TypeOf((*MockContentStorage)(nil).CreatePresignedURL), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePresignedURL", reflect.TypeOf((*MockContentStorage)(nil).CreatePresignedURL), arg0, arg1, arg2)
 }
 
 // DeleteFile mocks base method.
