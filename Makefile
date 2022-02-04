@@ -49,7 +49,7 @@ build:  ## Build application and places the binary under ./result/bin
 .PHONY: build-docker-image
 build-docker-image:  ## Build docker container for native architecture
 	@echo $(VERSION) > VERSION
-	./build/nix-docker-image.sh build .\#dockerImage --print-build-logs
+	./build/nix-docker-image.sh
 	docker tag hasura-storage:$(VERSION) hasura-storage:latest
 
 
