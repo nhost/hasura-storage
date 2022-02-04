@@ -3,6 +3,7 @@
 package storage_test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +30,7 @@ func getS3() *storage.S3 {
 
 	logger := logrus.New()
 
-	st, err := storage.NewS3(config, "default", "a-root-folder", logger)
+	st, err := storage.NewS3(config, "default", "f215cf48-7458-4596-9aa5-2159fc6a3caf", logger)
 	if err != nil {
 		panic(err)
 	}
@@ -65,12 +65,12 @@ func TestDeleteFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, apiErr := s3.PutFile(f, "s3_test.go", "text")
+	_, apiErr := s3.PutFile(f, "default/s3_test.go", "text")
 	if apiErr != nil {
 		t.Fatal(apiErr)
 	}
 
-	if !findFile(t, s3, "a-root-folder", "s3_test.go") {
+	if !findFile(t, s3, "f215cf48-7458-4596-9aa5-2159fc6a3caf/default", "s3_test.go") {
 		t.Fatal("couldn't find test file")
 	}
 
@@ -80,7 +80,7 @@ func TestDeleteFile(t *testing.T) {
 	}{
 		{
 			name:     "success",
-			filepath: "s3_test.go",
+			filepath: "default/s3_test.go",
 		},
 		{
 			name:     "file not found",
@@ -98,7 +98,7 @@ func TestDeleteFile(t *testing.T) {
 				t.Error(err)
 			}
 
-			if findFile(t, s3, "a-root-folder", tc.filepath) {
+			if findFile(t, s3, "f215cf48-7458-4596-9aa5-2159fc6a3caf/default", tc.filepath) {
 				t.Error("file wasn't deleted")
 			}
 		})
@@ -128,6 +128,7 @@ func TestListFiles(t *testing.T) {
 			}
 
 			for _, f := range got {
+				fmt.Println(f)
 				if !strings.HasPrefix(f, "f215cf48-7458-4596-9aa5-2159fc6a3caf/default/") {
 					t.Errorf("found extraneous file: %s", f)
 				}
@@ -146,12 +147,12 @@ func TestGetFilePresignedURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, apiErr := s3.PutFile(f, "s3_test.go", "text")
+	_, apiErr := s3.PutFile(f, "default/s3_test.go", "text")
 	if apiErr != nil {
 		t.Fatal(apiErr)
 	}
 
-	if !findFile(t, s3, "a-root-folder", "s3_test.go") {
+	if !findFile(t, s3, "f215cf48-7458-4596-9aa5-2159fc6a3caf/default", "s3_test.go") {
 		t.Fatal("couldn't find test file")
 	}
 
@@ -174,7 +175,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			tc := tc
-			url, err := s3.CreatePresignedURL(tc.filepath, time.Minute, controller.GetObjectMethod)
+			url, err := s3.CreatePresignedURL(tc.filepath, time.Minute)
 			if err != nil {
 				t.Error(err)
 			}

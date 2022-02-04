@@ -66,7 +66,7 @@ type MetadataStorage interface {
 type ContentStorage interface {
 	PutFile(content io.ReadSeeker, filepath, contentType string) (string, *APIError)
 	GetFile(id string) (io.ReadCloser, *APIError)
-	CreatePresignedURL(filepath string, expire time.Duration, method PresignedURLMethod) (string, *APIError)
+	CreatePresignedURL(filepath string, expire time.Duration) (string, *APIError)
 	DeleteFile(filepath string) *APIError
 	ListFiles() ([]string, *APIError)
 }

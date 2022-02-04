@@ -9,18 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PresignedURLMethod int
-
-const (
-	GetObjectMethod = iota
-	PutObjectMethod
-	HeadObjectMethod
-)
-
-const (
-	GetFilePresignedURLHeader = "x-nhost-presignedurl-method"
-)
-
 type GetFilePresignedURLResponse struct {
 	Error      *ErrorResponse `json:"error"`
 	URL        string         `json:"url"`
@@ -29,22 +17,11 @@ type GetFilePresignedURLResponse struct {
 
 type GetFilePresignedURLRequest struct {
 	FileID string
-	Method PresignedURLMethod
 }
 
 func (ctrl *Controller) getFilePresignedURLParse(ctx *gin.Context) GetFilePresignedURLRequest {
-	var method PresignedURLMethod
-	switch ctx.Request.Header.Get(GetFilePresignedURLHeader) {
-	case "", "getObjectMethod":
-		method = GetObjectMethod
-	case "pubObjectMethod":
-		method = PutObjectMethod
-	case "headObjectMethod":
-		method = HeadObjectMethod
-	}
 	return GetFilePresignedURLRequest{
 		FileID: ctx.Param("id"),
-		Method: method,
 	}
 }
 
@@ -65,7 +42,6 @@ func (ctrl *Controller) getFilePresignedURL(ctx *gin.Context) (GetFilePresignedU
 	url, apiErr := ctrl.contentStorage.CreatePresignedURL(
 		filepath,
 		time.Duration(fileMetadata.Bucket.DownloadExpiration)*time.Minute,
-		req.Method,
 	)
 	if apiErr != nil {
 		return GetFilePresignedURLResponse{},
