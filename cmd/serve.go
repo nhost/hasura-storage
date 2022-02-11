@@ -197,16 +197,16 @@ var serveCmd = &cobra.Command{
 
 		logger.WithFields(
 			logrus.Fields{
-				"debug":                   viper.GetBool(debugFlag),
-				"bind":                    viper.GetString(bindFlag),
-				"trusted-proxies":         viper.GetStringSlice(trustedProxiesFlag),
-				"hasura_graphql_endpoint": viper.GetString(hasuraEndpointFlag),
-				"postgres-migrations":     viper.GetBool(postgresMigrationsFlag),
-				"hasura-graphql-metadata": viper.GetBool(hasuraMetadataFlag),
-				"s3_endpoint":             viper.GetString(s3EndpointFlag),
-				"s3_region":               viper.GetString(s3RegionFlag),
-				"s3_bucket":               viper.GetString(s3BucketFlag),
-				"s3_root_folder":          viper.GetString(s3RootFolderFlag),
+				"debug":               viper.GetBool(debugFlag),
+				"bind":                viper.GetString(bindFlag),
+				"trusted-proxies":     viper.GetStringSlice(trustedProxiesFlag),
+				"hasura_endpoint":     viper.GetString(hasuraEndpointFlag),
+				"postgres-migrations": viper.GetBool(postgresMigrationsFlag),
+				"hasura-metadata":     viper.GetBool(hasuraMetadataFlag),
+				"s3_endpoint":         viper.GetString(s3EndpointFlag),
+				"s3_region":           viper.GetString(s3RegionFlag),
+				"s3_bucket":           viper.GetString(s3BucketFlag),
+				"s3_root_folder":      viper.GetString(s3RootFolderFlag),
 			},
 		).Debug("parameters")
 
