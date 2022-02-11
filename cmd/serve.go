@@ -230,7 +230,7 @@ var serveCmd = &cobra.Command{
 		)
 
 		metadataStorage := getMetadataStorage(
-			viper.GetString(hasuraEndpointFlag + "/graphql"),
+			viper.GetString(hasuraEndpointFlag) + "/graphql",
 		)
 		router, err := getGin(
 			metadataStorage,
