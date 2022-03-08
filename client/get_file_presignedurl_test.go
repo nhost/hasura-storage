@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package client_test
@@ -28,6 +29,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 
 	files := []fileHelper{
 		{
+			name: randomString(),
 			path: "testdata/alphabet.txt",
 			id:   uuid.NewString(),
 		},
