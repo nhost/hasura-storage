@@ -19,14 +19,14 @@ type FileSummary struct {
 }
 
 type BucketMetadata struct {
-	ID                   string
-	MinUploadFile        int
-	MaxUploadFile        int
-	PresignedURLsEnabled bool
-	DownloadExpiration   int
-	CreatedAt            string
-	UpdatedAt            string
-	CacheControl         string
+	ID                   string `json:"id"`
+	MinUploadFile        int    `json:"minUploadFile"`
+	MaxUploadFile        int    `json:"maxUploadFile"`
+	PresignedURLsEnabled bool   `json:"presignedURLsEnabled"` // nolint: tagliatelle
+	DownloadExpiration   int    `json:"downloadExpiration"`
+	CreatedAt            string `json:"createdAt"`
+	UpdatedAt            string `json:"updatedAt"`
+	CacheControl         string `json:"cacheControl"`
 }
 
 type FileMetadata struct {
@@ -49,7 +49,9 @@ type FileMetadataWithBucket struct {
 
 //go:generate mockgen --build_flags=--mod=mod -destination mock_controller/metadata_storage.go -package mock_controller . MetadataStorage
 type MetadataStorage interface {
+	GetBuckets(ctx context.Context, headers http.Header) ([]BucketMetadata, *APIError)
 	GetBucketByID(ctx context.Context, id string, headers http.Header) (BucketMetadata, *APIError)
+	GetBucketFiles(ctx context.Context, id string, filter string, headers http.Header) ([]FileMetadata, *APIError)
 	GetFileByID(ctx context.Context, id string, headers http.Header) (FileMetadataWithBucket, *APIError)
 	InitializeFile(ctx context.Context, uuid string, headers http.Header) *APIError
 	PopulateMetadata(
@@ -106,6 +108,13 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		apiRoot.GET("/openapi.yaml", ctrl.OpenAPI)
 		apiRoot.GET("/version", ctrl.Version)
 	}
+	buckets := apiRoot.Group("/buckets")
+	{
+		buckets.GET("/", ctrl.GetBuckets)
+		buckets.GET("/:id", ctrl.GetBucket)
+		buckets.GET("/:id/list-files", ctrl.GetBucketFiles)
+	}
+
 	files := apiRoot.Group("/files")
 	{
 		files.POST("/", ctrl.UploadFile)
