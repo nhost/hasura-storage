@@ -12,7 +12,7 @@ if [[ $NIX_BUILD_NATIVE -eq 1 ]]; then
         ;;
     esac
 
-    nix build .\#packages.aarch64-linux.dockerImage --print-build-logs && docker load < result
+    nix build .\#packages.${SYSTEM}.dockerImage --print-build-logs && docker load < result
     exit $?
 fi
 
