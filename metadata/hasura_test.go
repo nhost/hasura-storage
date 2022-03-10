@@ -4,6 +4,7 @@ package metadata_test
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"os"
 	"testing"
