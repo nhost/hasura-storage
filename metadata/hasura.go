@@ -23,7 +23,7 @@ func parseGraphqlError(err error) *controller.APIError {
 		switch code {
 		case "access-denied", "validation-failed":
 			return controller.ForbiddenError(ghErr, "you are not authorized")
-		case "data-exception", "constraint-violation":
+		case "data-exception", "constraint-violation", "invalid-headers":
 			return controller.BadDataError(err, ghErr.Error())
 		default:
 			return controller.InternalServerError(err)
@@ -60,6 +60,16 @@ func (md FileSummary) ToControllerType() controller.FileSummary {
 	}
 }
 
+type BucketsMetadata []BucketMetadata
+
+func (md BucketsMetadata) ToControllerType() []controller.BucketMetadata {
+	res := make([]controller.BucketMetadata, len(md))
+	for i, m := range md {
+		res[i] = m.ToControllerType()
+	}
+	return res
+}
+
 type BucketMetadata struct {
 	ID                   graphql.String  `graphql:"id"`
 	MinUploadFile        graphql.Int     `graphql:"minUploadFileSize"`
@@ -82,6 +92,16 @@ func (md BucketMetadata) ToControllerType() controller.BucketMetadata {
 		UpdatedAt:            string(md.UpdatedAt),
 		CacheControl:         string(md.CacheControl),
 	}
+}
+
+type FilesMetadata []FileMetadata
+
+func (md FilesMetadata) ToControllerType() []controller.FileMetadata {
+	res := make([]controller.FileMetadata, len(md))
+	for i, m := range md {
+		res[i] = m.ToControllerType()
+	}
+	return res
 }
 
 type FileMetadata struct {
@@ -148,6 +168,26 @@ func NewHasura(endpoint string, authorizer HasuraAuthorizer) *Hasura {
 	}
 }
 
+func (h *Hasura) GetBuckets(
+	ctx context.Context,
+	headers http.Header,
+) ([]controller.BucketMetadata, *controller.APIError) {
+	var query struct {
+		Buckets BucketsMetadata `graphql:"buckets"`
+	}
+
+	variables := map[string]interface{}{}
+
+	client := h.client.WithRequestModifier(h.authorizer(headers))
+	err := client.Query(ctx, &query, variables)
+	if err != nil {
+		aerr := parseGraphqlError(err)
+		return nil, aerr.ExtendError("problem executing query")
+	}
+
+	return query.Buckets.ToControllerType(), nil
+}
+
 func (h *Hasura) GetBucketByID(
 	ctx context.Context,
 	bucketID string,
@@ -173,6 +213,42 @@ func (h *Hasura) GetBucketByID(
 	}
 
 	return query.StorageBucketsByPK.ToControllerType(), nil
+}
+
+func (h *Hasura) GetBucketFiles(
+	ctx context.Context,
+	bucketID string,
+	filter string,
+	headers http.Header,
+) ([]controller.FileMetadata, *controller.APIError) {
+	if filter == "" {
+		filter = ".*"
+	}
+
+	var query struct {
+		BucketFiles struct {
+			ID    graphql.String `graphsl:"id"`
+			Files FilesMetadata  `graphql:"files(where: {name: {_regex: $filter}})"`
+		} `graphql:"bucket(id: $id)"`
+	}
+
+	variables := map[string]interface{}{
+		"id":     graphql.String(bucketID),
+		"filter": graphql.String(filter),
+	}
+
+	client := h.client.WithRequestModifier(h.authorizer(headers))
+	err := client.Query(ctx, &query, variables)
+	if err != nil {
+		aerr := parseGraphqlError(err)
+		return nil, aerr.ExtendError("problem executing query")
+	}
+
+	if query.BucketFiles.ID == graphql.String("") {
+		return nil, controller.ErrBucketNotFound
+	}
+
+	return query.BucketFiles.Files.ToControllerType(), nil
 }
 
 func (h *Hasura) InitializeFile(ctx context.Context, fileID string, headers http.Header) *controller.APIError {
