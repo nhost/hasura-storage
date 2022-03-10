@@ -1,1 +1,1 @@
-ALTER TABLE storage.files ADD CONSTRAINT files_name_unique UNIQUE (name);
+ALTER TABLE storage.files ADD CONSTRAINT files_name_unique UNIQUE (name, bucket_id);
