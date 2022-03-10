@@ -29,5 +29,5 @@ func (ctrl *Controller) GetBucketFiles(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, GetBucketFilesResponse{bucketFiles, nil})
+	ctx.JSON(http.StatusOK, GetBucketFilesResponse{bucketFiles, nil})
 }

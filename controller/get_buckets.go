@@ -27,5 +27,5 @@ func (ctrl *Controller) GetBuckets(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, GetBucketsResponse{bucketsMetadata, nil})
+	ctx.JSON(http.StatusOK, GetBucketsResponse{bucketsMetadata, nil})
 }
