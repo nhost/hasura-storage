@@ -1,4 +1,4 @@
-// +build integration
+//go:build integration
 
 package client_test
 
@@ -20,10 +20,12 @@ func TestGetFileInformation(t *testing.T) {
 
 	files := []fileHelper{
 		{
+			name: randomString(),
 			path: "testdata/alphabet.txt",
 			id:   uuid.NewString(),
 		},
 		{
+			name: randomString(),
 			path: "testdata/nhost.jpg",
 			id:   uuid.NewString(),
 		},
@@ -54,7 +56,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-match!=etag",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfMatch("garbage")},
@@ -68,7 +69,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-none-match==etag",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithNoneMatch(testFiles.ProcessedFiles[0].ETag)},
@@ -82,7 +82,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-none-match!=etag",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithNoneMatch("garbage")},
@@ -96,7 +95,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-modified-since!=date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfModifiedSince("Thu, 23 Dec 2025 10:00:00 UTC")},
@@ -110,7 +108,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-modified-since==date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfModifiedSince("Thu, 23 Dec 2020 10:00:00 UTC")},
@@ -124,7 +121,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-unmodified-since!=date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfUnmodifiedSince("Thu, 23 Dec 2025 10:00:00 UTC")},
@@ -138,7 +134,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file information, if-unmodified-since==date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfUnmodifiedSince("Thu, 23 Dec 2020 10:00:00 UTC")},
@@ -152,7 +147,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "bad id",
 			id:   "asdadasdads",
 			expectedErr: &client.APIResponseError{
@@ -164,7 +158,6 @@ func TestGetFileInformation(t *testing.T) {
 			},
 		},
 		{
-
 			name: "not found",
 			id:   "93aa5806-3050-4810-817a-c917245bb6c1",
 			expectedErr: &client.APIResponseError{

@@ -1,12 +1,14 @@
-// +build integration
+//go:build integration
 
 package metadata_test
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -18,6 +20,18 @@ import (
 const (
 	hasuraURL = "http://localhost:8080/v1/graphql"
 )
+
+func randomString() string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	rand.Seed(time.Now().UnixMicro())
+
+	s := make([]rune, 5)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
 
 func getAuthHeader() http.Header {
 	headers := http.Header{}
@@ -173,6 +187,7 @@ func TestPopulateMetadata(t *testing.T) {
 	if err := hasura.InitializeFile(context.Background(), fileID, getAuthHeader()); err != nil {
 		panic(err)
 	}
+	name := randomString()
 
 	cases := []struct {
 		name                   string
@@ -190,7 +205,7 @@ func TestPopulateMetadata(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{},
 			expected: controller.FileMetadata{
 				ID:               fileID,
-				Name:             "name",
+				Name:             name,
 				Size:             123,
 				BucketID:         "default",
 				ETag:             "asdasd",
@@ -237,7 +252,7 @@ func TestPopulateMetadata(t *testing.T) {
 			t.Parallel()
 			tc := tc
 
-			got, err := hasura.PopulateMetadata(context.Background(), tc.fileID, "name", 123, "default", "asdasd", true, "text", tc.headers)
+			got, err := hasura.PopulateMetadata(context.Background(), tc.fileID, name, 123, "default", "asdasd", true, "text", tc.headers)
 
 			if tc.expectedStatusCode != err.StatusCode() {
 				t.Errorf("wrong status code, expected %d, got %d", tc.expectedStatusCode, err.StatusCode())
@@ -268,7 +283,8 @@ func TestGetFileByID(t *testing.T) {
 		panic(err)
 	}
 
-	if _, err := hasura.PopulateMetadata(context.Background(), fileID, "name", 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
+	name := randomString()
+	if _, err := hasura.PopulateMetadata(context.Background(), fileID, name, 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
 		panic(err)
 	}
 
@@ -289,7 +305,7 @@ func TestGetFileByID(t *testing.T) {
 			expected: controller.FileMetadataWithBucket{
 				FileMetadata: controller.FileMetadata{
 					ID:               fileID,
-					Name:             "name",
+					Name:             name,
 					Size:             123,
 					BucketID:         "default",
 					ETag:             "asdasd",
@@ -452,7 +468,9 @@ func TestDeleteFileByID(t *testing.T) {
 		panic(err)
 	}
 
-	if _, err := hasura.PopulateMetadata(context.Background(), fileID, "name", 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
+	name := randomString()
+
+	if _, err := hasura.PopulateMetadata(context.Background(), fileID, name, 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
 		panic(err)
 	}
 
@@ -471,7 +489,7 @@ func TestDeleteFileByID(t *testing.T) {
 			expected: controller.FileMetadataWithBucket{
 				FileMetadata: controller.FileMetadata{
 					ID:               fileID,
-					Name:             "name",
+					Name:             name,
 					Size:             123,
 					BucketID:         "default",
 					ETag:             "asdasd",
@@ -559,7 +577,7 @@ func TestListFiles(t *testing.T) {
 		panic(err)
 	}
 
-	if _, err := hasura.PopulateMetadata(context.Background(), fileID1, "name", 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
+	if _, err := hasura.PopulateMetadata(context.Background(), fileID1, randomString(), 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
 		panic(err)
 	}
 
@@ -568,7 +586,7 @@ func TestListFiles(t *testing.T) {
 		panic(err)
 	}
 
-	if _, err := hasura.PopulateMetadata(context.Background(), fileID2, "asdads", 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
+	if _, err := hasura.PopulateMetadata(context.Background(), fileID2, randomString(), 123, "default", "asdasd", true, "text", getAuthHeader()); err != nil {
 		panic(err)
 	}
 

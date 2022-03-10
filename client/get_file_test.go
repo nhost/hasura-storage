@@ -1,4 +1,4 @@
-// +build integration
+//go:build integration
 
 package client_test
 
@@ -23,10 +23,12 @@ func TestGetFile(t *testing.T) {
 
 	files := []fileHelper{
 		{
+			name: randomString(),
 			path: "testdata/alphabet.txt",
 			id:   uuid.NewString(),
 		},
 		{
+			name: randomString(),
 			path: "testdata/nhost.jpg",
 			id:   uuid.NewString(),
 		},
@@ -50,7 +52,7 @@ func TestGetFile(t *testing.T) {
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfMatch(testFiles.ProcessedFiles[0].ETag)},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "alphabet.txt",
+				Filename: testFiles.ProcessedFiles[0].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 63,
@@ -63,7 +65,6 @@ func TestGetFile(t *testing.T) {
 			expectedSha: "2e7ef00280a48b02e0d77d4727db841b311a7c12e755b43f66ead3e451a9611e",
 		},
 		{
-
 			name: "get file, if-match!=etag",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfMatch("garbage")},
@@ -79,7 +80,6 @@ func TestGetFile(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file, if-none-match==etag",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithNoneMatch(testFiles.ProcessedFiles[0].ETag)},
@@ -99,7 +99,7 @@ func TestGetFile(t *testing.T) {
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithNoneMatch("garbage")},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "alphabet.txt",
+				Filename: testFiles.ProcessedFiles[0].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 63,
@@ -112,7 +112,6 @@ func TestGetFile(t *testing.T) {
 			expectedSha: "2e7ef00280a48b02e0d77d4727db841b311a7c12e755b43f66ead3e451a9611e",
 		},
 		{
-
 			name: "get file, if-modified-since!=date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfModifiedSince("Thu, 23 Dec 2025 10:00:00 UTC")},
@@ -128,12 +127,11 @@ func TestGetFile(t *testing.T) {
 			},
 		},
 		{
-
 			name: "get file, if-modified-since==date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfModifiedSince("Thu, 23 Dec 2020 10:00:00 UTC")},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "alphabet.txt",
+				Filename: testFiles.ProcessedFiles[0].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 63,
@@ -146,12 +144,11 @@ func TestGetFile(t *testing.T) {
 			expectedSha: "2e7ef00280a48b02e0d77d4727db841b311a7c12e755b43f66ead3e451a9611e",
 		},
 		{
-
 			name: "get file, if-unmodified-since!=date",
 			id:   testFiles.ProcessedFiles[0].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfUnmodifiedSince("Thu, 23 Dec 2025 10:00:00 UTC")},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "alphabet.txt",
+				Filename: testFiles.ProcessedFiles[0].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 63,
@@ -179,7 +176,6 @@ func TestGetFile(t *testing.T) {
 			},
 		},
 		{
-
 			name: "bad id",
 			id:   "asdadasdads",
 			expectedErr: &client.APIResponseError{
@@ -191,7 +187,6 @@ func TestGetFile(t *testing.T) {
 			},
 		},
 		{
-
 			name: "not found",
 			id:   "93aa5806-3050-4810-817a-c917245bb6c1",
 			expectedErr: &client.APIResponseError{
@@ -208,7 +203,7 @@ func TestGetFile(t *testing.T) {
 			id:   testFiles.ProcessedFiles[1].ID,
 			opts: []client.GetFileInformationOpt{client.WithIfMatch(testFiles.ProcessedFiles[1].ETag)},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "nhost.jpg",
+				Filename: testFiles.ProcessedFiles[1].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 33399,
@@ -230,7 +225,7 @@ func TestGetFile(t *testing.T) {
 				client.WithImageBlur(5),
 			},
 			expected: &client.FileInformationHeaderWithReader{
-				Filename: "nhost.jpg",
+				Filename: testFiles.ProcessedFiles[1].Name,
 				FileInformationHeader: &client.FileInformationHeader{
 					CacheControl:  "max-age=3600",
 					ContentLength: 11286,
