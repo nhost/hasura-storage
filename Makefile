@@ -76,6 +76,7 @@ dev-env-build: build-docker-image  ## Builds development environment
 .PHONY: dev-jwt
 dev-jwt:  ## return a jwt valid for development environment
 	@sh ./$(DEV_ENV_PATH)/jwt-gen/get-jwt.sh
+	@sleep 2
 
 
 .PHONY: dev-s3-access-key
