@@ -1,10 +1,9 @@
-// +build integration
+//go:build integration
 
 package client_test
 
 import (
 	"os"
-	"path"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -25,7 +24,7 @@ func updateFile(
 		t.Fatal(err)
 	}
 
-	fileToUpload := client.NewFile(path.Base(file.path), f, client.WithUUID(file.id))
+	fileToUpload := client.NewFile(file.name, f, client.WithUUID(file.id))
 
 	return cl.UpdateFile(context.Background(), fileID, fileToUpload)
 }
@@ -35,15 +34,17 @@ func TestUpdateFile(t *testing.T) {
 	cl := client.New(baseURL, os.Getenv("HASURA_AUTH_BEARER"))
 
 	id1 := uuid.NewString()
+	prefix := randomString()
 
 	file := fileHelper{
+		name: randomizedName(prefix, "alphabet.txt"),
 		path: "testdata/alphabet.txt",
 		id:   id1,
 	}
 
 	_, err := uploadFiles(t, cl, file)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 
 	cases := []struct {
@@ -57,12 +58,12 @@ func TestUpdateFile(t *testing.T) {
 			name:   "success",
 			fileID: id1,
 			file: fileHelper{
-				"testdata/rick.gif", id1,
+				randomizedName(prefix, "rick.gif"), "testdata/rick.gif", id1,
 			},
 			expected: &controller.UpdateFileResponse{
 				FileMetadata: &controller.FileMetadata{
 					ID:         id1,
-					Name:       "rick.gif",
+					Name:       randomizedName(prefix, "rick.gif"),
 					Size:       51271,
 					BucketID:   "default",
 					ETag:       `"40dca5f6097e48ee06aa7c3177fd44bd"`,
@@ -77,7 +78,7 @@ func TestUpdateFile(t *testing.T) {
 			name:   "wrong id",
 			fileID: "asdadasdads",
 			file: fileHelper{
-				"testdata/rick.gif", id1,
+				randomizedName(prefix, "rick.gif"), "testdata/rick.gif", id1,
 			},
 			expectedErr: &client.APIResponseError{
 				StatusCode: 400,
@@ -91,7 +92,7 @@ func TestUpdateFile(t *testing.T) {
 			name:   "not found",
 			fileID: "08c75a05-1b6a-42aa-b5ba-d9e1d5f3e8ca",
 			file: fileHelper{
-				"testdata/rick.gif", id1,
+				randomizedName(prefix, "rick.gif"), "testdata/rick.gif", id1,
 			},
 			expectedErr: &client.APIResponseError{
 				StatusCode: 404,

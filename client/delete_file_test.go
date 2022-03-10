@@ -1,4 +1,4 @@
-// +build integration
+//go:build integration
 
 package client_test
 
@@ -20,6 +20,7 @@ func TestDeleteFile(t *testing.T) {
 	id1 := uuid.NewString()
 
 	file := fileHelper{
+		name: randomString(),
 		path: "testdata/alphabet.txt",
 		id:   id1,
 	}
