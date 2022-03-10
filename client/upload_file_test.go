@@ -1,13 +1,14 @@
-// +build integration
+//go:build integration
 
 package client_test
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"os"
-	"path"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -17,8 +18,25 @@ import (
 )
 
 type fileHelper struct {
+	name string
 	path string
 	id   string
+}
+
+func randomString() string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	rand.Seed(time.Now().UnixMicro())
+
+	s := make([]rune, 5)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
+
+func randomizedName(prefix, name string) string {
+	return prefix + "-" + name
 }
 
 func uploadFiles(
@@ -34,7 +52,7 @@ func uploadFiles(
 			t.Fatal(err)
 		}
 
-		filesToUpload[i] = client.NewFile(path.Base(file.path), f, client.WithUUID(file.id))
+		filesToUpload[i] = client.NewFile(file.name, f, client.WithUUID(file.id))
 	}
 
 	return cl.UploadFile(context.Background(), filesToUpload...)
@@ -47,6 +65,8 @@ func TestUploadFile(t *testing.T) {
 	id1 := uuid.NewString()
 	id2 := uuid.NewString()
 
+	prefix := randomString()
+
 	cases := []struct {
 		name        string
 		files       []fileHelper
@@ -56,14 +76,14 @@ func TestUploadFile(t *testing.T) {
 		{
 			name: "success",
 			files: []fileHelper{
-				{"testdata/alphabet.txt", id1},
-				{"testdata/greek.txt", id2},
+				{randomizedName(prefix, "alphabet.txt"), "testdata/alphabet.txt", id1},
+				{randomizedName(prefix, "greek.txt"), "testdata/greek.txt", id2},
 			},
 			expected: &controller.UploadFileResponse{
 				ProcessedFiles: []controller.FileMetadata{
 					{
 						ID:         id1,
-						Name:       "alphabet.txt",
+						Name:       randomizedName(prefix, "alphabet.txt"),
 						Size:       63,
 						BucketID:   "default",
 						ETag:       `"588be441fe7a59460850b0aa3e1c5a65"`,
@@ -74,7 +94,7 @@ func TestUploadFile(t *testing.T) {
 					},
 					{
 						ID:         id2,
-						Name:       "greek.txt",
+						Name:       randomizedName(prefix, "greek.txt"),
 						Size:       103,
 						BucketID:   "default",
 						ETag:       `"d4b4575c5af8c28b4486acd1051ddf37"`,
@@ -89,8 +109,8 @@ func TestUploadFile(t *testing.T) {
 		{
 			name: "duplicated",
 			files: []fileHelper{
-				{"testdata/alphabet.txt", id1},
-				{"testdata/greek.txt", id2},
+				{randomizedName(prefix, "alphabet.txt"), "testdata/alphabet.txt", id1},
+				{randomizedName(prefix, "greek.txt"), "testdata/greek.txt", id2},
 			},
 			expectedErr: &client.APIResponseError{
 				StatusCode: http.StatusBadRequest,
