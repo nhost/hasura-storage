@@ -1,6 +1,7 @@
 package controller_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -97,5 +98,17 @@ func assert(t *testing.T, got, wanted interface{}, opts ...cmp.Option) {
 
 	if !cmp.Equal(got, wanted, opts...) {
 		t.Error(cmp.Diff(got, wanted, opts...))
+	}
+}
+
+func assertJSON(t *testing.T, gotB []byte, gotT interface{}, wanted interface{}, opts ...cmp.Option) {
+	t.Helper()
+
+	if err := json.Unmarshal(gotB, &gotT); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cmp.Equal(gotT, wanted, opts...) {
+		t.Error(cmp.Diff(gotT, wanted, opts...))
 	}
 }

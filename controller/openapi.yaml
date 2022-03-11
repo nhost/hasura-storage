@@ -42,6 +42,27 @@ components:
           type: string
         isUploaded:
           type: boolean
+    BucketMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+        minUploadFile:
+          type: number
+        maxUploadFile:
+          type: number
+        presignedURLsEnabled:
+          type: boolean
+        downloadExpiration:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        cacheControl:
+          type: string
     FileMetadata:
       type: object
       properties:
@@ -109,7 +130,100 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VersionInformation'
-                
+
+  /buckets/:
+    get:
+      summary: Retrieve information about all buckets
+      description: Retrieve information about all buckets
+      tags:
+        - storage
+      security:
+        - Authorization: []
+      responses:
+        '200':
+          description: Bucket metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buckets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BucketMetadata'
+        default:
+          description: En error occured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /buckets/{id}:
+    get:
+      summary: Retrieve information about a bucket
+      description: Retrieve information about a bucket
+      tags:
+        - storage
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bucket metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BucketMetadata'
+        default:
+          description: En error occured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /buckets/{id}/files/list:
+    get:
+      summary: Retrieve list of files from the bucket
+      description: Retrieve list of files from the bucket
+      tags:
+        - storage
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: filter_files_regex
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bucket metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileMetadata'
+        default:
+          description: En error occured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /files/:
     post:
       summary: Upload one or more files
@@ -147,7 +261,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  ProcessedFiles:
+                  processedFiles:
                     type: array
                     items:
                       $ref: '#/components/schemas/FileMetadata'
@@ -157,6 +271,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
   /files/{id}:
     head:
       summary: Retrieve information about a file

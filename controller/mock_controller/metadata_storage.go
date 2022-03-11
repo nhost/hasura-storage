@@ -66,6 +66,21 @@ func (mr *MockMetadataStorageMockRecorder) GetBucketByID(arg0, arg1, arg2 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBucketByID", reflect.TypeOf((*MockMetadataStorage)(nil).GetBucketByID), arg0, arg1, arg2)
 }
 
+// GetBuckets mocks base method.
+func (m *MockMetadataStorage) GetBuckets(arg0 context.Context, arg1 http.Header) ([]controller.BucketMetadata, *controller.APIError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBuckets", arg0, arg1)
+	ret0, _ := ret[0].([]controller.BucketMetadata)
+	ret1, _ := ret[1].(*controller.APIError)
+	return ret0, ret1
+}
+
+// GetBuckets indicates an expected call of GetBuckets.
+func (mr *MockMetadataStorageMockRecorder) GetBuckets(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuckets", reflect.TypeOf((*MockMetadataStorage)(nil).GetBuckets), arg0, arg1)
+}
+
 // GetFileByID mocks base method.
 func (m *MockMetadataStorage) GetFileByID(arg0 context.Context, arg1 string, arg2 http.Header) (controller.FileMetadataWithBucket, *controller.APIError) {
 	m.ctrl.T.Helper()
@@ -93,6 +108,21 @@ func (m *MockMetadataStorage) InitializeFile(arg0 context.Context, arg1 string, 
 func (mr *MockMetadataStorageMockRecorder) InitializeFile(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeFile", reflect.TypeOf((*MockMetadataStorage)(nil).InitializeFile), arg0, arg1, arg2)
+}
+
+// ListBucketFiles mocks base method.
+func (m *MockMetadataStorage) ListBucketFiles(arg0 context.Context, arg1, arg2 string, arg3 http.Header) ([]controller.FileMetadata, *controller.APIError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListBucketFiles", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]controller.FileMetadata)
+	ret1, _ := ret[1].(*controller.APIError)
+	return ret0, ret1
+}
+
+// ListBucketFiles indicates an expected call of ListBucketFiles.
+func (mr *MockMetadataStorageMockRecorder) ListBucketFiles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBucketFiles", reflect.TypeOf((*MockMetadataStorage)(nil).ListBucketFiles), arg0, arg1, arg2, arg3)
 }
 
 // ListFiles mocks base method.

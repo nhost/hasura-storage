@@ -4,6 +4,7 @@ package metadata_test
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -642,6 +643,298 @@ func TestListFiles(t *testing.T) {
 				}
 				if !found1 || !found2 {
 					t.Error("couldn't find some files in the list")
+				}
+			}
+		})
+	}
+}
+
+func TestGetBuckets(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name                   string
+		bucketID               string
+		headers                http.Header
+		expectedStatusCode     int
+		expectedPublicResponse *controller.ErrorResponse
+		expected               []controller.BucketMetadata
+	}{
+		{
+			name:                   "success",
+			bucketID:               "default",
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected: []controller.BucketMetadata{
+				{
+					ID:                   "default",
+					MinUploadFile:        1,
+					MaxUploadFile:        50000000,
+					PresignedURLsEnabled: true,
+					DownloadExpiration:   30,
+					CreatedAt:            "",
+					UpdatedAt:            "",
+					CacheControl:         "max-age=3600",
+				},
+			},
+		},
+		{
+			name:               "not authorized",
+			bucketID:           "asdsad",
+			expectedStatusCode: 403,
+			expectedPublicResponse: &controller.ErrorResponse{
+				Message: "you are not authorized",
+			},
+			expected: []controller.BucketMetadata{},
+		},
+	}
+
+	hasura := metadata.NewHasura(hasuraURL, metadata.ForWardHeadersAuthorizer)
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc := tc
+
+			buckets, err := hasura.GetBuckets(context.Background(), tc.headers)
+
+			if tc.expectedStatusCode != err.StatusCode() {
+				t.Errorf("wrong status code, expected %d, got %d", tc.expectedStatusCode, err.StatusCode())
+			}
+
+			if err != nil {
+				if !cmp.Equal(err.PublicResponse(), tc.expectedPublicResponse) {
+					t.Error(cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse))
+				}
+			} else {
+				opts := cmp.Options{
+					cmpopts.IgnoreFields(controller.BucketMetadata{}, "CreatedAt", "UpdatedAt"),
+				}
+				if !cmp.Equal(buckets, tc.expected, opts...) {
+					t.Error(cmp.Diff(buckets, tc.expected, opts...))
+				}
+			}
+		})
+	}
+}
+
+func TestListBucketFiles(t *testing.T) {
+	prefix := randomString()
+
+	hasura := metadata.NewHasura(hasuraURL, metadata.ForWardHeadersAuthorizer)
+
+	fm := []controller.FileMetadata{
+		{
+			ID:               uuid.NewString(),
+			Name:             prefix + "/" + "file1.txt",
+			Size:             123,
+			BucketID:         "default",
+			ETag:             "asdasd",
+			CreatedAt:        "",
+			UpdatedAt:        "",
+			IsUploaded:       true,
+			MimeType:         "text",
+			UploadedByUserID: "",
+		},
+		{
+			ID:               uuid.NewString(),
+			Name:             prefix + "/" + "a_folder/file2.txt",
+			Size:             123,
+			BucketID:         "default",
+			ETag:             "asdasd",
+			CreatedAt:        "",
+			UpdatedAt:        "",
+			IsUploaded:       true,
+			MimeType:         "text",
+			UploadedByUserID: "",
+		},
+		{
+			ID:               uuid.NewString(),
+			Name:             prefix + "/" + "a_folder/file3.txt",
+			Size:             123,
+			BucketID:         "default",
+			ETag:             "asdasd",
+			CreatedAt:        "",
+			UpdatedAt:        "",
+			IsUploaded:       true,
+			MimeType:         "text",
+			UploadedByUserID: "",
+		},
+		{
+			ID:               uuid.NewString(),
+			Name:             prefix + "/" + "b_folder/file4.txt",
+			Size:             123,
+			BucketID:         "default",
+			ETag:             "asdasd",
+			CreatedAt:        "",
+			UpdatedAt:        "",
+			IsUploaded:       true,
+			MimeType:         "text",
+			UploadedByUserID: "",
+		},
+	}
+
+	for _, m := range fm {
+		if err := hasura.InitializeFile(context.Background(), m.ID, getAuthHeader()); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := hasura.PopulateMetadata(
+			context.Background(),
+			m.ID, m.Name, m.Size, m.BucketID, m.ETag, m.IsUploaded, m.MimeType,
+			getAuthHeader(),
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Parallel()
+
+	cases := []struct {
+		name                   string
+		bucketID               string
+		headers                http.Header
+		filter                 string
+		expectedStatusCode     int
+		expectedPublicResponse *controller.ErrorResponse
+		expected               []controller.FileMetadata
+	}{
+		{
+			name:                   "no filter",
+			bucketID:               "default",
+			filter:                 "",
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected:               nil, // we count in this case instead
+		},
+		{
+			name:                   "filter prefix",
+			bucketID:               "default",
+			filter:                 fmt.Sprintf(`^%s\/`, prefix),
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected:               fm,
+		},
+		{
+			name:                   "filter everything in a subfolder",
+			bucketID:               "default",
+			filter:                 fmt.Sprintf(`^%s\/\w+\/`, prefix),
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected: []controller.FileMetadata{
+				{
+					ID:               uuid.NewString(),
+					Name:             prefix + "/" + "a_folder/file2.txt",
+					Size:             123,
+					BucketID:         "default",
+					ETag:             "asdasd",
+					CreatedAt:        "",
+					UpdatedAt:        "",
+					IsUploaded:       true,
+					MimeType:         "text",
+					UploadedByUserID: "",
+				},
+				{
+					ID:               uuid.NewString(),
+					Name:             prefix + "/" + "a_folder/file3.txt",
+					Size:             123,
+					BucketID:         "default",
+					ETag:             "asdasd",
+					CreatedAt:        "",
+					UpdatedAt:        "",
+					IsUploaded:       true,
+					MimeType:         "text",
+					UploadedByUserID: "",
+				},
+				{
+					ID:               uuid.NewString(),
+					Name:             prefix + "/" + "b_folder/file4.txt",
+					Size:             123,
+					BucketID:         "default",
+					ETag:             "asdasd",
+					CreatedAt:        "",
+					UpdatedAt:        "",
+					IsUploaded:       true,
+					MimeType:         "text",
+					UploadedByUserID: "",
+				},
+			},
+		},
+		{
+			name:                   "filter everything in a given subfolder",
+			bucketID:               "default",
+			filter:                 fmt.Sprintf(`^%s\/a_folder\/`, prefix),
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected: []controller.FileMetadata{
+				{
+					ID:               uuid.NewString(),
+					Name:             prefix + "/" + "a_folder/file2.txt",
+					Size:             123,
+					BucketID:         "default",
+					ETag:             "asdasd",
+					CreatedAt:        "",
+					UpdatedAt:        "",
+					IsUploaded:       true,
+					MimeType:         "text",
+					UploadedByUserID: "",
+				},
+				{
+					ID:               uuid.NewString(),
+					Name:             prefix + "/" + "a_folder/file3.txt",
+					Size:             123,
+					BucketID:         "default",
+					ETag:             "asdasd",
+					CreatedAt:        "",
+					UpdatedAt:        "",
+					IsUploaded:       true,
+					MimeType:         "text",
+					UploadedByUserID: "",
+				},
+			},
+		},
+		{
+			name:               "not authorized",
+			bucketID:           "asdsad",
+			expectedStatusCode: 403,
+			expectedPublicResponse: &controller.ErrorResponse{
+				Message: "you are not authorized",
+			},
+			expected: []controller.FileMetadata{},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc := tc
+
+			files, err := hasura.ListBucketFiles(context.Background(), "default", tc.filter, tc.headers)
+
+			if tc.expectedStatusCode != err.StatusCode() {
+				t.Errorf("wrong status code, expected %d, got %d", tc.expectedStatusCode, err.StatusCode())
+			}
+
+			if err != nil {
+				if !cmp.Equal(err.PublicResponse(), tc.expectedPublicResponse) {
+					t.Error(cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse))
+				}
+			} else {
+				if tc.filter == "" && len(files) < 4 {
+					t.Error("got wrong number of files")
+				} else if tc.filter != "" {
+					opts := cmp.Options{
+						cmpopts.IgnoreFields(controller.FileMetadata{}, "ID", "CreatedAt", "UpdatedAt"),
+					}
+					if !cmp.Equal(files, tc.expected, opts...) {
+						t.Error(cmp.Diff(files, tc.expected, opts...))
+					}
 				}
 			}
 		})
