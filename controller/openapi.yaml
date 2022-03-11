@@ -186,7 +186,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /buckets/{id}/list-files:
+  /buckets/{id}/files/list:
     get:
       summary: Retrieve list of files from the bucket
       description: Retrieve list of files from the bucket

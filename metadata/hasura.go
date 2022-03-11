@@ -215,7 +215,7 @@ func (h *Hasura) GetBucketByID(
 	return query.StorageBucketsByPK.ToControllerType(), nil
 }
 
-func (h *Hasura) GetBucketFiles(
+func (h *Hasura) ListBucketFiles(
 	ctx context.Context,
 	bucketID string,
 	filter string,
