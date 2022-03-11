@@ -107,7 +107,7 @@ func TestGetBucketFiles(t *testing.T) {
 			req, _ := http.NewRequestWithContext(
 				context.Background(),
 				"GET",
-				"/v1/storage/buckets/blah/list-files",
+				"/v1/storage/buckets/blah/files/list",
 				nil,
 			)
 

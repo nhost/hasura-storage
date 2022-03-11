@@ -14,7 +14,7 @@ func (c *Client) GetBucketFiles(
 	id string,
 	filter string,
 ) (*controller.GetBucketFilesResponse, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/buckets/"+id+"/list-files", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/buckets/"+id+"/files/list", nil)
 	if err != nil {
 		return nil, fmt.Errorf("problem creating request: %w", err)
 	}

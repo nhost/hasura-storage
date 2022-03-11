@@ -38,9 +38,9 @@ curl -v $URL/buckets/default \
   -H "$AUTH" | jq
 
 
-curl -v $URL/buckets/default/list-files \
+curl -v $URL/buckets/default/files/list \
   -H "$AUTH" | jq
 
 
-curl -v $URL/buckets/default/list-files?filter_files_regex="^a_folder/.*" \
+curl -v $URL/buckets/default/files/list?filter_files_regex="^a_folder/.*" \
   -H "$AUTH" | jq
