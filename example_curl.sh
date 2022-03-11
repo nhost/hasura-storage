@@ -29,7 +29,7 @@ time curl -v -o nhost.jpg $URL/files/${FILE_ID} \
 time curl -v -o nhost.jpg $URL/files/${FILE_ID}?x=600\&y\=200\&q=50\&b=5 \
       -H "$AUTH"
 
-time curl -v -o nhost.jpg $URL/buckets/default/get-file?filename="b_folder/logo.jpg" \
+time curl -v -o nhost.jpg $URL/buckets/default/file?filename="b_folder/logo.jpg" \
       -H "$AUTH"
 
 curl -v $URL/buckets/ \

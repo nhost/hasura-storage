@@ -14,7 +14,7 @@ func (c *Client) GetFileByName(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		fmt.Sprintf("%s/buckets/%s/get-file", c.baseURL, bucketID),
+		fmt.Sprintf("%s/buckets/%s/file", c.baseURL, bucketID),
 		nil,
 	)
 	if err != nil {

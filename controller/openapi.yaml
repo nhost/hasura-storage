@@ -224,7 +224,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /buckets/{id}/get-file:
+  /buckets/{id}/file:
     get:
       summary: Retrieve contents of file
       description: Retrieve contents of file

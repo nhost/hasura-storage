@@ -119,7 +119,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		buckets.GET("/", ctrl.GetBuckets)
 		buckets.GET("/:id", ctrl.GetBucket)
 		buckets.GET("/:id/files/list", ctrl.ListBucketFiles)
-		buckets.GET("/:id/get-file", ctrl.GetFileByName)
+		buckets.GET("/:id/file", ctrl.GetFileByName)
 	}
 
 	files := apiRoot.Group("/files")

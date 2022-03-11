@@ -77,7 +77,7 @@ func TestGetFileByName(t *testing.T) {
 			req, _ := http.NewRequestWithContext(
 				context.Background(),
 				"GET",
-				"/v1/storage/buckets/default/get-file",
+				"/v1/storage/buckets/default/file",
 				nil,
 			)
 
