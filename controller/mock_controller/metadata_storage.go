@@ -66,21 +66,6 @@ func (mr *MockMetadataStorageMockRecorder) GetBucketByID(arg0, arg1, arg2 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBucketByID", reflect.TypeOf((*MockMetadataStorage)(nil).GetBucketByID), arg0, arg1, arg2)
 }
 
-// GetBucketFiles mocks base method.
-func (m *MockMetadataStorage) GetBucketFiles(arg0 context.Context, arg1, arg2 string, arg3 http.Header) ([]controller.FileMetadata, *controller.APIError) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBucketFiles", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]controller.FileMetadata)
-	ret1, _ := ret[1].(*controller.APIError)
-	return ret0, ret1
-}
-
-// GetBucketFiles indicates an expected call of GetBucketFiles.
-func (mr *MockMetadataStorageMockRecorder) GetBucketFiles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBucketFiles", reflect.TypeOf((*MockMetadataStorage)(nil).GetBucketFiles), arg0, arg1, arg2, arg3)
-}
-
 // GetBuckets mocks base method.
 func (m *MockMetadataStorage) GetBuckets(arg0 context.Context, arg1 http.Header) ([]controller.BucketMetadata, *controller.APIError) {
 	m.ctrl.T.Helper()
