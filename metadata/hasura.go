@@ -332,6 +332,35 @@ func (h *Hasura) GetFileByID(
 	return query.StorageFilesByPK.ToControllerType(), nil
 }
 
+func (h *Hasura) GetFileByName(
+	ctx context.Context,
+	bucketID string,
+	name string,
+	headers http.Header,
+) (controller.FileMetadataWithBucket, *controller.APIError) {
+	var query struct {
+		Files []FileMetadataWithBucket `graphql:"files(where: {bucketId: {_eq: $id}, name: {_eq: $name}})"`
+	}
+
+	variables := map[string]interface{}{
+		"id":   graphql.String(bucketID),
+		"name": graphql.String(name),
+	}
+
+	client := h.client.WithRequestModifier(h.authorizer(headers))
+	err := client.Query(ctx, &query, variables)
+	if err != nil {
+		aerr := parseGraphqlError(err)
+		return controller.FileMetadataWithBucket{}, aerr.ExtendError("problem executing query")
+	}
+
+	if len(query.Files) == 0 {
+		return controller.FileMetadataWithBucket{}, controller.ErrFileNotFound
+	}
+
+	return query.Files[0].ToControllerType(), nil
+}
+
 func (h *Hasura) SetIsUploaded(
 	ctx context.Context, fileID string, isUploaded bool, headers http.Header,
 ) *controller.APIError {

@@ -37,6 +37,12 @@ var (
 		errors.New("bucket not found"), // nolint
 		nil,
 	}
+	ErrMissingFilename = &APIError{
+		http.StatusBadRequest,
+		"filename missing in query url",
+		errors.New("filename missing in query url"), // nolint
+		nil,
+	}
 	ErrFileNotFound = &APIError{
 		http.StatusNotFound,
 		"file not found",

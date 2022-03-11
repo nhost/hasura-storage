@@ -146,18 +146,7 @@ func (ctrl *Controller) getFileImage(
 	return src, nil
 }
 
-func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
-	req, apiErr := ctrl.getFileParse(ctx)
-	if apiErr != nil {
-		return 0, apiErr
-	}
-
-	id := ctx.Param("id")
-	fileMetadata, apiErr := ctrl.getFileMetadata(ctx.Request.Context(), id, ctx.Request.Header)
-	if apiErr != nil {
-		return 0, apiErr
-	}
-
+func (ctrl *Controller) getFile(ctx *gin.Context, fileMetadata FileMetadataWithBucket, headers getFileInformationHeaders) (int, *APIError) {
 	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
 		return 0, apiErr
@@ -169,7 +158,7 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
 	}
 	defer object.Close()
 
-	statusCode, apiErr := checkConditionals(fileMetadata, req.headers)
+	statusCode, apiErr := checkConditionals(fileMetadata, headers)
 	if apiErr != nil {
 		return 0, apiErr
 	}
@@ -187,6 +176,21 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
 	}
 
 	return statusCode, nil
+}
+
+func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
+	req, apiErr := ctrl.getFileParse(ctx)
+	if apiErr != nil {
+		return 0, apiErr
+	}
+
+	id := ctx.Param("id")
+	fileMetadata, apiErr := ctrl.getFileMetadata(ctx.Request.Context(), id, ctx.Request.Header)
+	if apiErr != nil {
+		return 0, apiErr
+	}
+
+	return ctrl.getFile(ctx, fileMetadata, req.headers)
 }
 
 func (ctrl *Controller) GetFile(ctx *gin.Context) {

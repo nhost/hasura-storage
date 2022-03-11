@@ -940,3 +940,137 @@ func TestGetBucketFiles(t *testing.T) {
 		})
 	}
 }
+
+func TestGetFileByName(t *testing.T) {
+	prefix := randomString()
+
+	hasura := metadata.NewHasura(hasuraURL, metadata.ForWardHeadersAuthorizer)
+
+	fm := []controller.FileMetadata{
+		{
+			ID:               uuid.NewString(),
+			Name:             prefix + "/" + "a_folder/file2.txt",
+			Size:             123,
+			BucketID:         "default",
+			ETag:             "asdasd",
+			CreatedAt:        "",
+			UpdatedAt:        "",
+			IsUploaded:       true,
+			MimeType:         "text",
+			UploadedByUserID: "",
+		},
+	}
+
+	for _, m := range fm {
+		if err := hasura.InitializeFile(context.Background(), m.ID, getAuthHeader()); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := hasura.PopulateMetadata(
+			context.Background(),
+			m.ID, m.Name, m.Size, m.BucketID, m.ETag, m.IsUploaded, m.MimeType,
+			getAuthHeader(),
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Parallel()
+
+	cases := []struct {
+		name                   string
+		bucketID               string
+		headers                http.Header
+		filename               string
+		expectedStatusCode     int
+		expectedPublicResponse *controller.ErrorResponse
+		expected               controller.FileMetadataWithBucket
+	}{
+		{
+			name:                   "success",
+			bucketID:               "default",
+			filename:               fmt.Sprintf("%s/a_folder/file2.txt", prefix),
+			headers:                getAuthHeader(),
+			expectedStatusCode:     0,
+			expectedPublicResponse: &controller.ErrorResponse{},
+			expected: controller.FileMetadataWithBucket{
+				FileMetadata: controller.FileMetadata{
+					ID:         "70456b7b-652e-44dd-844f-930288af3c4d",
+					Name:       prefix + "/a_folder/file2.txt",
+					Size:       123,
+					BucketID:   "default",
+					ETag:       "asdasd",
+					CreatedAt:  "2022-03-11T09:18:04.851062+00:00",
+					UpdatedAt:  "2022-03-11T09:18:04.856285+00:00",
+					IsUploaded: true,
+					MimeType:   "text",
+				},
+				Bucket: controller.BucketMetadata{
+					ID:                   "default",
+					MinUploadFile:        1,
+					MaxUploadFile:        50000000,
+					PresignedURLsEnabled: true,
+					DownloadExpiration:   30,
+					CreatedAt:            "2022-03-10T13:09:33.086971+00:00",
+					UpdatedAt:            "2022-03-10T13:09:33.086971+00:00",
+					CacheControl:         "max-age=3600",
+				},
+			},
+		},
+		{
+			name:               "bucket not found",
+			bucketID:           "qwe,ndskjh",
+			filename:           fmt.Sprintf("%s/a_folder/file2.txt", prefix),
+			headers:            getAuthHeader(),
+			expectedStatusCode: 404,
+			expectedPublicResponse: &controller.ErrorResponse{
+				Message: "file not found",
+			},
+		},
+		{
+			name:               "file not found",
+			bucketID:           "default",
+			filename:           "asdwqeasdasdasd",
+			headers:            getAuthHeader(),
+			expectedStatusCode: 404,
+			expectedPublicResponse: &controller.ErrorResponse{
+				Message: "file not found",
+			},
+		},
+		{
+			name:               "not authorized",
+			bucketID:           "asdsad",
+			expectedStatusCode: 403,
+			expectedPublicResponse: &controller.ErrorResponse{
+				Message: "you are not authorized",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc := tc
+
+			files, err := hasura.GetFileByName(context.Background(), tc.bucketID, tc.filename, tc.headers)
+
+			if tc.expectedStatusCode != err.StatusCode() {
+				t.Errorf("wrong status code, expected %d, got %d", tc.expectedStatusCode, err.StatusCode())
+			}
+
+			if err != nil {
+				if !cmp.Equal(err.PublicResponse(), tc.expectedPublicResponse) {
+					t.Error(cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse))
+				}
+			} else {
+				opts := cmp.Options{
+					cmpopts.IgnoreFields(controller.FileMetadata{}, "ID", "CreatedAt", "UpdatedAt"),
+					cmpopts.IgnoreFields(controller.BucketMetadata{}, "ID", "CreatedAt", "UpdatedAt"),
+				}
+				if !cmp.Equal(files, tc.expected, opts...) {
+					t.Error(cmp.Diff(files, tc.expected, opts...))
+				}
+			}
+		})
+	}
+}
