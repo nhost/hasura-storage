@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestGetBucketFiles(t *testing.T) {
+func TestListBucketFiles(t *testing.T) {
 	baseURL := "http://localhost:8000/v1/storage"
 	cl := client.New(baseURL, os.Getenv("HASURA_AUTH_BEARER"))
 
@@ -52,7 +52,7 @@ func TestGetBucketFiles(t *testing.T) {
 		id          string
 		filter      string
 		cl          *client.Client
-		expected    *controller.GetBucketFilesResponse
+		expected    *controller.ListBucketFilesResponse
 		expectedErr error
 	}{
 		{
@@ -60,7 +60,7 @@ func TestGetBucketFiles(t *testing.T) {
 			id:     "default",
 			filter: fmt.Sprintf(`^%s`, prefix),
 			cl:     cl,
-			expected: &controller.GetBucketFilesResponse{
+			expected: &controller.ListBucketFilesResponse{
 				Files: []controller.FileMetadata{
 					{
 						ID:         "e650c224-05ea-4144-9fb5-2f086623c9c4",
@@ -103,7 +103,7 @@ func TestGetBucketFiles(t *testing.T) {
 			name: "not found",
 			id:   "askjnmbsd",
 			cl:   cl,
-			expected: &controller.GetBucketFilesResponse{
+			expected: &controller.ListBucketFilesResponse{
 				Error: &controller.ErrorResponse{
 					Message: "bucket not found",
 				},
@@ -114,7 +114,7 @@ func TestGetBucketFiles(t *testing.T) {
 			name: "not authorized",
 			id:   "default",
 			cl:   client.New(baseURL, ""),
-			expected: &controller.GetBucketFilesResponse{
+			expected: &controller.ListBucketFilesResponse{
 				Error: &controller.ErrorResponse{
 					Message: "Message: Malformed Authorization header, Locations: []",
 				},
@@ -127,7 +127,7 @@ func TestGetBucketFiles(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc := tc
 
-			got, err := tc.cl.GetBucketFiles(context.Background(), tc.id, tc.filter)
+			got, err := tc.cl.ListBucketFiles(context.Background(), tc.id, tc.filter)
 			if !cmp.Equal(err, tc.expectedErr) {
 				t.Errorf(cmp.Diff(err, tc.expectedErr))
 			}

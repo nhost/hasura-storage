@@ -720,7 +720,7 @@ func TestGetBuckets(t *testing.T) {
 	}
 }
 
-func TestGetBucketFiles(t *testing.T) {
+func TestListBucketFiles(t *testing.T) {
 	prefix := randomString()
 
 	hasura := metadata.NewHasura(hasuraURL, metadata.ForWardHeadersAuthorizer)
@@ -915,7 +915,7 @@ func TestGetBucketFiles(t *testing.T) {
 			t.Parallel()
 			tc := tc
 
-			files, err := hasura.GetBucketFiles(context.Background(), "default", tc.filter, tc.headers)
+			files, err := hasura.ListBucketFiles(context.Background(), "default", tc.filter, tc.headers)
 
 			if tc.expectedStatusCode != err.StatusCode() {
 				t.Errorf("wrong status code, expected %d, got %d", tc.expectedStatusCode, err.StatusCode())

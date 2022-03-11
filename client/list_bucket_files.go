@@ -9,11 +9,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (c *Client) GetBucketFiles(
+func (c *Client) ListBucketFiles(
 	ctx context.Context,
 	id string,
 	filter string,
-) (*controller.GetBucketFilesResponse, error) {
+) (*controller.ListBucketFilesResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/buckets/"+id+"/files/list", nil)
 	if err != nil {
 		return nil, fmt.Errorf("problem creating request: %w", err)
@@ -30,7 +30,7 @@ func (c *Client) GetBucketFiles(
 	}
 	defer resp.Body.Close()
 
-	response := &controller.GetBucketFilesResponse{}
+	response := &controller.ListBucketFilesResponse{}
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(response); err != nil {
 		return nil, fmt.Errorf("problem unmarshaling response: %w", err)

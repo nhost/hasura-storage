@@ -51,7 +51,7 @@ type FileMetadataWithBucket struct {
 type MetadataStorage interface {
 	GetBuckets(ctx context.Context, headers http.Header) ([]BucketMetadata, *APIError)
 	GetBucketByID(ctx context.Context, id string, headers http.Header) (BucketMetadata, *APIError)
-	GetBucketFiles(ctx context.Context, id string, filter string, headers http.Header) ([]FileMetadata, *APIError)
+	ListBucketFiles(ctx context.Context, id string, filter string, headers http.Header) ([]FileMetadata, *APIError)
 	GetFileByID(ctx context.Context, id string, headers http.Header) (FileMetadataWithBucket, *APIError)
 	InitializeFile(ctx context.Context, uuid string, headers http.Header) *APIError
 	PopulateMetadata(
@@ -112,7 +112,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 	{
 		buckets.GET("/", ctrl.GetBuckets)
 		buckets.GET("/:id", ctrl.GetBucket)
-		buckets.GET("/:id/files/list", ctrl.GetBucketFiles)
+		buckets.GET("/:id/files/list", ctrl.ListBucketFiles)
 	}
 
 	files := apiRoot.Group("/files")

@@ -12,18 +12,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestGetBucketFiles(t *testing.T) {
+func TestListBucketFiles(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
 		name             string
 		expectedStatus   int
-		expectedResponse *controller.GetBucketFilesResponse
+		expectedResponse *controller.ListBucketFilesResponse
 	}{
 		{
 			name:           "good",
 			expectedStatus: 200,
-			expectedResponse: &controller.GetBucketFilesResponse{
+			expectedResponse: &controller.ListBucketFilesResponse{
 				Files: []controller.FileMetadata{
 					{
 						ID:               "38288c85-02af-416b-b075-11c4dae9",
@@ -69,7 +69,7 @@ func TestGetBucketFiles(t *testing.T) {
 			metadataStorage := mock_controller.NewMockMetadataStorage(c)
 			contentStorage := mock_controller.NewMockContentStorage(c)
 
-			metadataStorage.EXPECT().GetBucketFiles(
+			metadataStorage.EXPECT().ListBucketFiles(
 				gomock.Any(), "blah", "", gomock.Any(),
 			).Return([]controller.FileMetadata{
 				{
@@ -114,7 +114,7 @@ func TestGetBucketFiles(t *testing.T) {
 			router.ServeHTTP(responseRecorder, req)
 
 			assert(t, tc.expectedStatus, responseRecorder.Code)
-			assertJSON(t, responseRecorder.Body.Bytes(), &controller.GetBucketFilesResponse{}, tc.expectedResponse)
+			assertJSON(t, responseRecorder.Body.Bytes(), &controller.ListBucketFilesResponse{}, tc.expectedResponse)
 		})
 	}
 }
