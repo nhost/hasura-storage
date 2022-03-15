@@ -43,11 +43,11 @@ func isImage(mimeType string) bool {
 func getImageManipulationOptions(ctx *gin.Context, mimeType string) ([]image.Options, *APIError) { // nolint: cyclop
 	opts := make([]image.Options, 0, 3) // nolint: gomnd
 	// newSizeX, y, q, b
-	newSizeX, okX, err := getQueryInt(ctx, "x")
+	newSizeX, okX, err := getQueryInt(ctx, "w")
 	if err != nil {
 		return nil, err
 	}
-	newSizeY, okY, err := getQueryInt(ctx, "y")
+	newSizeY, okY, err := getQueryInt(ctx, "h")
 	if err != nil {
 		return nil, err
 	}
