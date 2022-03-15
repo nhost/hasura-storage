@@ -180,7 +180,7 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
 
 	if statusCode == http.StatusOK {
 		// if we want to download files at some point prepend `attachment;` before filename
-		ctx.Header("Content-Disposition", fmt.Sprintf(`filename="%s"`, fileMetadata.Name))
+		ctx.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileMetadata.Name))
 
 		if _, err := io.Copy(ctx.Writer, object); err != nil {
 			return 0, InternalServerError(err)
