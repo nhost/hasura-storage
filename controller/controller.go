@@ -66,8 +66,11 @@ type MetadataStorage interface {
 //go:generate mockgen --build_flags=--mod=mod -destination mock_controller/content_storage.go -package mock_controller . ContentStorage
 type ContentStorage interface {
 	PutFile(content io.ReadSeeker, filepath, contentType string) (string, *APIError)
-	GetFile(id string) (io.ReadCloser, *APIError)
+	GetFile(filepath string) (io.ReadCloser, *APIError)
 	CreatePresignedURL(filepath string, expire time.Duration) (string, *APIError)
+	GetFileWithPresignedURL(
+		ctx context.Context, filepath, signature string, headers http.Header,
+	) (io.ReadCloser, *APIError)
 	DeleteFile(filepath string) *APIError
 	ListFiles() ([]string, *APIError)
 }
@@ -135,6 +138,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		files.PUT("/:id", ctrl.UpdateFile)
 		files.DELETE("/:id", ctrl.DeleteFile)
 		files.GET("/:id/presignedurl", ctrl.GetFilePresignedURL)
+		files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
 	}
 
 	ops := apiRoot.Group("/ops")

@@ -144,12 +144,17 @@ func (ctrl *Controller) getFileInformationProcess(ctx *gin.Context) (int, *APIEr
 		return 0, apiErr
 	}
 	if len(opts) > 0 {
-		_, etag, n, apiErr := ctrl.modifyImage(ctx, fileMetadata.ID, opts...)
+		object, apiErr := ctrl.contentStorage.GetFile(fileMetadata.ID)
 		if apiErr != nil {
 			return 0, apiErr
 		}
-		fileMetadata.Size = int64(n)
-		fileMetadata.ETag = etag
+		defer object.Close()
+
+		object, apiErr = ctrl.manipulateImage(ctx.Request.Context(), object, &fileMetadata, opts...)
+		if apiErr != nil {
+			return 0, apiErr
+		}
+		defer object.Close()
 	}
 
 	if apiErr := writeCachingHeaders(ctx, fileMetadata); apiErr != nil {

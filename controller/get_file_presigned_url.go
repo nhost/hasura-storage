@@ -10,9 +10,9 @@ import (
 )
 
 type GetFilePresignedURLResponse struct {
-	Error      *ErrorResponse `json:"error"`
-	URL        string         `json:"url"`
-	Expiration int            `json:"expiration"`
+	Error      *ErrorResponse `json:"error,omitempty"`
+	URL        string         `json:"url,omitempty"`
+	Expiration int            `json:"expiration,omitempty"`
 }
 
 type GetFilePresignedURLRequest struct {

@@ -94,81 +94,48 @@ func (p *FakeReadCloserWrapper) Close() error {
 	return nil
 }
 
-func (ctrl *Controller) modifyImage(
-	ctx context.Context, filepath string, opts ...image.Options,
-) (io.ReadCloser, string, int, *APIError) {
-	object, apiErr := ctrl.contentStorage.GetFile(filepath)
-	if apiErr != nil {
-		return nil, "", 0, apiErr
-	}
+func (ctrl *Controller) manipulateImage(
+	ctx context.Context, object io.ReadCloser, fileMetadata *FileMetadataWithBucket, opts ...image.Options,
+) (io.ReadCloser, *APIError) {
 	defer object.Close()
 
 	buf := &bytes.Buffer{}
 	if err := image.Manipulate(ctx, object, buf, opts...); err != nil {
-		return nil, "", 0, InternalServerError(err)
+		return nil, InternalServerError(err)
 	}
 
 	image := NewP(buf.Bytes())
 	hash := sha256.New()
 	if _, err := io.Copy(hash, image); err != nil {
-		return nil, "", 0, InternalServerError(err)
+		return nil, InternalServerError(err)
 	}
 	if _, err := image.Seek(0, 0); err != nil {
-		return nil, "", 0, InternalServerError(err)
+		return nil, InternalServerError(err)
 	}
 
 	etag := fmt.Sprintf("\"%x\"", hash.Sum(nil))
 
-	return image, etag, buf.Len(), nil
+	fileMetadata.Size = int64(buf.Len())
+	fileMetadata.ETag = etag
+
+	return NewP(buf.Bytes()), nil
 }
 
-func (ctrl *Controller) getFileImage(
-	ctx context.Context, fileMetadata *FileMetadataWithBucket, opts ...image.Options,
-) (io.ReadCloser, *APIError) {
-	var src io.ReadCloser
-	if len(opts) > 0 {
-		buf, etag, n, apiErr := ctrl.modifyImage(ctx, fileMetadata.ID, opts...)
-		if apiErr != nil {
-			return nil, apiErr
-		}
-		fileMetadata.Size = int64(n)
-		fileMetadata.ETag = etag
-
-		src = buf
-	} else {
-		object, apiErr := ctrl.contentStorage.GetFile(fileMetadata.ID)
-		if apiErr != nil {
-			return nil, apiErr
-		}
-		src = object
-	}
-	return src, nil
-}
-
-func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
-	req, apiErr := ctrl.getFileParse(ctx)
-	if apiErr != nil {
-		return 0, apiErr
-	}
-
-	id := ctx.Param("id")
-	fileMetadata, apiErr := ctrl.getFileMetadata(ctx.Request.Context(), id, ctx.Request.Header)
-	if apiErr != nil {
-		return 0, apiErr
-	}
-
+func (ctrl *Controller) processFileToDownload(ctx *gin.Context, object io.ReadCloser, fileMetadata FileMetadataWithBucket, headers getFileInformationHeaders) (int, *APIError) {
 	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
 		return 0, apiErr
 	}
 
-	object, apiErr := ctrl.getFileImage(ctx.Request.Context(), &fileMetadata, opts...)
-	if apiErr != nil {
-		return 0, apiErr
+	if len(opts) > 0 {
+		object, apiErr = ctrl.manipulateImage(ctx.Request.Context(), object, &fileMetadata, opts...)
+		if apiErr != nil {
+			return 0, apiErr
+		}
+		defer object.Close()
 	}
-	defer object.Close()
 
-	statusCode, apiErr := checkConditionals(fileMetadata, req.headers)
+	statusCode, apiErr := checkConditionals(fileMetadata, headers)
 	if apiErr != nil {
 		return 0, apiErr
 	}
@@ -187,6 +154,26 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
 	}
 
 	return statusCode, nil
+}
+
+func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
+	req, apiErr := ctrl.getFileParse(ctx)
+	if apiErr != nil {
+		return 0, apiErr
+	}
+
+	fileMetadata, apiErr := ctrl.getFileMetadata(ctx.Request.Context(), req.fileID, ctx.Request.Header)
+	if apiErr != nil {
+		return 0, apiErr
+	}
+
+	object, apiErr := ctrl.contentStorage.GetFile(fileMetadata.ID)
+	if apiErr != nil {
+		return 0, apiErr
+	}
+	defer object.Close()
+
+	return ctrl.processFileToDownload(ctx, object, fileMetadata, req.headers)
 }
 
 func (ctrl *Controller) GetFile(ctx *gin.Context) {

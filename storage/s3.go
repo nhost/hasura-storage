@@ -117,7 +117,11 @@ func (s *S3) CreatePresignedURL(filepath string, expire time.Duration) (string, 
 func (s *S3) GetFileWithPresignedURL(
 	ctx context.Context, filepath, signature string, headers http.Header,
 ) (io.ReadCloser, *controller.APIError) {
-	url := fmt.Sprintf("%s/%s/%s?%s", s.url, s.rootFolder, filepath, signature)
+	if s.rootFolder != "" {
+		filepath = s.rootFolder + "/" + filepath
+	}
+	url := fmt.Sprintf("%s/%s/%s?%s", s.url, *s.bucket, filepath, signature)
+	fmt.Println(666, url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem creating request: %w", err))
