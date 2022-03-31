@@ -95,7 +95,7 @@ func getContentStorage(
 		S3ForcePathStyle: aws.Bool(true),
 	}
 
-	st, err := storage.NewS3(config, bucket, rootFolder, logger)
+	st, err := storage.NewS3(config, bucket, rootFolder, s3Endpoint, logger)
 	if err != nil {
 		panic(err)
 	}
