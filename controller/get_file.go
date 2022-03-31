@@ -121,7 +121,12 @@ func (ctrl *Controller) manipulateImage(
 	return NewP(buf.Bytes()), nil
 }
 
-func (ctrl *Controller) processFileToDownload(ctx *gin.Context, object io.ReadCloser, fileMetadata FileMetadataWithBucket, headers getFileInformationHeaders) (int, *APIError) {
+func (ctrl *Controller) processFileToDownload(
+	ctx *gin.Context,
+	object io.ReadCloser,
+	fileMetadata FileMetadataWithBucket,
+	headers getFileInformationHeaders,
+) (int, *APIError) {
 	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
 		return 0, apiErr

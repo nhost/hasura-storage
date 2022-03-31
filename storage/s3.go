@@ -121,7 +121,6 @@ func (s *S3) GetFileWithPresignedURL(
 		filepath = s.rootFolder + "/" + filepath
 	}
 	url := fmt.Sprintf("%s/%s/%s?%s", s.url, *s.bucket, filepath, signature)
-	fmt.Println(666, url)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem creating request: %w", err))

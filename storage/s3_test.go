@@ -36,7 +36,7 @@ func getS3() *storage.S3 {
 
 	logger := logrus.New()
 
-	url := "http://localhost:9000/default"
+	url := "http://localhost:9000"
 	st, err := storage.NewS3(config, "default", "f215cf48-7458-4596-9aa5-2159fc6a3caf", url, logger)
 	if err != nil {
 		panic(err)
