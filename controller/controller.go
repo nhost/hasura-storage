@@ -105,7 +105,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		return nil, fmt.Errorf("problem setting trusted proxies: %w", err)
 	}
 
-	router.MaxMultipartMemory = 1000 << 20 // nolint:gomnd  // 8MB
+	router.MaxMultipartMemory = 1000 << 20 // nolint:gomnd  // 1GB
 	router.Use(gin.Recovery())
 	router.Use(logger)
 	router.Use(cors.New(cors.Config{

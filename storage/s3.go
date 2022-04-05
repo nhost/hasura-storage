@@ -150,9 +150,7 @@ func (s *S3) GetFileWithPresignedURL(
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusPartialContent, http.StatusNotModified:
 		respHeaders = http.Header{
-			"Content-Length": []string{resp.Header.Get("Content-Length")},
-			"Etag":           []string{resp.Header.Get("etag")},
-			"Accept-Ranges":  []string{"bytes"},
+			"Accept-Ranges": []string{"bytes"},
 		}
 		if resp.StatusCode == http.StatusPartialContent {
 			respHeaders["Content-Range"] = []string{resp.Header.Get("Content-Range")}
