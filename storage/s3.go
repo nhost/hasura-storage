@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +26,15 @@ type S3Error struct {
 func parseS3Error(resp *http.Response) *controller.APIError {
 	var s3Error S3Error
 	if err := xml.NewDecoder(resp.Body).Decode(&s3Error); err != nil {
-		return controller.InternalServerError(fmt.Errorf("problem parsing S3 error: %w", err))
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return controller.InternalServerError(
+				fmt.Errorf("problem reading S3 error, status code %d: %w", resp.StatusCode, err),
+			)
+		}
+		return controller.InternalServerError(
+			fmt.Errorf("problem parsing S3 error, status code %d: %s", resp.StatusCode, b), // nolint: goerr113
+		)
 	}
 	return controller.NewAPIError(resp.StatusCode, s3Error.Message, errors.New(s3Error.Message), nil) // nolint: goerr113
 }
@@ -116,7 +125,7 @@ func (s *S3) CreatePresignedURL(filepath string, expire time.Duration) (string, 
 
 func (s *S3) GetFileWithPresignedURL(
 	ctx context.Context, filepath, signature string, headers http.Header,
-) (io.ReadCloser, *controller.APIError) {
+) (*controller.FileWithPresignedURL, *controller.APIError) {
 	if s.rootFolder != "" {
 		filepath = s.rootFolder + "/" + filepath
 	}
@@ -133,11 +142,36 @@ func (s *S3) GetFileWithPresignedURL(
 		return nil, controller.InternalServerError(fmt.Errorf("problem getting file: %w", err))
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !(resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusPartialContent) {
 		return nil, parseS3Error(resp)
 	}
 
-	return resp.Body, nil
+	respHeaders := make(http.Header)
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusPartialContent, http.StatusNotModified:
+		respHeaders = http.Header{
+			"Content-Length": []string{resp.Header.Get("Content-Length")},
+			"Etag":           []string{resp.Header.Get("etag")},
+			"Accept-Ranges":  []string{"bytes"},
+		}
+		if resp.StatusCode == http.StatusPartialContent {
+			respHeaders["Content-Range"] = []string{resp.Header.Get("Content-Range")}
+		}
+	}
+
+	length, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64) // nolint: gomnd
+	if err != nil {
+		return nil, controller.InternalServerError(fmt.Errorf("problem parsing Content-Length: %w", err))
+	}
+
+	return &controller.FileWithPresignedURL{
+		ContentType:   resp.Header.Get("Content-Type"),
+		ContentLength: length,
+		Etag:          resp.Header.Get("Etag"),
+		StatusCode:    resp.StatusCode,
+		Body:          resp.Body,
+		ExtraHeaders:  respHeaders,
+	}, nil
 }
 
 func (s *S3) DeleteFile(filepath string) *controller.APIError {

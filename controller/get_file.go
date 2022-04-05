@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/image"
@@ -95,94 +96,103 @@ func (p *FakeReadCloserWrapper) Close() error {
 }
 
 func (ctrl *Controller) manipulateImage(
-	ctx context.Context, object io.ReadCloser, fileMetadata *FileMetadataWithBucket, opts ...image.Options,
-) (io.ReadCloser, *APIError) {
+	ctx context.Context, object io.ReadCloser, opts ...image.Options,
+) (io.ReadCloser, int64, string, *APIError) {
 	defer object.Close()
 
 	buf := &bytes.Buffer{}
 	if err := image.Manipulate(ctx, object, buf, opts...); err != nil {
-		return nil, InternalServerError(err)
+		return nil, 0, "", InternalServerError(err)
 	}
 
 	image := NewP(buf.Bytes())
 	hash := sha256.New()
 	if _, err := io.Copy(hash, image); err != nil {
-		return nil, InternalServerError(err)
+		return nil, 0, "", InternalServerError(err)
 	}
 	if _, err := image.Seek(0, 0); err != nil {
-		return nil, InternalServerError(err)
+		return nil, 0, "", InternalServerError(err)
 	}
 
 	etag := fmt.Sprintf("\"%x\"", hash.Sum(nil))
 
-	fileMetadata.Size = int64(buf.Len())
-	fileMetadata.ETag = etag
-
-	return NewP(buf.Bytes()), nil
+	return NewP(buf.Bytes()), int64(buf.Len()), etag, nil
 }
 
 func (ctrl *Controller) processFileToDownload(
 	ctx *gin.Context,
 	object io.ReadCloser,
 	fileMetadata FileMetadataWithBucket,
-	headers getFileInformationHeaders,
-) (int, *APIError) {
+	infoHeaders getFileInformationHeaders,
+) (*FileResponse, *APIError) {
 	opts, apiErr := getImageManipulationOptions(ctx, fileMetadata.MimeType)
 	if apiErr != nil {
-		return 0, apiErr
+		return nil, apiErr
+	}
+
+	updateAt, apiErr := timeInRFC3339(fileMetadata.UpdatedAt)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
 	if len(opts) > 0 {
-		object, apiErr = ctrl.manipulateImage(ctx.Request.Context(), object, &fileMetadata, opts...)
+		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(ctx.Request.Context(), object, opts...)
 		if apiErr != nil {
-			return 0, apiErr
+			return nil, apiErr
 		}
-		defer object.Close()
+
+		updateAt = time.Now().Format(time.RFC3339)
 	}
 
-	statusCode, apiErr := checkConditionals(fileMetadata, headers)
+	statusCode, apiErr := checkConditionals(fileMetadata, infoHeaders)
 	if apiErr != nil {
-		return 0, apiErr
+		return nil, apiErr
 	}
 
-	if apiErr := writeCachingHeaders(ctx, fileMetadata); apiErr != nil {
-		return 0, apiErr
-	}
-
-	if statusCode == http.StatusOK {
-		// if we want to download files at some point prepend `attachment;` before filename
-		ctx.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileMetadata.Name))
-
-		if _, err := io.Copy(ctx.Writer, object); err != nil {
-			return 0, InternalServerError(err)
-		}
-	}
-
-	return statusCode, nil
+	return NewFileResponse(
+		fileMetadata.MimeType,
+		fileMetadata.Size,
+		fileMetadata.ETag,
+		fileMetadata.Bucket.CacheControl,
+		updateAt,
+		statusCode,
+		object,
+		fileMetadata.Name,
+		make(http.Header),
+	), nil
 }
 
-func (ctrl *Controller) getFileProcess(ctx *gin.Context) (int, *APIError) {
+func (ctrl *Controller) getFileProcess(ctx *gin.Context) (*FileResponse, *APIError) {
 	req, apiErr := ctrl.getFileParse(ctx)
 	if apiErr != nil {
-		return 0, apiErr
+		return nil, apiErr
 	}
 
 	fileMetadata, apiErr := ctrl.getFileMetadata(ctx.Request.Context(), req.fileID, ctx.Request.Header)
 	if apiErr != nil {
-		return 0, apiErr
+		return nil, apiErr
 	}
 
 	object, apiErr := ctrl.contentStorage.GetFile(fileMetadata.ID)
 	if apiErr != nil {
-		return 0, apiErr
+		return nil, apiErr
 	}
-	defer object.Close()
 
-	return ctrl.processFileToDownload(ctx, object, fileMetadata, req.headers)
+	response, apiErr := ctrl.processFileToDownload(ctx, object, fileMetadata, req.headers)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	if response.statusCode == http.StatusOK {
+		// if we want to download files at some point prepend `attachment;` before filename
+		response.headers.Add("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileMetadata.Name))
+	}
+
+	return response, nil
 }
 
 func (ctrl *Controller) GetFile(ctx *gin.Context) {
-	statusCode, apiErr := ctrl.getFileProcess(ctx)
+	response, apiErr := ctrl.getFileProcess(ctx)
 	if apiErr != nil {
 		_ = ctx.Error(apiErr)
 
@@ -191,5 +201,7 @@ func (ctrl *Controller) GetFile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.AbortWithStatus(statusCode)
+	defer response.body.Close()
+
+	response.Write(ctx)
 }

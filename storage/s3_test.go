@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/storage"
 	"github.com/sirupsen/logrus"
@@ -167,14 +168,24 @@ func TestGetFilePresignedURL(t *testing.T) {
 		name               string
 		filepath           string
 		sleep              time.Duration
-		expected           string
+		expected           *controller.FileWithPresignedURL
+		expectedContent    string
 		expectedErr        *controller.ErrorResponse
 		expectedStatusCode int
 	}{
 		{
 			name:     "success",
 			filepath: "sample.txt",
-			expected: "this is a sample\n",
+			expected: &controller.FileWithPresignedURL{
+				ContentType:   "text",
+				ContentLength: 17,
+				Etag:          `"8ba761284b556cd234f73ec0b75fa054"`,
+				StatusCode:    200,
+				Body:          nil,
+				ExtraHeaders:  map[string][]string{},
+			},
+			expectedContent:    "this is a sample\n",
+			expectedStatusCode: http.StatusOK,
 		},
 		{
 			name:     "file not found",
@@ -211,9 +222,19 @@ func TestGetFilePresignedURL(t *testing.T) {
 
 			time.Sleep(tc.sleep)
 
-			r, apiErr := s3.GetFileWithPresignedURL(context.Background(), tc.filepath, signature, http.Header{})
+			got, apiErr := s3.GetFileWithPresignedURL(context.Background(), tc.filepath, signature, http.Header{})
+			opts := cmp.Options{
+				cmpopts.IgnoreFields(controller.FileWithPresignedURL{}, "Body"),
+			}
+			if !cmp.Equal(got, tc.expected, opts) {
+				t.Error(cmp.Diff(got, tc.expected, opts))
+			}
 
 			statusCode := 0
+			if got != nil {
+				statusCode = got.StatusCode
+			}
+
 			var publicResponse *controller.ErrorResponse
 			if apiErr != nil {
 				statusCode = apiErr.StatusCode()
@@ -228,13 +249,13 @@ func TestGetFilePresignedURL(t *testing.T) {
 				t.Errorf(cmp.Diff(publicResponse, tc.expectedErr))
 			}
 
-			if tc.expected != "" {
-				b, err := ioutil.ReadAll(r)
+			if tc.expectedContent != "" {
+				b, err := ioutil.ReadAll(got.Body)
 				if err != nil {
 					t.Error(err)
 				}
-				if !cmp.Equal(string(b), tc.expected) {
-					t.Errorf(cmp.Diff(string(b), tc.expected))
+				if !cmp.Equal(string(b), tc.expectedContent) {
+					t.Errorf(cmp.Diff(string(b), tc.expectedContent))
 				}
 			}
 		})

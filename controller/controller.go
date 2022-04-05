@@ -70,7 +70,7 @@ type ContentStorage interface {
 	CreatePresignedURL(filepath string, expire time.Duration) (string, *APIError)
 	GetFileWithPresignedURL(
 		ctx context.Context, filepath, signature string, headers http.Header,
-	) (io.ReadCloser, *APIError)
+	) (*FileWithPresignedURL, *APIError)
 	DeleteFile(filepath string) *APIError
 	ListFiles() ([]string, *APIError)
 }
@@ -105,7 +105,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, logger gin.HandlerF
 		return nil, fmt.Errorf("problem setting trusted proxies: %w", err)
 	}
 
-	router.MaxMultipartMemory = 8 << 20 // nolint:gomnd  // 8MB
+	router.MaxMultipartMemory = 1000 << 20 // nolint:gomnd  // 8MB
 	router.Use(gin.Recovery())
 	router.Use(logger)
 	router.Use(cors.New(cors.Config{

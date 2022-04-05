@@ -83,10 +83,10 @@ func (mr *MockContentStorageMockRecorder) GetFile(arg0 interface{}) *gomock.Call
 }
 
 // GetFileWithPresignedURL mocks base method.
-func (m *MockContentStorage) GetFileWithPresignedURL(arg0 context.Context, arg1, arg2 string, arg3 http.Header) (io.ReadCloser, *controller.APIError) {
+func (m *MockContentStorage) GetFileWithPresignedURL(arg0 context.Context, arg1, arg2 string, arg3 http.Header) (*controller.FileWithPresignedURL, *controller.APIError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFileWithPresignedURL", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(io.ReadCloser)
+	ret0, _ := ret[0].(*controller.FileWithPresignedURL)
 	ret1, _ := ret[1].(*controller.APIError)
 	return ret0, ret1
 }
