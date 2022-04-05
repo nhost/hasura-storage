@@ -17,14 +17,6 @@ func timeInRFC3339(t string) (string, *APIError) {
 	return datetime.Format(time.RFC1123), nil
 }
 
-func applyCachingHeaders(etag, cacheControl, lastModified string) func(ctx *gin.Context) {
-	return func(ctx *gin.Context) {
-		ctx.Header("ETag", etag)
-		ctx.Header("Cache-Control", cacheControl)
-		ctx.Header("Last-modified", lastModified)
-	}
-}
-
 type FileResponse struct {
 	contentType   string
 	contentLength int64
