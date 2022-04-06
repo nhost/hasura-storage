@@ -182,7 +182,9 @@ func TestGetFilePresignedURL(t *testing.T) {
 				Etag:          `"8ba761284b556cd234f73ec0b75fa054"`,
 				StatusCode:    200,
 				Body:          nil,
-				ExtraHeaders:  map[string][]string{},
+				ExtraHeaders: map[string][]string{
+					"Accept-Ranges": {"bytes"},
+				},
 			},
 			expectedContent:    "this is a sample\n",
 			expectedStatusCode: http.StatusOK,
