@@ -65,7 +65,7 @@ func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
 }
 
 func getGin(
-	publicURLFlag string,
+	publicURL string,
 	hasuraAdminSecret string,
 	metadataStorage controller.MetadataStorage,
 	contentStorage controller.ContentStorage,
@@ -77,7 +77,7 @@ func getGin(
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	ctrl := controller.New(publicURLFlag, hasuraAdminSecret, metadataStorage, contentStorage, logger)
+	ctrl := controller.New(publicURL, hasuraAdminSecret, metadataStorage, contentStorage, logger)
 
 	return ctrl.SetupRouter(trustedProxies, ginLogger(logger)) // nolint: wrapcheck
 }
