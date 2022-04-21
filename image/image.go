@@ -1,78 +1,101 @@
 package image
 
 import (
-	"context"
+	"bytes"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
+
+	"github.com/davidbyttow/govips/v2/vips"
 )
 
 const (
-	radiusMultiplier = 2
+	poolSize = 4
 )
 
-type Options func(args []string) []string
+var buffs = newBufferPool()
 
-func WithBlur(sigma int) Options {
-	return func(args []string) []string {
-		return append(args, "-blur", fmt.Sprintf("%dx%d", sigma*radiusMultiplier, sigma))
+type bufferPool struct {
+	ch chan struct{}
+}
+
+func newBufferPool() *bufferPool {
+	ch := make(chan struct{}, poolSize)
+
+	for i := 0; i < poolSize; i++ {
+		ch <- struct{}{}
+	}
+	return &bufferPool{
+		ch: ch,
 	}
 }
 
+func (p *bufferPool) get() *bytes.Buffer {
+	<-p.ch
+	return bytes.NewBuffer(make([]byte, 0, 5*1024*1024))
+}
+
+func (p *bufferPool) put(buf *bytes.Buffer) {
+	p.ch <- struct{}{}
+}
+
+type Options func(orig *vips.ImageRef, params *vips.ExportParams)
+
 func WithNewSize(x, y int) Options { // nolint: varnamelen
-	return func(args []string) []string {
-		return append(
-			args,
-			"-gravity", "Center",
-			"-resize", fmt.Sprintf("%dx%d^", x, y),
-			"-extent", fmt.Sprintf("%dx%d", x, y),
-		)
+	return func(orig *vips.ImageRef, _ *vips.ExportParams) {
+		if x == 0 {
+			x = orig.Width() * y / orig.Height()
+		}
+		if y == 0 {
+			y = orig.Height() * x / orig.Width()
+		}
+		if err := orig.Thumbnail(x, y, vips.InterestingCentre); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func WithBlur(sigma float64) Options {
+	return func(orig *vips.ImageRef, _ *vips.ExportParams) {
+		if err := orig.GaussianBlur(sigma); err != nil {
+			panic(err)
+		}
 	}
 }
 
 func WithQuality(q int) Options {
-	return func(args []string) []string {
-		return append(args, "-quality", fmt.Sprintf("%d", q))
+	return func(_ *vips.ImageRef, params *vips.ExportParams) {
+		params.Quality = q
 	}
 }
 
-/*
-Why shell out to imagemagick you may wonder. We evaluated following options:
-1. Pure go (using the std lib)
-2. govips (which leverages the C library vips)
-3. shelling out to imagemagick
+func Manipulate(orig io.Reader, modified io.Writer, opts ...Options) error {
+	buf := buffs.get()
+	defer buffs.put(buf)
 
-We noticed the following:
-
-1. govips was faster but memory management wasn't ideal. It consumed 2x the amount of RAM than the
-   pure go implementation and memory took forever to be freed
-2. pure go was slower than govips but memory consumption was ok. Not great but not terrible. In
-   addition, standard library support only a few formats and supporting extra formats would
-   require a lot of effort
-4. magicwand gave similar issues as govips
-5. shelling out to imamagic gave similar results in terms of speed as pure go, however, as we
-   are shellig out memory was consumed and immediately freed. In addition, imagemagick has ample
-   support to many many formats and functionality so in the end this is a very quick and big gain.
-
-In short, imagemagick was ok in terms of latency, great in terms of memory (as memory is freed
-when the process dies) and you get a lot of functionality for free.
-*/
-func Manipulate(ctx context.Context, orig io.Reader, modified io.Writer, opts ...Options) error {
-	args := make([]string, 0, len(opts)*2+1)
-	args = append(args, "-")
-	for _, o := range opts {
-		args = o(args)
+	_, err := io.Copy(buf, orig)
+	if err != nil {
+		panic(err)
 	}
-	args = append(args, "-")
 
-	cmd := exec.CommandContext(ctx, "magick", args...)
-	cmd.Stdin = orig
-	cmd.Stdout = modified
-	cmd.Stderr = os.Stderr
+	image1, err := vips.NewImageFromBuffer(buf.Bytes())
+	if err != nil {
+		return fmt.Errorf("problem creating image from reader: %w", err)
+	}
+	defer image1.Close()
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("problem running imagemagick: %w", err)
+	params := &vips.ExportParams{}
+
+	for _, o := range opts {
+		o(image1, params)
+	}
+
+	b, _, err := image1.Export(params)
+	if err != nil {
+		return fmt.Errorf("problem exporting image: %w", err)
+	}
+
+	if _, err := modified.Write(b); err != nil {
+		return fmt.Errorf("problem writing image: %w", err)
 	}
 
 	return nil

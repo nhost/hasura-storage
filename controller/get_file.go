@@ -2,7 +2,6 @@ package controller
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -25,6 +24,19 @@ func getQueryInt(ctx *gin.Context, param string) (int, bool, *APIError) {
 		return 0, false, nil
 	}
 	x, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, false, BadDataError(err, fmt.Sprintf("query parameter %s must be an int", param))
+	}
+
+	return x, true, nil
+}
+
+func getQueryFloat(ctx *gin.Context, param string) (float64, bool, *APIError) {
+	s, ok := ctx.GetQuery(param)
+	if !ok {
+		return 0, false, nil
+	}
+	x, err := strconv.ParseFloat(s, 32)
 	if err != nil {
 		return 0, false, BadDataError(err, fmt.Sprintf("query parameter %s must be an int", param))
 	}
@@ -65,7 +77,7 @@ func getImageManipulationOptions(ctx *gin.Context, mimeType string) ([]image.Opt
 		opts = append(opts, image.WithQuality(q))
 	}
 
-	b, ok, err := getQueryInt(ctx, "b")
+	b, ok, err := getQueryFloat(ctx, "b")
 	if err != nil {
 		return nil, err
 	}
@@ -96,12 +108,12 @@ func (p *FakeReadCloserWrapper) Close() error {
 }
 
 func (ctrl *Controller) manipulateImage(
-	ctx context.Context, object io.ReadCloser, opts ...image.Options,
+	object io.ReadCloser, opts ...image.Options,
 ) (io.ReadCloser, int64, string, *APIError) {
 	defer object.Close()
 
 	buf := &bytes.Buffer{}
-	if err := image.Manipulate(ctx, object, buf, opts...); err != nil {
+	if err := image.Manipulate(object, buf, opts...); err != nil {
 		return nil, 0, "", InternalServerError(err)
 	}
 
@@ -136,7 +148,7 @@ func (ctrl *Controller) processFileToDownload(
 	}
 
 	if len(opts) > 0 {
-		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(ctx.Request.Context(), object, opts...)
+		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(object, opts...)
 		if apiErr != nil {
 			return nil, apiErr
 		}

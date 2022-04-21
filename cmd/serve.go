@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/metadata"
@@ -197,6 +198,15 @@ var serveCmd = &cobra.Command{
 			logger.SetLevel(logrus.InfoLevel)
 			gin.SetMode(gin.ReleaseMode)
 		}
+
+		vips.Startup(&vips.Config{
+			ConcurrencyLevel: 1,
+			MaxCacheFiles:    20,
+			MaxCacheMem:      50 * 1024 * 1024,
+			MaxCacheSize:     100,
+		})
+		defer vips.Shutdown()
+		vips.LoggingSettings(nil, vips.LogLevelWarning)
 
 		logger.WithFields(
 			logrus.Fields{

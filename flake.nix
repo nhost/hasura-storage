@@ -28,7 +28,7 @@
         };
 
         buildInputs = with pkgs; [
-          imagemagick
+          vips
         ];
 
         nativeBuildInputs = with pkgs; [
@@ -131,7 +131,7 @@
               inherit name version ldflags tags buildInputs nativeBuildInputs;
             };
 
-            dockerImage = pkgs.dockerTools.buildImage {
+            dockerImage = pkgs.dockerTools.buildLayeredImage {
               name = name;
               tag = version;
               created = "now";
@@ -139,6 +139,9 @@
                 pkgs.cacert
               ] ++ buildInputs;
               config = {
+                Env = [
+                  "TMPDIR=/"
+                ];
                 Entrypoint = [
                   "${self.packages.${system}.hasuraStorage}/bin/hasura-storage"
                 ];
