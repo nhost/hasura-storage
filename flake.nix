@@ -141,6 +141,7 @@
               config = {
                 Env = [
                   "TMPDIR=/"
+                  "MALLOC_ARENA_MAX=2"
                 ];
                 Entrypoint = [
                   "${self.packages.${system}.hasuraStorage}/bin/hasura-storage"

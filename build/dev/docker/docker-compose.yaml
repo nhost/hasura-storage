@@ -50,7 +50,7 @@ services:
       - '8000:8000'
       - '8001:8001'
     environment:
-      DEBUG: "true"
+      # DEBUG: "true"
       HASURA_ENDPOINT: http://graphql-engine:8080/v1
       HASURA_ADMIN_SECRET: ${HASURA_ADMIN_SECRET:-hello123}
       S3_ENDPOINT: http://minio:9000
