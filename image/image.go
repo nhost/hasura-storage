@@ -35,7 +35,6 @@ func NewTransformer() *Transformer {
 		MaxCacheMem:      0,
 		MaxCacheSize:     0,
 	})
-	defer vips.Shutdown()
 	vips.LoggingSettings(nil, vips.LogLevelWarning)
 
 	workers := make(chan struct{}, maxWorkers)

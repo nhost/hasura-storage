@@ -1,189 +1,80 @@
 package image_test
 
-// import (
-// 	"context"
-// 	"crypto/sha256"
-// 	"fmt"
-// 	"io"
-// 	"os"
-// 	"testing"
-//
-// 	"github.com/google/go-cmp/cmp"
-// 	"github.com/nhost/hasura-storage/image"
-// )
-//
-// func TestManipulate(t *testing.T) {
-// 	t.Parallel()
-//
-// 	cases := []struct {
-// 		name     string
-// 		filename string
-// 		sum      string
-// 	}{
-// 		{
-// 			name:     "jpg",
-// 			filename: "testdata/nhost.jpg",
-// 			sum:      "e3d7eec66c0c934cf234e78b34b311b7b26962088220b1062f7fe8e26026d946",
-// 		},
-// 		// png is disabled because metadata contains info that causes the sum to change every time
-// 		// {
-// 		// 	name:     "png",
-// 		// 	filename: "testdata/nhost.png",
-// 		// 	sum:      "ac213b0753f3d9b9e5acacea557b51892cb5dfde3f2cabf9e97a83a36d8a932c",
-// 		// },
-// 		{
-// 			name:     "webp",
-// 			filename: "testdata/nhost.webp",
-// 			sum:      "f1467434921394f1bf77f06c9df6800997d385fa93d4a2914eed8a37abef4584",
-// 		},
-// 	}
-//
-// 	for _, tc := range cases {
-// 		tc := tc
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			t.Parallel()
-// 			tc := tc
-//
-// 			orig, err := os.Open(tc.filename)
-// 			if err != nil {
-// 				t.Fatal(err)
-// 			}
-// 			defer orig.Close()
-//
-// 			hasher := sha256.New()
-// 			if err := image.Manipulate(context.Background(), orig, hasher, image.WithNewSize(300, 100)); err != nil {
-// 				t.Fatal(err)
-// 			}
-//
-// 			got := fmt.Sprintf("%x", hasher.Sum(nil))
-// 			if !cmp.Equal(got, tc.sum) {
-// 				t.Error(cmp.Diff(got, tc.sum))
-// 			}
-// 		})
-// 	}
-// }
-//
-// func TestManipulate2(t *testing.T) {
-// 	t.Parallel()
-//
-// 	cases := []struct {
-// 		name     string
-// 		filename string
-// 		sum      string
-// 	}{
-// 		{
-// 			name:     "jpg",
-// 			filename: "testdata/nhost.jpg",
-// 			sum:      "e3d7eec66c0c934cf234e78b34b311b7b26962088220b1062f7fe8e26026d946",
-// 		},
-// 		// png is disabled because metadata contains info that causes the sum to change every time
-// 		{
-// 			name:     "png",
-// 			filename: "testdata/nhost.png",
-// 			sum:      "ac213b0753f3d9b9e5acacea557b51892cb5dfde3f2cabf9e97a83a36d8a932c",
-// 		},
-// 		{
-// 			name:     "webp",
-// 			filename: "testdata/nhost.webp",
-// 			sum:      "f1467434921394f1bf77f06c9df6800997d385fa93d4a2914eed8a37abef4584",
-// 		},
-// 	}
-//
-// 	for _, tc := range cases {
-// 		tc := tc
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			t.Parallel()
-// 			tc := tc
-//
-// 			orig, err := os.Open(tc.filename)
-// 			if err != nil {
-// 				t.Fatal(err)
-// 			}
-// 			defer orig.Close()
-//
-// 			// hasher := sha256.New()
-// 			f, err := os.OpenFile("/tmp/nhost."+tc.name, os.O_RDWR|os.O_CREATE, 0o755)
-// 			if err != nil {
-// 				t.Fatal(err)
-// 			}
-// 			if err := image.Manipulate2(
-// 				orig, f,
-// 				image.WithNewSize2(200, 400),
-// 				// image.WithBlur2(4),
-// 				image.WithQuality2(4),
-// 			); err != nil {
-// 				t.Fatal(err)
-// 			}
-//
-// 			// got := fmt.Sprintf("%x", hasher.Sum(nil))
-// 			// if !cmp.Equal(got, tc.sum) {
-// 			// 	t.Error(cmp.Diff(got, tc.sum))
-// 			// }
-// 		})
-// 	}
-// }
-//
-// // requires "golang.org/x/image/draw"
-// // for benchmarking.
-// // func resizePureGo(orig io.Reader, modified io.Writer, newSizeX, newSizeY int) error {
-// // 	// Decode the image (from PNG to image.Image):
-// // 	src, err := jpeg.Decode(orig)
-// // 	if err != nil {
-// // 		return fmt.Errorf("problem decoding image: %w", err)
-// // 	}
-//
-// // 	dst := stdlibImage.NewRGBA(
-// // 		stdlibImage.Rect(0, 0, newSizeX, newSizeY),
-// // 	)
-//
-// // 	draw.ApproxBiLinear.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
-//
-// // 	// Encode to `output`:
-// // 	if err := jpeg.Encode(modified, dst, &jpeg.Options{Quality: 100}); err != nil {
-// // 		return fmt.Errorf("problem encoding image: %w", err)
-// // 	}
-//
-// // 	return nil
-// // }
-//
-// func BenchmarkManipulate(b *testing.B) {
-// 	for i := 0; i < 100; i++ {
-// 		orig, err := os.Open("testdata/nhost.jpg")
-// 		if err != nil {
-// 			b.Fatal(err)
-// 		}
-// 		defer orig.Close()
-//
-// 		if err := image.Manipulate(context.Background(), orig, io.Discard, image.WithNewSize(300, 100)); err != nil {
-// 			b.Fatal(err)
-// 		}
-// 	}
-// }
-//
-// // func BenchmarkManipulatePureGo(b *testing.B) {
-// // 	for i := 0; i < 100; i++ {
-// // 		orig, err := os.Open("testdata/nhost.jpg")
-// // 		if err != nil {
-// // 			b.Fatal(err)
-// // 		}
-// // 		defer orig.Close()
-//
-// // 		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
-// // 			b.Fatal(err)
-// // 		}
-// // 	}
-// // }
-//
-// // func BenchmarkManipulateMagicWand(b *testing.B) {
-// // 	for i := 0; i < 100; i++ {
-// // 		orig, err := os.Open("testdata/nhost.jpg")
-// // 		if err != nil {
-// // 			b.Fatal(err)
-// // 		}
-// // 		defer orig.Close()
-//
-// // 		if err := resizePureGo(orig, io.Discard, 300, 100); err != nil {
-// // 			b.Fatal(err)
-// // 		}
-// // 	}
-// // }
+import (
+	"crypto/sha256"
+	"fmt"
+	"io"
+	"os"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/nhost/hasura-storage/image"
+)
+
+func TestManipulate(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		filename string
+		sum      string
+	}{
+		{
+			name:     "jpg",
+			filename: "testdata/nhost.jpg",
+			sum:      "a93c06cc06da9cd982d3f1a519d042870ad58b44d9069c40049b0693e64634e6",
+		},
+		{
+			name:     "png",
+			filename: "testdata/nhost.png",
+			sum:      "ac7da45c3a994e50fdbc25123992b31116d32f20dac2c5436d2d6fdbfd319853",
+		},
+		{
+			name:     "webp",
+			filename: "testdata/nhost.webp",
+			sum:      "0e58269cbdf904af89c54d119e0b5db6761f4c5f0514f47b72422c03b4cbb0da",
+		},
+	}
+
+	transformer := image.NewTransformer()
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc := tc
+
+			orig, err := os.Open(tc.filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer orig.Close()
+
+			hasher := sha256.New()
+			// f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
+			if err := transformer.Run(orig, hasher, image.Options{Width: 300, Height: 100, Blur: 2}); err != nil {
+				t.Fatal(err)
+			}
+
+			got := fmt.Sprintf("%x", hasher.Sum(nil))
+			if !cmp.Equal(got, tc.sum) {
+				t.Error(cmp.Diff(got, tc.sum))
+			}
+		})
+	}
+}
+
+func BenchmarkManipulate(b *testing.B) {
+	transformer := image.NewTransformer()
+	for i := 0; i < 100; i++ {
+		orig, err := os.Open("testdata/nhost.jpg")
+		if err != nil {
+			b.Fatal(err)
+		}
+		defer orig.Close()
+
+		if err := transformer.Run(orig, io.Discard, image.Options{Width: 300, Height: 100}); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
