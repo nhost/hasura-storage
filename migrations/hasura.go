@@ -272,17 +272,5 @@ func ApplyHasuraMetadata(url, hasuraSecret string) error {
 		return fmt.Errorf("problem creating array relationships: %w", err)
 	}
 
-	// we used to add this relationship here, but it's not needed anymore so we try to remove it
-	objRelationshipUser := DropRelationship{
-		Type: "pg_drop_relationship",
-		Args: DropRelationshipArgs{
-			Table:        "storage",
-			Source:       "default",
-			Cascade:      false,
-			Relationship: "uploadedByUser",
-		},
-	}
-	_ = postMetadata(url, hasuraSecret, objRelationshipUser)
-
 	return nil
 }
