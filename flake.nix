@@ -67,7 +67,7 @@
               nativeBuildInputs = with pkgs; [
                 clang
                 golangci-lint
-              ] ++ nativeBuildInputs;
+              ] ++ buildInputs ++ nativeBuildInputs;
             }
             ''
               export GOLANGCI_LINT_CACHE=$TMPDIR/.cache/golangci-lint
