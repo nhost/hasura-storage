@@ -48,7 +48,6 @@ services:
         condition: service_healthy
     ports:
       - '8000:8000'
-      - '8001:8001'
     environment:
       DEBUG: "true"
       HASURA_ENDPOINT: http://graphql-engine:8080/v1
