@@ -2,7 +2,7 @@ final: prev: rec {
   go = final.go_1_18;
 
   golangci-lint = prev.golangci-lint.override rec {
-    buildGoModule = args: prev.buildGoModule.override { go = go; } (args // rec {
+    buildGoModule = args: prev.buildGoModule.override { go = prev.go_1_17; } (args // rec {
       version = "1.44.0";
       src = prev.fetchFromGitHub {
         owner = "golangci";

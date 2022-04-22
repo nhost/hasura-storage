@@ -112,52 +112,52 @@
 
         };
 
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            nixpkgs-fmt
-            golangci-lint
-            docker-client
-            docker-compose
-            go-migrate
-            gnumake
-            gnused
-            richgo
-          ] ++ buildInputs ++ nativeBuildInputs;
+        devShells = flake-utils.lib.flattenTree rec {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              nixpkgs-fmt
+              golangci-lint
+              docker-client
+              docker-compose
+              go-migrate
+              gnumake
+              gnused
+              richgo
+            ] ++ buildInputs ++ nativeBuildInputs;
+          };
         };
 
-        packages = flake-utils.lib.flattenTree
-          {
-            hasuraStorage = pkgs.callPackage ./nix/hasura-storage.nix {
-              inherit name version ldflags tags buildInputs nativeBuildInputs;
-            };
-
-            dockerImage = pkgs.dockerTools.buildLayeredImage {
-              name = name;
-              tag = version;
-              created = "now";
-              contents = [
-                pkgs.cacert
-              ] ++ buildInputs;
-              config = {
-                Env = [
-                  "TMPDIR=/"
-                  "MALLOC_ARENA_MAX=2"
-                ];
-                Entrypoint = [
-                  "${self.packages.${system}.hasuraStorage}/bin/hasura-storage"
-                ];
-              };
-            };
-
+        packages = flake-utils.lib.flattenTree rec {
+          hasuraStorage = pkgs.callPackage ./nix/hasura-storage.nix {
+            inherit name version ldflags tags buildInputs nativeBuildInputs;
           };
 
-        defaultPackage = self.packages.${system}.hasuraStorage;
-
-        apps = flake-utils.lib.flattenTree
-          {
-            hasuraStorage = self.packages.${system}.hasuraStorage;
-            golangci-lint = pkgs.golangci-lint;
+          dockerImage = pkgs.dockerTools.buildLayeredImage {
+            name = name;
+            tag = version;
+            created = "now";
+            contents = [
+              pkgs.cacert
+            ] ++ buildInputs;
+            config = {
+              Env = [
+                "TMPDIR=/"
+                "MALLOC_ARENA_MAX=2"
+              ];
+              Entrypoint = [
+                "${self.packages.${system}.hasuraStorage}/bin/hasura-storage"
+              ];
+            };
           };
+
+          default = hasuraStorage;
+
+        };
+
+        apps = flake-utils.lib.flattenTree {
+          hasuraStorage = self.packages.${system}.hasuraStorage;
+          golangci-lint = pkgs.golangci-lint;
+        };
 
         defaultApp = self.packages.${system}.hasuraStorage;
 
