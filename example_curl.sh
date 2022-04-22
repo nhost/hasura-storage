@@ -32,10 +32,3 @@ time curl -v -o nhost.jpg $URL/${FILE_ID} \
 
 time curl -v -o nhost.jpg $URL/${FILE_ID}?w=600\&h\=200\&q=50\&b=5 \
       -H "$AUTH"
-
-curl $URL/ \
-  -v \
-  -H "Content-Type: multipart/form-data" \
-  -H "$AUTH" \
-  -F "bucket-id=$BUCKET" \
-  -F "file[]=@/Users/dbarroso/Downloads/sample_5184×3456.jpg"
