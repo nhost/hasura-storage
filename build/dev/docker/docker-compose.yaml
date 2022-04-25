@@ -61,4 +61,3 @@ services:
       POSTGRES_MIGRATIONS: 1
       POSTGRES_MIGRATIONS_SOURCE: ${HASURA_GRAPHQL_DATABASE_URL:-postgres://postgres:hejsan@postgres:5432/postgres?sslmode=disable}
     command: serve
-
