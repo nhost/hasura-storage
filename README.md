@@ -49,6 +49,7 @@ The main features of the service are:
 - dowload files from any s3-compatible service
 - create presigned URLs to grant temporary access
 - caching information to integrate with caches and CDNs (cache headers, etag, conditional headers, etc)
+- perform basic image manipulation on the fly
 
 ## OpenAPI
 
