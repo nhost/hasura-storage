@@ -18,8 +18,6 @@ services:
       - minio
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
-      retries: 3
-      start_period: 20s
     restart: unless-stopped
     ports:
       - '8080:8080'
