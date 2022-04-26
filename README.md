@@ -35,9 +35,9 @@ sequenceDiagram
     User->>+hasura-storage: request file
     hasura-storage->>+hasura: check permissions
     hasura->>-hasura-storage: return if user can access file
-    hasura-storage->>+s3: retrieve file
+    hasura-storage->>+s3: request file
     s3->>-hasura-storage: file
-    hasura-storage->>-User: "file"
+    hasura-storage->>-User: file
 ```
 
 ## Features
@@ -52,7 +52,7 @@ The main features of the service are:
 
 ## OpenAPI
 
-The service comes with an [OpenAPI definition](/blob/main/controller/openapi.yaml) which you can also see [online](https://editor.swagger.io/?url=https://raw.githubusercontent.com/nhost/hasura-storage/main/controller/openapi.yaml).
+The service comes with an [OpenAPI definition](/controller/openapi.yaml) which you can also see [online](https://editor.swagger.io/?url=https://raw.githubusercontent.com/nhost/hasura-storage/main/controller/openapi.yaml).
 
 ## Using the service
 
@@ -65,9 +65,8 @@ Requirements:
 1. [hasura](https://hasura.io) running, which in turns needs [postgres or any other supported database](https://hasura.io/docs/latest/graphql/core/databases/index/#supported-databases).
 2. An s3-compatible service. For instance, [AWS S3](https://aws.amazon.com/s3/), [minio](https://min.io), etc...
 
-A fully working example using docker-compose can be found [here](/blob/main/build/dev/docker/).
-
+A fully working example using docker-compose can be found [here](/build/dev/docker/).
 
 ## Contributing
 
-If you need help or want to contribute it is recommended to read the [contributing](/blob/main/CONTRIBUTING.md) information first. In addition, if you plan to contribute with code it is also encouraged to read the [development](/blob/main/DEVELOPMENT.md) guide.
+If you need help or want to contribute it is recommended to read the [contributing](/CONTRIBUTING.md) information first. In addition, if you plan to contribute with code it is also encouraged to read the [development](/DEVELOPMENT.md) guide.
