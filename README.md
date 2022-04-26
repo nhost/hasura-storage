@@ -66,7 +66,7 @@ Requirements:
 1. [hasura](https://hasura.io) running, which in turns needs [postgres or any other supported database](https://hasura.io/docs/latest/graphql/core/databases/index/#supported-databases).
 2. An s3-compatible service. For instance, [AWS S3](https://aws.amazon.com/s3/), [minio](https://min.io), etc...
 
-A fully working example using docker-compose can be found [here](/build/dev/docker/).
+A fully working example using docker-compose can be found [here](/build/dev/docker/). Just remember to replace the image `hasura-storage:dev` with a valid [docker image](https://hub.docker.com/r/nhost/hasura-storage/tags), for instance, `nhost/hasura-storage:0.1.5`.
 
 ## Contributing
 

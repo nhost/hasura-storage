@@ -40,7 +40,7 @@ services:
       - '32765:32765'
 
   storage:
-    image: nhost/hasura-storage:latest
+    image: hasura-storage:dev
     depends_on:
       - graphql-engine
     restart: unless-stopped

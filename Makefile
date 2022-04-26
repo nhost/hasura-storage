@@ -51,7 +51,7 @@ build:  ## Build application and places the binary under ./result/bin
 build-docker-image:  ## Build docker container for native architecture
 	@echo $(VERSION) > VERSION
 	./build/nix-docker-image.sh
-	docker tag hasura-storage:$(VERSION) nhost/hasura-storage:latest
+	docker tag hasura-storage:$(VERSION) hasura-storage:dev
 
 
 .PHONY: dev-env-up-short
