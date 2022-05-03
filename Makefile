@@ -78,6 +78,14 @@ dev-env-build: build-docker-image  ## Builds development environment
 	docker-compose -f ${DOCKER_DEV_ENV_PATH}/docker-compose.yaml build
 
 
+.PHONY: dev-env-build-builder
+dev-env-build-builder:
+	docker build \
+		-t dbarroso/hasura-storage-builder:latest \
+		-f build/nix.Dockerfile \
+		.
+
+
 .PHONY: dev-env-shell
 dev-env-shell:  ## Starts a shell in a dockerized build environment
 	docker run --rm -it \
@@ -86,7 +94,7 @@ dev-env-shell:  ## Starts a shell in a dockerized build environment
 		-w /build \
 		--entrypoint sh \
 		dbarroso/hasura-storage-builder:latest \
-		-c "nix develop .#default"
+		-c "nix develop"
 
 
 .PHONY: dev-jwt
