@@ -18,6 +18,7 @@ func timeInRFC3339(t string) (string, *APIError) {
 }
 
 type FileResponse struct {
+	fileID        string
 	contentType   string
 	contentLength int64
 	etag          string
@@ -30,6 +31,7 @@ type FileResponse struct {
 }
 
 func NewFileResponse(
+	fileID string,
 	contentType string,
 	contentLength int64,
 	etag string,
@@ -67,6 +69,7 @@ func (r *FileResponse) Write(ctx *gin.Context) {
 
 	ctx.Header("Etag", r.etag)
 	ctx.Header("Cache-Control", r.cacheControl)
+	ctx.Header("Cache-Tag", r.fileID)
 	ctx.Header("Last-modified", r.lastModified)
 
 	if r.body != nil && (r.statusCode == http.StatusOK || r.statusCode == http.StatusPartialContent) {

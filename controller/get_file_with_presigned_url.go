@@ -83,6 +83,7 @@ func (ctrl *Controller) getFileWithPresignedURL(ctx *gin.Context) (*FileResponse
 	}
 
 	response := NewFileResponse(
+		req.fileID,
 		download.ContentType,
 		download.ContentLength,
 		download.Etag,
