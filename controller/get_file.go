@@ -157,6 +157,7 @@ func (ctrl *Controller) processFileToDownload(
 	}
 
 	return NewFileResponse(
+		fileMetadata.ID,
 		fileMetadata.MimeType,
 		fileMetadata.Size,
 		fileMetadata.ETag,
