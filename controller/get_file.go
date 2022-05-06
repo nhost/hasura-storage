@@ -155,7 +155,6 @@ func (ctrl *Controller) processFileToDownload(
 	if apiErr != nil {
 		return nil, apiErr
 	}
-
 	return NewFileResponse(
 		fileMetadata.ID,
 		fileMetadata.MimeType,
