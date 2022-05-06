@@ -43,6 +43,7 @@ func NewFileResponse(
 	headers http.Header,
 ) *FileResponse {
 	return &FileResponse{
+		fileID:        fileID,
 		contentType:   contentType,
 		contentLength: contentLength,
 		etag:          etag,
@@ -70,6 +71,8 @@ func (r *FileResponse) Write(ctx *gin.Context) {
 	ctx.Header("Etag", r.etag)
 	ctx.Header("Cache-Control", r.cacheControl)
 	ctx.Header("Cache-Tag", r.fileID)
+	ctx.Header("Surrogate-Control", r.cacheControl)
+	ctx.Header("Surrogate-Key", r.fileID)
 	ctx.Header("Last-modified", r.lastModified)
 
 	if r.body != nil && (r.statusCode == http.StatusOK || r.statusCode == http.StatusPartialContent) {
