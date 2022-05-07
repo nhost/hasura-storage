@@ -18,11 +18,12 @@ int manipulate(void *buf, size_t len, Result *result, Options options) {
   VipsImage *out = vips_image_new();
   int err = vips_thumbnail_image(orig, &out, width, "height", height, "crop",
                                  options.crop, "size", options.size, NULL);
-  if (err != 0) {
-    return err;
-  }
 
   g_object_unref(orig);
+  if (err != 0) {
+    g_object_unref(out);
+    return err;
+  }
 
   if (options.blur > 0) {
     VipsImage *blurred = vips_image_new();
