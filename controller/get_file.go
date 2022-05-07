@@ -44,15 +44,6 @@ func getQueryFloat(ctx *gin.Context, param string) (float64, *APIError) {
 	return x, nil
 }
 
-func isImage(mimeType string) bool {
-	for _, supported := range []string{"image/webp", "image/png", "image/jpeg"} {
-		if mimeType == supported {
-			return true
-		}
-	}
-	return false
-}
-
 func getImageManipulationOptions(ctx *gin.Context, mimeType string) (image.Options, *APIError) {
 	w, err := getQueryInt(ctx, "w")
 	if err != nil {
@@ -79,11 +70,20 @@ func getImageManipulationOptions(ctx *gin.Context, mimeType string) (image.Optio
 		Blur:    b,
 		Quality: q,
 	}
-	if !opts.IsEmpty() && !isImage(mimeType) {
-		return image.Options{}, BadDataError(
-			fmt.Errorf("image manipulation features are not supported for '%s'", mimeType), // nolint: goerr113
-			fmt.Sprintf("image manipulation features are not supported for '%s'", mimeType),
-		)
+	if !opts.IsEmpty() {
+		switch mimeType {
+		case "image/webp":
+			opts.Format = image.ImageTypeWEBP
+		case "image/png":
+			opts.Format = image.ImageTypePNG
+		case "image/jpeg":
+			opts.Format = image.ImageTypeJPEG
+		default:
+			return image.Options{}, BadDataError(
+				fmt.Errorf("image manipulation features are not supported for '%s'", mimeType), // nolint: goerr113
+				fmt.Sprintf("image manipulation features are not supported for '%s'", mimeType),
+			)
+		}
 	}
 
 	return opts, nil
