@@ -19,28 +19,35 @@ func TestManipulate(t *testing.T) {
 		filename string
 		sum      string
 		size     uint64
-		format   image.ImageType
+		options  image.Options
 	}{
 		{
 			name:     "jpg",
 			filename: "testdata/nhost.jpg",
 			sum:      "609365ae9f099954d90270f1c4ba19fed1bf54094d7b6495dc93b4d0ebae9211",
 			size:     33399,
-			format:   image.ImageTypeJPEG,
+			options:  image.Options{Width: 300, Height: 100, Blur: 2, Format: image.ImageTypeJPEG},
 		},
 		{
 			name:     "png",
 			filename: "testdata/nhost.png",
 			sum:      "23926d3aeb6e53527e46d2dac3bd4fc5ca66332c8643fe7d9e9f3caf2668944d",
 			size:     68307,
-			format:   image.ImageTypePNG,
+			options:  image.Options{Width: 300, Height: 100, Blur: 2, Format: image.ImageTypePNG},
 		},
 		{
 			name:     "webp",
 			filename: "testdata/nhost.webp",
 			sum:      "d57de01e6c966a0802bbb558392e973fd28399bc3617a0a8f4c25942f3988b4f",
 			size:     17784,
-			format:   image.ImageTypeWEBP,
+			options:  image.Options{Width: 300, Height: 100, Blur: 2, Format: image.ImageTypeWEBP},
+		},
+		{
+			name:     "jpg only blur",
+			filename: "testdata/nhost.jpg",
+			sum:      "c534df8fcf66240a63b561b1d628e05fa02baad44aac4c8a93550080c2a159f1",
+			size:     33399,
+			options:  image.Options{Blur: 2, Format: image.ImageTypeJPEG},
 		},
 	}
 
@@ -60,12 +67,7 @@ func TestManipulate(t *testing.T) {
 
 			hasher := sha256.New()
 			// f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
-			if err := transformer.Run(
-				orig,
-				tc.size,
-				hasher,
-				image.Options{Width: 300, Height: 100, Blur: 2, Format: tc.format},
-			); err != nil {
+			if err := transformer.Run(orig, tc.size, hasher, tc.options); err != nil {
 				t.Fatal(err)
 			}
 
