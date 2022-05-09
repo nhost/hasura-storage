@@ -9,13 +9,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"reflect"
 	"runtime/debug"
+	"sync"
 	"unsafe"
 )
 
 const (
 	maxWorkers = 3
-	buffSize   = 5 << 20
 )
 
 type ImageType int
@@ -40,6 +41,7 @@ func (o Options) IsEmpty() bool {
 
 type Transformer struct {
 	workers chan struct{}
+	pool    sync.Pool
 }
 
 func NewTransformer() *Transformer {
@@ -60,19 +62,33 @@ func NewTransformer() *Transformer {
 	for i := 0; i < maxWorkers; i++ {
 		workers <- struct{}{}
 	}
-	return &Transformer{workers: workers}
+
+	return &Transformer{
+		workers: workers,
+		pool: sync.Pool{
+			New: func() any {
+				return new(bytes.Buffer)
+			},
+		},
+	}
 }
 
 func (t *Transformer) Shutdown() {
 	C.vips_shutdown()
 }
 
-func (t *Transformer) Run(orig io.Reader, modified io.Writer, opts Options) error {
+func (t *Transformer) Run(orig io.Reader, length uint64, modified io.Writer, opts Options) error {
 	// this is to avoid processing too many images at the same time in order to save memory
 	<-t.workers
 	defer func() { t.workers <- struct{}{} }()
 
-	buf := bytes.NewBuffer(make([]byte, 0, buffSize))
+	buf, _ := t.pool.Get().(*bytes.Buffer)
+	defer t.pool.Put(buf)
+	defer buf.Reset()
+
+	if buf.Len() < int(length) {
+		buf.Grow(int(length))
+	}
 
 	_, err := io.Copy(buf, orig)
 	if err != nil {
@@ -104,7 +120,7 @@ func Manipulate(buf []byte, opts Options) ([]byte, error) {
 			crop:   C.VIPS_INTERESTING_CENTRE,
 			size:   C.VIPS_SIZE_BOTH, // nolint: gocritic
 			blur:   C.double(opts.Blur),
-			format: C.ImageType(opts.Format),
+			format: C.ImageType(opts.Format), // nolint: gocritic
 		},
 	)
 	if err != 0 {
@@ -114,5 +130,11 @@ func Manipulate(buf []byte, opts Options) ([]byte, error) {
 		return nil, fmt.Errorf("%v\nStack:\n%s", s, debug.Stack()) // nolint: goerr113
 	}
 
-	return C.GoBytes(result.buf, C.int(result.len)), nil
+	var data []byte
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	sh.Data = uintptr(result.buf)
+	sh.Len = int(result.len)
+	sh.Cap = int(result.len)
+
+	return data, nil
 }

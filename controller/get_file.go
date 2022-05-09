@@ -102,12 +102,12 @@ func (p *FakeReadCloserWrapper) Close() error {
 }
 
 func (ctrl *Controller) manipulateImage(
-	object io.ReadCloser, opts image.Options,
+	object io.ReadCloser, size uint64, opts image.Options,
 ) (io.ReadCloser, int64, string, *APIError) {
 	defer object.Close()
 
 	buf := &bytes.Buffer{}
-	if err := ctrl.imageTransformer.Run(object, buf, opts); err != nil {
+	if err := ctrl.imageTransformer.Run(object, size, buf, opts); err != nil {
 		return nil, 0, "", InternalServerError(err)
 	}
 
@@ -143,7 +143,7 @@ func (ctrl *Controller) processFileToDownload(
 	}
 
 	if !opts.IsEmpty() {
-		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(object, opts)
+		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(object, uint64(fileMetadata.Size), opts)
 		if apiErr != nil {
 			return nil, apiErr
 		}
