@@ -93,7 +93,12 @@ func TestGetFile(t *testing.T) {
 
 			assert(t, tc.expectedStatus, responseRecorder.Code)
 
-			if tc.expectedStatus == 200 {
+			if tc.expectedStatus == 304 {
+				assert(t, responseRecorder.Header(), http.Header{
+					"Cache-Control": {"max-age=3600"},
+					"Etag":          {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
+				})
+			} else if tc.expectedStatus == 200 {
 				assert(t, responseRecorder.Header(), http.Header{
 					"Cache-Control":       {"max-age=3600"},
 					"Content-Length":      {"64"},
@@ -101,6 +106,7 @@ func TestGetFile(t *testing.T) {
 					"Content-Type":        {"text/plain; charset=utf-8"},
 					"Etag":                {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
 					"Last-Modified":       {"Mon, 27 Dec 2021 09:58:11 UTC"},
+					"Surrogate-Key":       {"55af1e60-0f28-454e-885e-ea6aab2bb288"},
 				})
 			} else {
 				assert(t, responseRecorder.Header(), http.Header{
@@ -109,6 +115,7 @@ func TestGetFile(t *testing.T) {
 					"Content-Type":   {"text/plain; charset=utf-8"},
 					"Etag":           {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
 					"Last-Modified":  {"Mon, 27 Dec 2021 09:58:11 UTC"},
+					"Surrogate-Key":  {"55af1e60-0f28-454e-885e-ea6aab2bb288"},
 				})
 			}
 

@@ -12,12 +12,15 @@ import (
 	"reflect"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 )
 
 const (
 	maxWorkers = 3
 )
+
+var initialized int32 = 0 // nolint: gochecknoglobals
 
 type ImageType int
 
@@ -45,18 +48,22 @@ type Transformer struct {
 }
 
 func NewTransformer() *Transformer {
-	name := C.CString("hasuraStorage")
-	defer C.free(unsafe.Pointer(name))
+	if atomic.CompareAndSwapInt32(&initialized, 0, 1) {
+		// thread-safe way of initializing vips once and only once
+		// mostly interesting for testing in parallel
+		name := C.CString("hasuraStorage")
+		defer C.free(unsafe.Pointer(name))
 
-	err := C.vips_init(name)
-	if err != 0 {
-		panic(fmt.Sprintf("vips error, code=%v", err))
+		err := C.vips_init(name)
+		if err != 0 {
+			panic(fmt.Sprintf("vips error, code=%v", err))
+		}
+
+		C.vips_concurrency_set(C.int(1))
+		C.vips_cache_set_max_files(C.int(0))
+		C.vips_cache_set_max_mem(C.size_t(0))
+		C.vips_cache_set_max(C.int(0))
 	}
-
-	C.vips_concurrency_set(C.int(1))
-	C.vips_cache_set_max_files(C.int(0))
-	C.vips_cache_set_max_mem(C.size_t(0))
-	C.vips_cache_set_max(C.int(0))
 
 	workers := make(chan struct{}, maxWorkers)
 	for i := 0; i < maxWorkers; i++ {
