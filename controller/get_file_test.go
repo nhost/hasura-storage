@@ -64,8 +64,15 @@ func TestGetFile(t *testing.T) {
 
 			contentStorage.EXPECT().GetFile(
 				"55af1e60-0f28-454e-885e-ea6aab2bb288",
+				gomock.Any(),
 			).Return(
-				io.NopCloser(strings.NewReader("Hello, world!")),
+				&controller.File{
+					StatusCode:    200,
+					Etag:          `"55af1e60-0f28-454e-885e-ea6aab2bb288"`,
+					Body:          io.NopCloser(strings.NewReader("Hello, world!")),
+					ContentLength: 64,
+					ExtraHeaders:  make(http.Header),
+				},
 				nil,
 			)
 
@@ -93,12 +100,13 @@ func TestGetFile(t *testing.T) {
 
 			assert(t, tc.expectedStatus, responseRecorder.Code)
 
-			if tc.expectedStatus == 304 {
+			switch tc.expectedStatus {
+			case 304:
 				assert(t, responseRecorder.Header(), http.Header{
 					"Cache-Control": {"max-age=3600"},
 					"Etag":          {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
 				})
-			} else if tc.expectedStatus == 200 {
+			case 200:
 				assert(t, responseRecorder.Header(), http.Header{
 					"Cache-Control":       {"max-age=3600"},
 					"Content-Length":      {"64"},
@@ -108,7 +116,7 @@ func TestGetFile(t *testing.T) {
 					"Last-Modified":       {"Mon, 27 Dec 2021 09:58:11 UTC"},
 					"Surrogate-Key":       {"55af1e60-0f28-454e-885e-ea6aab2bb288"},
 				})
-			} else {
+			default:
 				assert(t, responseRecorder.Header(), http.Header{
 					"Cache-Control":  {"max-age=3600"},
 					"Content-Length": {"64"},

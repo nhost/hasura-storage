@@ -168,7 +168,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 		name               string
 		filepath           string
 		sleep              time.Duration
-		expected           *controller.FileWithPresignedURL
+		expected           *controller.File
 		expectedContent    string
 		expectedErr        *controller.ErrorResponse
 		expectedStatusCode int
@@ -176,7 +176,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 		{
 			name:     "success",
 			filepath: "sample.txt",
-			expected: &controller.FileWithPresignedURL{
+			expected: &controller.File{
 				ContentType:   "text",
 				ContentLength: 17,
 				Etag:          `"8ba761284b556cd234f73ec0b75fa054"`,
@@ -226,7 +226,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 
 			got, apiErr := s3.GetFileWithPresignedURL(context.Background(), tc.filepath, signature, http.Header{})
 			opts := cmp.Options{
-				cmpopts.IgnoreFields(controller.FileWithPresignedURL{}, "Body"),
+				cmpopts.IgnoreFields(controller.File{}, "Body"),
 			}
 			if !cmp.Equal(got, tc.expected, opts) {
 				t.Error(cmp.Diff(got, tc.expected, opts))
