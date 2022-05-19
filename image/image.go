@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -23,6 +24,8 @@ const (
 var initialized int32 = 0 // nolint: gochecknoglobals
 
 type ImageType int
+
+var initialized int32 = 0 // nolint: gochecknoglobals
 
 const (
 	ImageTypeJPEG ImageType = C.JPEG
@@ -93,8 +96,11 @@ func (t *Transformer) Run(orig io.Reader, length uint64, modified io.Writer, opt
 	defer t.pool.Put(buf)
 	defer buf.Reset()
 
-	if buf.Len() < int(length) {
-		buf.Grow(int(length))
+	if length > math.MaxUint32 {
+		panic("length is too big")
+	}
+	if l := int(length); buf.Len() < l {
+		buf.Grow(l)
 	}
 
 	_, err := io.Copy(buf, orig)
