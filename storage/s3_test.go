@@ -169,7 +169,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 		filepath           string
 		sleep              time.Duration
 		requestHeaders     http.Header
-    expected           *controller.File
+		expected           *controller.File
 		expectedContent    string
 		expectedErr        *controller.ErrorResponse
 		expectedStatusCode int
@@ -196,7 +196,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 			requestHeaders: http.Header{
 				"If-None-Match": {`"8ba761284b556cd234f73ec0b75fa054"`},
 			},
-			expected: &controller.FileWithPresignedURL{
+			expected: &controller.File{
 				ContentLength: 0,
 				Etag:          `"8ba761284b556cd234f73ec0b75fa054"`,
 				StatusCode:    304,
