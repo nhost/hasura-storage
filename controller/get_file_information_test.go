@@ -160,21 +160,13 @@ func TestGetFileInfo(t *testing.T) {
 
 			assert(t, tc.expectedStatus, responseRecorder.Code)
 
-			if responseRecorder.Code == 304 {
-				assert(t, responseRecorder.Header(), http.Header{
-					"Cache-Control": {"max-age=3600"},
-					"Etag":          {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
-				})
-			} else {
-				assert(t, responseRecorder.Header(), http.Header{
-					"Cache-Control":  {"max-age=3600"},
-					"Content-Length": {"64"},
-					"Content-Type":   {"text/plain; charset=utf-8"},
-					"Etag":           {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
-					"Last-Modified":  {"Mon, 27 Dec 2021 09:58:11 UTC"},
-					"Surrogate-Key":  {"55af1e60-0f28-454e-885e-ea6aab2bb288"},
-				})
-			}
+			assert(t, responseRecorder.Header(), http.Header{
+				"Cache-Control":  {"max-age=3600"},
+				"Content-Length": {"64"},
+				"Content-Type":   {"text/plain; charset=utf-8"},
+				"Etag":           {`"55af1e60-0f28-454e-885e-ea6aab2bb288"`},
+				"Last-Modified":  {"Mon, 27 Dec 2021 09:58:11 UTC"},
+			})
 		})
 	}
 }
