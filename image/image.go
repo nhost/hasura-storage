@@ -66,19 +66,6 @@ func NewTransformer() *Transformer {
 		C.vips_cache_set_max(C.int(0))
 	}
 
-	name := C.CString("hasuraStorage")
-	defer C.free(unsafe.Pointer(name))
-
-	err := C.vips_init(name)
-	if err != 0 {
-		panic(fmt.Sprintf("vips error, code=%v", err))
-	}
-
-	C.vips_concurrency_set(C.int(1))
-	C.vips_cache_set_max_files(C.int(0))
-	C.vips_cache_set_max_mem(C.size_t(0))
-	C.vips_cache_set_max(C.int(0))
-
 	workers := make(chan struct{}, maxWorkers)
 	for i := 0; i < maxWorkers; i++ {
 		workers <- struct{}{}
