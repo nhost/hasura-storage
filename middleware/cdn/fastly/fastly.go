@@ -69,6 +69,7 @@ func New(serviceID string, apiKey string, logger *logrus.Logger) gin.HandlerFunc
 			// 3. when Fastly does a revalidation it doesn;t run vcl_fetch if it succeeds but
 			//    it does set ttl to max-age breaking the emulated no-cache behavior :facepalm:
 			ctx.Writer.Header().Del("Cache-Control")
+			ctx.Writer.Header().Del("Surrogate-Control")
 		}
 
 		if id, ok := ctx.Get("FileChanged"); ok {

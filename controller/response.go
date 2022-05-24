@@ -73,6 +73,7 @@ func (r *FileResponse) Write(ctx *gin.Context) {
 		ctx.Header("Last-modified", r.lastModified)
 	}
 
+	ctx.Header("Surrogate-Control", "max-age=604800")
 	ctx.Header("Cache-Control", r.cacheControl)
 	ctx.Header("Etag", r.etag)
 
