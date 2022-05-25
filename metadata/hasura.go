@@ -3,7 +3,6 @@ package metadata
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/hasura/go-graphql-client"
