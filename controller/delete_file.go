@@ -25,8 +25,7 @@ func (ctrl *Controller) deleteFile(ctx *gin.Context) *APIError {
 }
 
 func (ctrl *Controller) DeleteFile(ctx *gin.Context) {
-	apiErr := ctrl.deleteFile(ctx)
-	if apiErr != nil {
+	if apiErr := ctrl.deleteFile(ctx); apiErr != nil {
 		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
 
 		ctx.JSON(apiErr.statusCode, apiErr.PublicResponse())
@@ -34,5 +33,5 @@ func (ctrl *Controller) DeleteFile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.AbortWithStatus(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }
