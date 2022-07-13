@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+BUILDER_NAME=hasura-stora-builder
 
 which nix > /dev/null
 
@@ -27,5 +28,5 @@ docker run --rm -it \
     -v $PWD:/build \
     -w /build \
     --entrypoint sh \
-    dbarroso/nix:2.6.0 \
+    dbarroso/hasura-storage-builder:latest \
         -c "nix build .\\#dockerImage --print-build-logs && docker load < result"

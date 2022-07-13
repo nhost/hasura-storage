@@ -78,6 +78,25 @@ dev-env-build: build-docker-image  ## Builds development environment
 	docker-compose -f ${DOCKER_DEV_ENV_PATH}/docker-compose.yaml build
 
 
+.PHONY: dev-env-build-builder
+dev-env-build-builder:
+	docker build \
+		-t dbarroso/hasura-storage-builder:latest \
+		-f build/nix.Dockerfile \
+		.
+
+
+.PHONY: dev-env-shell
+dev-env-shell:  ## Starts a shell in a dockerized build environment
+	docker run --rm -it \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(PWD):/build \
+		-w /build \
+		--entrypoint sh \
+		dbarroso/hasura-storage-builder:latest \
+		-c "nix develop"
+
+
 .PHONY: dev-jwt
 dev-jwt:  ## return a jwt valid for development environment
 	@sh ./$(DEV_ENV_PATH)/jwt-gen/get-jwt.sh
