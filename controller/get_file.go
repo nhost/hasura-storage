@@ -125,9 +125,11 @@ func (ctrl *Controller) manipulateImage(
 	return NewP(buf.Bytes()), int64(buf.Len()), etag, nil
 }
 
+type getFileFunc func() (*File, *APIError)
+
 func (ctrl *Controller) processFileToDownload(
 	ctx *gin.Context,
-	download *File,
+	downloadFunc getFileFunc,
 	fileMetadata FileMetadata,
 	cacheControl string,
 	infoHeaders *getFileInformationHeaders,
@@ -136,6 +138,16 @@ func (ctrl *Controller) processFileToDownload(
 	if apiErr != nil {
 		return nil, apiErr
 	}
+
+	rangeHeader := ctx.Request.Header.Get("Range")
+	if !opts.IsEmpty() {
+		ctx.Request.Header.Set("Range", "")
+	}
+	download, apiErr := downloadFunc()
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	ctx.Request.Header.Set("Range", rangeHeader)
 
 	updateAt, apiErr := timeFromRFC3339ToRFC1123(fileMetadata.UpdatedAt)
 	if apiErr != nil {
@@ -193,12 +205,12 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (*FileResponse, *APIErr
 		return nil, apiErr
 	}
 
-	download, apiErr := ctrl.contentStorage.GetFile(fileMetadata.ID, ctx.Request.Header)
-	if apiErr != nil {
-		return nil, apiErr
+	downloadFunc := func() (*File, *APIError) {
+		return ctrl.contentStorage.GetFile(fileMetadata.ID, ctx.Request.Header)
 	}
 
-	response, apiErr := ctrl.processFileToDownload(ctx, download, fileMetadata, bucketMetadata.CacheControl, &req.headers)
+	response, apiErr := ctrl.processFileToDownload(
+		ctx, downloadFunc, fileMetadata, bucketMetadata.CacheControl, &req.headers)
 	if apiErr != nil {
 		return nil, apiErr
 	}
