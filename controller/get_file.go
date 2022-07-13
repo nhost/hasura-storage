@@ -139,6 +139,9 @@ func (ctrl *Controller) processFileToDownload(
 		return nil, apiErr
 	}
 
+	// we remove this header if image manipulation options are specified
+	// because we pass them as is to the storage backend which means
+	// we'd get a partial file prior to performing the image manipulation
 	rangeHeader := ctx.Request.Header.Get("Range")
 	if !opts.IsEmpty() {
 		ctx.Request.Header.Set("Range", "")
