@@ -84,7 +84,7 @@ func TestListNotUploaded(t *testing.T) {
 
 			ctrl := controller.New("http://asd", "asdasd", metadataStorage, contentStorage, nil, logger)
 
-			router, _ := ctrl.SetupRouter(nil, ginLogger(logger))
+			router, _ := ctrl.SetupRouter(nil, "/v1", ginLogger(logger))
 
 			responseRecorder := httptest.NewRecorder()
 

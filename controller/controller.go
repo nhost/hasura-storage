@@ -103,7 +103,9 @@ func New(
 	}
 }
 
-func (ctrl *Controller) SetupRouter(trustedProxies []string, middleware ...gin.HandlerFunc) (*gin.Engine, error) {
+func (ctrl *Controller) SetupRouter(
+	trustedProxies []string, apiRootPrefix string, middleware ...gin.HandlerFunc,
+) (*gin.Engine, error) {
 	router := gin.New()
 	if err := router.SetTrustedProxies(trustedProxies); err != nil {
 		return nil, fmt.Errorf("problem setting trusted proxies: %w", err)
@@ -132,7 +134,7 @@ func (ctrl *Controller) SetupRouter(trustedProxies []string, middleware ...gin.H
 
 	router.GET("/healthz", ctrl.Health)
 
-	apiRoot := router.Group("/v1")
+	apiRoot := router.Group(apiRootPrefix)
 	{
 		apiRoot.GET("/openapi.yaml", ctrl.OpenAPI)
 		apiRoot.GET("/version", ctrl.Version)
