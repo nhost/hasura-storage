@@ -84,7 +84,9 @@ func getGin(
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	ctrl := controller.New(publicURL, hasuraAdminSecret, metadataStorage, contentStorage, imageTransformer, logger)
+	ctrl := controller.New(
+		publicURL, apiRootPrefix, hasuraAdminSecret, metadataStorage, contentStorage, imageTransformer, logger,
+	)
 
 	middlewares := []gin.HandlerFunc{
 		ginLogger(logger),

@@ -136,7 +136,7 @@ func TestGetFileInfo(t *testing.T) {
 				CacheControl:         "max-age=3600",
 			}, nil)
 
-			ctrl := controller.New("http://asd", "asdasd", metadataStorage, contentStorage, image.NewTransformer(), logger)
+			ctrl := controller.New("http://asd", "/v1", "asdasd", metadataStorage, contentStorage, image.NewTransformer(), logger)
 
 			router, _ := ctrl.SetupRouter(nil, "/v1", ginLogger(logger))
 

@@ -78,6 +78,7 @@ type ContentStorage interface {
 
 type Controller struct {
 	publicURL         string
+	apiRootPrefix     string
 	hasuraAdminSecret string
 	metadataStorage   MetadataStorage
 	contentStorage    ContentStorage
@@ -87,6 +88,7 @@ type Controller struct {
 
 func New(
 	publicURL string,
+	apiRootPrefix string,
 	hasuraAdminSecret string,
 	metadataStorage MetadataStorage,
 	contentStorage ContentStorage,
@@ -95,6 +97,7 @@ func New(
 ) *Controller {
 	return &Controller{
 		publicURL,
+		apiRootPrefix,
 		hasuraAdminSecret,
 		metadataStorage,
 		contentStorage,
