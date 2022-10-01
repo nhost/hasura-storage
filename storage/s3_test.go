@@ -23,7 +23,7 @@ import (
 )
 
 func getS3() *storage.S3 {
-	config := &aws.Config{ // nolint: exhaustivestruct
+	config := &aws.Config{ //nolint: exhaustivestruct
 		Credentials: credentials.NewStaticCredentials(
 			os.Getenv("TEST_S3_ACCESS_KEY"),
 			os.Getenv("TEST_S3_SECRET_KEY"),

@@ -19,6 +19,8 @@ linters:
       - scopelint  # deprecated
       - interfacer  # deprecated
       - golint  # deprecated
+      - usestdlibvars # needs to be fixed
+      - exhaustruct # needs to be fixed
 
 issues:
   exclude-rules:
@@ -36,3 +38,6 @@ issues:
       linters:
         - funlen
         - ireturn
+    - path: image/image.go
+      linters:
+        - nosnakecase

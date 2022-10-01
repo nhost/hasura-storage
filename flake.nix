@@ -124,6 +124,7 @@
               gnused
               richgo
               ccls
+              mockgen
             ] ++ buildInputs ++ nativeBuildInputs;
           };
         };
