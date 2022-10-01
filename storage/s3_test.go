@@ -6,7 +6,7 @@ package storage_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -269,7 +269,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 			}
 
 			if tc.expectedContent != "" {
-				b, err := ioutil.ReadAll(got.Body)
+				b, err := io.ReadAll(got.Body)
 				if err != nil {
 					t.Error(err)
 				}
