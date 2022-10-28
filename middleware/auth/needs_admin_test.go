@@ -51,6 +51,11 @@ func TestIsAdmin(t *testing.T) {
 			},
 			isAdmin: false,
 		},
+		{
+			name:      "no headers",
+			reqHeader: http.Header{},
+			isAdmin:   false,
+		},
 	}
 
 	for _, tc := range cases {
