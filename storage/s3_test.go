@@ -5,7 +5,6 @@ package storage_test
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -136,8 +135,7 @@ func TestListFiles(t *testing.T) {
 			}
 
 			for _, f := range got {
-				fmt.Println(f)
-				if !strings.HasPrefix(f, "f215cf48-7458-4596-9aa5-2159fc6a3caf/") {
+				if strings.HasPrefix(f, "this-shouldnt-show-in-list") {
 					t.Errorf("found extraneous file: %s", f)
 				}
 			}
