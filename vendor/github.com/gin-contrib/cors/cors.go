@@ -2,6 +2,7 @@ package cors
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -53,6 +54,9 @@ type Config struct {
 
 	// Allows usage of file:// schema (dangerous!) use it only when you 100% sure it's needed
 	AllowFiles bool
+
+	// Allows modifying preflight request headers before sending them to the client
+	ModifyPreflightHeadersFunc func(*gin.Context, http.Header) http.Header
 }
 
 // AddAllowMethods is allowed to add custom methods

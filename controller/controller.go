@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -110,6 +112,31 @@ func New(
 	}
 }
 
+func corsAllowHasuraHeaders(c *gin.Context, header http.Header) http.Header {
+	accessControlRequestHeaders := strings.Split(
+		c.Request.Header.Get("Access-Control-Request-Headers"),
+		",",
+	)
+
+	extraHeaders := make([]string, 0, 10) //nolint: gomnd
+	for _, header := range accessControlRequestHeaders {
+		if strings.HasPrefix(strings.ToLower(header), "x-hasura-") {
+			extraHeaders = append(extraHeaders, textproto.CanonicalMIMEHeaderKey(header))
+		}
+	}
+
+	if len(extraHeaders) == 0 {
+		return header
+	}
+
+	header.Set(
+		"Access-Control-Allow-Headers",
+		header.Get("Access-Control-Allow-Headers")+","+strings.Join(extraHeaders, ","),
+	)
+
+	return header
+}
+
 func (ctrl *Controller) SetupRouter(
 	trustedProxies []string, apiRootPrefix string, middleware ...gin.HandlerFunc,
 ) (*gin.Engine, error) {
@@ -134,6 +161,7 @@ func (ctrl *Controller) SetupRouter(
 			"x-hasura-admin-secret", "x-nhost-bucket-id", "x-nhost-file-name", "x-nhost-file-id",
 			"x-hasura-role",
 		},
+		ModifyPreflightHeadersFunc: corsAllowHasuraHeaders,
 		// AllowWildcard: true,
 		ExposeHeaders: []string{
 			"Content-Length", "Content-Type", "Cache-Control", "ETag", "Last-Modified", "X-Error",

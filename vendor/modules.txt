@@ -62,7 +62,7 @@ github.com/gabriel-vasile/mimetype
 github.com/gabriel-vasile/mimetype/internal/charset
 github.com/gabriel-vasile/mimetype/internal/json
 github.com/gabriel-vasile/mimetype/internal/magic
-# github.com/gin-contrib/cors v1.4.0
+# github.com/gin-contrib/cors v1.4.0 => github.com/dbarrosop/cors v0.0.0-20221117104324-e4ad07513fcb
 ## explicit; go 1.13
 github.com/gin-contrib/cors
 # github.com/gin-contrib/sse v0.1.0

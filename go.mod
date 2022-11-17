@@ -2,6 +2,8 @@ module github.com/nhost/hasura-storage
 
 go 1.19
 
+replace github.com/gin-contrib/cors v1.4.0 => github.com/dbarrosop/cors v0.0.0-20221117104324-e4ad07513fcb
+
 require (
 	github.com/aws/aws-sdk-go v1.44.125
 	github.com/gabriel-vasile/mimetype v1.4.1

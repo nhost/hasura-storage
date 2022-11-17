@@ -8,13 +8,14 @@ import (
 )
 
 type cors struct {
-	allowAllOrigins  bool
-	allowCredentials bool
-	allowOriginFunc  func(string) bool
-	allowOrigins     []string
-	normalHeaders    http.Header
-	preflightHeaders http.Header
-	wildcardOrigins  [][]string
+	allowAllOrigins            bool
+	allowCredentials           bool
+	allowOriginFunc            func(string) bool
+	allowOrigins               []string
+	normalHeaders              http.Header
+	preflightHeaders           http.Header
+	modifyPreflightHeadersFunc func(*gin.Context, http.Header) http.Header
+	wildcardOrigins            [][]string
 }
 
 var (
@@ -49,13 +50,14 @@ func newCors(config Config) *cors {
 	}
 
 	return &cors{
-		allowOriginFunc:  config.AllowOriginFunc,
-		allowAllOrigins:  config.AllowAllOrigins,
-		allowCredentials: config.AllowCredentials,
-		allowOrigins:     normalize(config.AllowOrigins),
-		normalHeaders:    generateNormalHeaders(config),
-		preflightHeaders: generatePreflightHeaders(config),
-		wildcardOrigins:  config.parseWildcardRules(),
+		allowOriginFunc:            config.AllowOriginFunc,
+		allowAllOrigins:            config.AllowAllOrigins,
+		allowCredentials:           config.AllowCredentials,
+		allowOrigins:               normalize(config.AllowOrigins),
+		normalHeaders:              generateNormalHeaders(config),
+		preflightHeaders:           generatePreflightHeaders(config),
+		modifyPreflightHeadersFunc: config.ModifyPreflightHeadersFunc,
+		wildcardOrigins:            config.parseWildcardRules(),
 	}
 }
 
@@ -125,6 +127,11 @@ func (cors *cors) validateOrigin(origin string) bool {
 }
 
 func (cors *cors) handlePreflight(c *gin.Context) {
+	headers := cors.preflightHeaders
+	if cors.modifyPreflightHeadersFunc != nil {
+		headers = cors.modifyPreflightHeadersFunc(c, headers)
+	}
+
 	header := c.Writer.Header()
 	for key, value := range cors.preflightHeaders {
 		header[key] = value
