@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -126,20 +128,7 @@ func (ctrl *Controller) SetupRouter(
 		router.Use(mw)
 	}
 
-	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"GET", "PUT", "POST", "HEAD", "DELETE"},
-		AllowHeaders: []string{
-			"Authorization", "Origin", "if-match", "if-none-match", "if-modified-since", "if-unmodified-since",
-			"x-hasura-admin-secret", "x-nhost-bucket-id", "x-nhost-file-name", "x-nhost-file-id",
-			"x-hasura-role",
-		},
-		// AllowWildcard: true,
-		ExposeHeaders: []string{
-			"Content-Length", "Content-Type", "Cache-Control", "ETag", "Last-Modified", "X-Error",
-		},
-		MaxAge: 12 * time.Hour, //nolint: gomnd
-	}))
+	router.Use(cors.New(getCorsConfig()))
 
 	router.GET("/healthz", ctrl.Health)
 
@@ -175,4 +164,30 @@ func (ctrl *Controller) Health(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"healthz": "ok",
 	})
+}
+
+func getCorsConfig() cors.Config {
+	config := cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "PUT", "POST", "HEAD", "DELETE"},
+		AllowHeaders: []string{
+			"Authorization", "Origin", "if-match", "if-none-match", "if-modified-since", "if-unmodified-since",
+			"x-hasura-admin-secret", "x-nhost-bucket-id", "x-nhost-file-name", "x-nhost-file-id",
+			"x-hasura-role",
+		},
+		ExposeHeaders: []string{
+			"Content-Length", "Content-Type", "Cache-Control", "ETag", "Last-Modified", "X-Error",
+		},
+		MaxAge: 12 * time.Hour, //nolint: gomnd
+	}
+	
+	if os.Getenv("CORS_ALLOW_ORIGINS") != "" {
+		config.AllowOrigins = strings.Split(os.Getenv("CORS_ALLOW_ORIGINS"), ",")
+	}
+
+	if os.Getenv("CORS_ALLOW_CREDENTIALS") == "true" {
+		config.AllowCredentials = true
+	}
+
+	return config
 }
