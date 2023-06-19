@@ -82,7 +82,7 @@ func (r *FileResponse) Write(ctx *gin.Context) {
 	ctx.Header("Etag", r.etag)
 
 	if r.body != nil && (r.statusCode == http.StatusOK || r.statusCode == http.StatusPartialContent) {
-	    safeName := url.QueryEscape(r.name)
+		safeName := url.QueryEscape(r.name)
 		ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, safeName))
 
 		_, err := io.Copy(ctx.Writer, r.body)
