@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,7 +82,8 @@ func (r *FileResponse) Write(ctx *gin.Context) {
 	ctx.Header("Etag", r.etag)
 
 	if r.body != nil && (r.statusCode == http.StatusOK || r.statusCode == http.StatusPartialContent) {
-		ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, r.name))
+		safeName := url.QueryEscape(r.name)
+		ctx.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, safeName))
 
 		_, err := io.Copy(ctx.Writer, r.body)
 		if err != nil {
