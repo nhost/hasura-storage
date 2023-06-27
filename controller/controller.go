@@ -144,7 +144,7 @@ func (ctrl *Controller) SetupRouter(
 		MaxAge: 12 * time.Hour, //nolint: gomnd
 	}
 
-	if corsAllowCredentials == true {
+	if corsAllowCredentials {
 		corsConfig.AllowCredentials = true
 	}
 
