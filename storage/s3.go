@@ -19,8 +19,8 @@ import (
 )
 
 type S3Error struct {
-	Code    string
-	Message string
+	Code    string `xml:"Code"`
+	Message string `xml:"Message"`
 }
 
 func parseS3Error(resp *http.Response) *controller.APIError {
@@ -160,6 +160,7 @@ func (s *S3) GetFileWithPresignedURL(
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem getting file: %w", err))
 	}
+	defer resp.Body.Close()
 
 	if !(resp.StatusCode == http.StatusOK ||
 		resp.StatusCode == http.StatusPartialContent ||
@@ -178,7 +179,7 @@ func (s *S3) GetFileWithPresignedURL(
 			respHeaders["Content-Range"] = []string{resp.Header.Get("Content-Range")}
 		}
 
-		length, err = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 32) //nolint: gomnd
+		length, err = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 32)
 		if err != nil {
 			return nil, controller.InternalServerError(fmt.Errorf("problem parsing Content-Length: %w", err))
 		}

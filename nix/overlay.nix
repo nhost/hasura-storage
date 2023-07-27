@@ -1,16 +1,15 @@
 final: prev: rec {
-  go = final.go_1_19;
+  go = final.go_1_20;
 
   golangci-lint = prev.golangci-lint.override rec {
     buildGoModule = args: prev.buildGoModule.override { go = go; } (args // rec {
-      version = "1.49.0";
+      version = "1.53.3";
       src = prev.fetchFromGitHub {
         owner = "golangci";
         repo = "golangci-lint";
         rev = "v${version}";
-        sha256 = "sha256-L2PtDiMtT+vcMU4uW3GYZexLtDqnHRuUts7bIh/g0YA=";
+        sha256 = "sha256-5qTWYmr82BFuyA+lS1HwCHqdrtWScI6tuu0noRbali8=";
       };
-      vendorSha256 = "sha256-VPkOFUwp0Bm/YyBCbfQTa+R1bjau7Ai+p/TbgNxeejc=";
       ldflags = [
         "-s"
         "-w"
@@ -30,7 +29,33 @@ final: prev: rec {
       final.libpng
       final.libwebp
       final.openjpeg
+      final.pango
     ];
+    mesonFlags = [
+      "-Dcgif=disabled"
+      "-Dspng=disabled"
+      "-Dpdfium=disabled"
+      "-Dnifti=disabled"
+      "-Dgsf=disabled"
+      "-Dfftw=disabled"
+      "-Dmagick=disabled"
+      "-Dcfitsio=disabled"
+      "-Dimagequant=disabled"
+      "-Dquantizr=disabled"
+      "-Dexif=disabled"
+      "-Dtiff=disabled"
+      "-Dopenslide=disabled"
+      "-Dmatio=disabled"
+      "-Dlcms=disabled"
+      "-Dopenexr=disabled"
+      "-Dorc=disabled"
+      "-Dheif=disabled"
+      "-Djpeg-xl=disabled"
+      "-Dpoppler=disabled"
+      "-Drsvg=disabled"
+      "-Dpangocairo=disabled"
+    ];
+
   });
 
 }
