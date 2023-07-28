@@ -21,6 +21,7 @@ final: prev: rec {
   };
 
   vips = prev.vips.overrideAttrs (oldAttrs: rec {
+    outputs = [ "bin" "out" "man" "dev" ];
     buildInputs = [
       final.glib
       final.libxml2
@@ -32,6 +33,7 @@ final: prev: rec {
       final.pango
     ];
     mesonFlags = [
+      "-Dgtk_doc=false"
       "-Dcgif=disabled"
       "-Dspng=disabled"
       "-Dpdfium=disabled"
