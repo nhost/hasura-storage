@@ -156,11 +156,10 @@ func (s *S3) GetFileWithPresignedURL(
 	req.Header = headers
 
 	client := http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:bodyclose //we are actually returning the body
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem getting file: %w", err))
 	}
-	defer resp.Body.Close()
 
 	if !(resp.StatusCode == http.StatusOK ||
 		resp.StatusCode == http.StatusPartialContent ||
