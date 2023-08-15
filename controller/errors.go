@@ -164,3 +164,10 @@ func (a *APIError) ExtendError(msg string) *APIError {
 	a.err = fmt.Errorf(fmt.Sprintf("%s: %s", msg, a.err.Error())) //nolint
 	return a
 }
+
+func (a *APIError) SetData(k string, v any) {
+	if a.data == nil {
+		a.data = make(map[string]interface{})
+	}
+	a.data[k] = v
+}

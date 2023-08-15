@@ -62,6 +62,55 @@ func (ctrl *Controller) getMultipartFile(file fileData) (multipart.File, string,
 	return fileContent, mt.String(), nil
 }
 
+func (ctrl *Controller) processFile(
+	ctx context.Context,
+	file fileData,
+	bucket BucketMetadata,
+	headers http.Header,
+) (FileMetadata, *APIError) {
+	if err := checkFileSize(file.header, bucket.MinUploadFile, bucket.MaxUploadFile); err != nil {
+		return FileMetadata{}, InternalServerError(fmt.Errorf("problem checking file size %s: %w", file.Name, err))
+	}
+
+	fileContent, contentType, err := ctrl.getMultipartFile(file)
+	if err != nil {
+		return FileMetadata{}, err
+	}
+	defer fileContent.Close()
+
+	if err := ctrl.av.ScanReader(fileContent); err != nil {
+		err.SetData("file", file.Name)
+		return FileMetadata{}, err
+	}
+
+	if err := ctrl.metadataStorage.InitializeFile(
+		ctx, file.ID, file.Name, file.header.Size, bucket.ID, contentType, headers,
+	); err != nil {
+		return FileMetadata{}, err
+	}
+
+	etag, apiErr := ctrl.contentStorage.PutFile(fileContent, file.ID, contentType)
+	if apiErr != nil {
+		_ = ctrl.metadataStorage.DeleteFileByID(
+			ctx,
+			file.ID,
+			http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
+		)
+		return FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
+	}
+
+	metadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
+		ctx,
+		file.ID, file.Name, file.header.Size, bucket.ID, etag, true, contentType,
+		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
+	)
+	if apiErr != nil {
+		return FileMetadata{}, apiErr.ExtendError(fmt.Sprintf("problem populating file metadata for file %s", file.Name))
+	}
+
+	return metadata, nil
+}
+
 func (ctrl *Controller) upload(
 	ctx context.Context,
 	request uploadFileRequest,
@@ -78,11 +127,7 @@ func (ctrl *Controller) upload(
 	filesMetadata := make([]FileMetadata, 0, len(request.files))
 
 	for _, file := range request.files {
-		if err := checkFileSize(file.header, bucket.MinUploadFile, bucket.MaxUploadFile); err != nil {
-			return filesMetadata, InternalServerError(fmt.Errorf("problem checking file size %s: %w", file.Name, err))
-		}
-
-		fileContent, contentType, err := ctrl.getMultipartFile(file)
+		metadata, err := ctrl.processFile(ctx, file, bucket, request.headers)
 		if err != nil {
 			return filesMetadata, err
 		}

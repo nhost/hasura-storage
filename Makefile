@@ -53,10 +53,16 @@ build-docker-image:  ## Build docker container for native architecture
 	./build/nix-docker-image.sh
 	docker tag hasura-storage:$(VERSION) hasura-storage:dev
 
+.PHONY: build-docker-image-clamav
+build-docker-image-clamav:  ## Build docker container for clamav
+	@echo $(VERSION) > VERSION
+	./build/nix-docker-image.sh clamavDockerImage
+	docker tag clamav:$(VERSION) clamav:dev
+
 
 .PHONY: dev-env-up-short
 dev-env-up-short:  ## Starts development environment without hasura-storage
-	docker-compose -f ${DOCKER_DEV_ENV_PATH}/docker-compose.yaml up -d postgres graphql-engine minio
+	docker-compose -f ${DOCKER_DEV_ENV_PATH}/docker-compose.yaml up -d postgres graphql-engine minio clamd
 
 
 .PHONY: dev-env-up-hasura

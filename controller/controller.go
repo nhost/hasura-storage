@@ -77,6 +77,11 @@ type ContentStorage interface {
 	ListFiles() ([]string, *APIError)
 }
 
+//go:generate mockgen --build_flags=--mod=mod -destination mock/antivirus.go -package mock . Antivirus
+type Antivirus interface {
+	ScanReader(r io.ReaderAt) *APIError
+}
+
 type Controller struct {
 	publicURL         string
 	apiRootPrefix     string
@@ -84,6 +89,7 @@ type Controller struct {
 	metadataStorage   MetadataStorage
 	contentStorage    ContentStorage
 	imageTransformer  *image.Transformer
+	av                Antivirus
 	logger            *logrus.Logger
 }
 
@@ -94,6 +100,7 @@ func New(
 	metadataStorage MetadataStorage,
 	contentStorage ContentStorage,
 	imageTransformer *image.Transformer,
+	av Antivirus,
 	logger *logrus.Logger,
 ) *Controller {
 	return &Controller{
@@ -103,6 +110,7 @@ func New(
 		metadataStorage,
 		contentStorage,
 		imageTransformer,
+		av,
 		logger,
 	}
 }

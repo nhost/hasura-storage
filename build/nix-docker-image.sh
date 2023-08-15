@@ -2,6 +2,8 @@
 
 which nix > /dev/null
 
+IMAGE=${1:-"dockerImage"}
+
 if [[ $NIX_BUILD_NATIVE -eq 1 ]]; then
     case $(uname -m) in
     "arm64")
@@ -12,12 +14,12 @@ if [[ $NIX_BUILD_NATIVE -eq 1 ]]; then
         ;;
     esac
 
-    nix build .\#packages.${SYSTEM}.dockerImage --print-build-logs && docker load < result
+    nix build .\#packages.${SYSTEM}.$IMAGE --print-build-logs && docker load < result
     exit $?
 fi
 
 if [[ ( $? -eq 0 ) && ( `uname` == "Linux" ) ]]; then
-    nix build .\#dockerImage --print-build-logs && docker load < result
+    nix build .\#$IMAGE --print-build-logs && docker load < result
     exit $?
 fi
 
@@ -28,4 +30,4 @@ docker run --rm -it \
     -w /build \
     --entrypoint sh \
     dbarroso/nix:2.6.0 \
-        -c "nix build .\\#dockerImage --print-build-logs && docker load < result"
+        -c "nix build .\\#$IMAGE --print-build-logs && docker load < result"

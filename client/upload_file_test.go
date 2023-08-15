@@ -51,6 +51,10 @@ func TestUploadFile(t *testing.T) {
 	id1 := uuid.NewString()
 	id2 := uuid.NewString()
 
+	id3 := uuid.NewString()
+	id4 := uuid.NewString()
+	id5 := uuid.NewString()
+
 	cases := []struct {
 		name        string
 		files       []fileHelper
@@ -108,6 +112,40 @@ func TestUploadFile(t *testing.T) {
 				Response: &controller.UploadFileResponse{
 					Error: &controller.ErrorResponse{
 						Message: `{"networkErrors":null,"graphqlErrors":[{"message":"Uniqueness violation. duplicate key value violates unique constraint \"files_pkey\"","extensions":{"code":"constraint-violation","path":"$.selectionSet.insertFile.args.object"}}]}`,
+					},
+				},
+			},
+		},
+		{
+			name: "with virus",
+			files: []fileHelper{
+				{"testdata/alphabet.txt", id3},
+				{"testdata/greek.txt", id4},
+				{"testdata/eicarcom2.zip", id5},
+			},
+			expected: &controller.UploadFileResponse{
+				ProcessedFiles: []controller.FileMetadata{
+					{
+						ID:         id3,
+						Name:       "alphabet.txt",
+						Size:       63,
+						BucketID:   "default",
+						ETag:       `"588be441fe7a59460850b0aa3e1c5a65"`,
+						CreatedAt:  "2022-01-18T12:58:16.754894+00:00",
+						UpdatedAt:  "2022-01-18T12:58:16.839344+00:00",
+						IsUploaded: true,
+						MimeType:   "text/plain; charset=utf-8",
+					},
+					{
+						ID:         id4,
+						Name:       "greek.txt",
+						Size:       103,
+						BucketID:   "default",
+						ETag:       `"d4b4575c5af8c28b4486acd1051ddf37"`,
+						CreatedAt:  "2022-01-18T12:58:16.876285+00:00",
+						UpdatedAt:  "2022-01-18T12:58:16.95204+00:00",
+						IsUploaded: true,
+						MimeType:   "text/plain; charset=utf-8",
 					},
 				},
 			},

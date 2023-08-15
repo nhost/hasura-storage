@@ -158,6 +158,50 @@
             };
           };
 
+          clamavDockerImage = pkgs.dockerTools.buildLayeredImage {
+            name = "clamav";
+            tag = version;
+            created = "now";
+
+            contents = with pkgs; [
+              (writeTextFile {
+                name = "tmp-file";
+                text = ''
+                  dummy file to generate tmpdir
+                '';
+                destination = "/tmp/tmp-file";
+              })
+              (writeTextFile {
+                name = "entrypoint.sh";
+                text = pkgs.lib.fileContents ./build/clamav/entrypoint.sh;
+                executable = true;
+                destination = "/usr/local/bin/entrypoint.sh";
+              })
+              (writeTextFile {
+                name = "freshclam.conf";
+                text = pkgs.lib.fileContents ./build/clamav/freshclam.conf;
+                destination = "/etc/clamav/freshclam.conf";
+              })
+              (writeTextFile {
+                name = "clamd.conf";
+                text = pkgs.lib.fileContents ./build/clamav/clamd.conf;
+                destination = "/etc/clamav/clamd.conf";
+              })
+              busybox
+              clamav
+              fakeNss
+              dockerTools.caCertificates
+            ];
+            config = {
+              Env = [
+                "TMPDIR=/tmp"
+              ];
+              Entrypoint = [
+                "/usr/local/bin/entrypoint.sh"
+              ];
+            };
+          };
+
           default = hasuraStorage;
 
         };
