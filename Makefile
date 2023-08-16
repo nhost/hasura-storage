@@ -53,11 +53,26 @@ build-docker-image:  ## Build docker container for native architecture
 	./build/nix-docker-image.sh
 	docker tag hasura-storage:$(VERSION) hasura-storage:dev
 
-.PHONY: build-docker-image-clamav
-build-docker-image-clamav:  ## Build docker container for clamav
+.PHONY: build-docker-image-clamav-dev
+build-docker-image-clamav-dev:  ## Build dev docker container for clamav
 	@echo $(VERSION) > VERSION
 	./build/nix-docker-image.sh clamavDockerImage
 	docker tag clamav:$(VERSION) clamav:dev
+
+.PHONY: build-docker-image-clamav
+build-docker-image-clamav:  ## Build docker container for clamav
+	@echo $(VERSION) > VERSION
+	./build/nix-docker-image.sh clamavDockerImage aarch64-linux
+	docker tag clamav:$(VERSION) nhost/clamav:$(VERSION)-aarch64
+	./build/nix-docker-image.sh clamavDockerImage x86_64-linux
+	docker tag clamav:$(VERSION) nhost/clamav:$(VERSION)-x86_64
+	docker push nhost/clamav:$(VERSION)-aarch64
+	docker push nhost/clamav:$(VERSION)-x86_64
+	docker manifest create \
+	  nhost/clamav:$(VERSION) \
+	    --amend nhost/clamav:$(VERSION)-aarch64 \
+	    --amend nhost/clamav:$(VERSION)-x86_64
+	docker manifest push nhost/clamav:$(VERSION)
 
 
 .PHONY: dev-env-up-short

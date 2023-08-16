@@ -66,7 +66,7 @@ services:
 
   clamd:
     container_name: hasura-storage-clamd
-    image: clamav:0.0.0-dev
+    image: nhost/clamav:0.0.1
     restart: unless-stopped
     ports:
       - '3310:3310'

@@ -206,12 +206,6 @@
 
         };
 
-        apps = flake-utils.lib.flattenTree {
-          hasuraStorage = self.packages.${system}.hasuraStorage;
-          golangci-lint = pkgs.golangci-lint;
-          default = self.packages.${system}.hasuraStorage;
-        };
-
       }
 
 
