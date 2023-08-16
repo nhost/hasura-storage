@@ -187,7 +187,7 @@
                 text = pkgs.lib.fileContents ./build/clamav/clamd.conf;
                 destination = "/etc/clamav/clamd.conf";
               })
-              busybox
+              # busybox
               clamav
               fakeNss
               dockerTools.caCertificates
