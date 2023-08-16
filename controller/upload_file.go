@@ -101,7 +101,7 @@ func (ctrl *Controller) processFile(
 
 	metadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
 		ctx,
-		file.ID, file.Name, file.header.Size, bucket.ID, etag, true, contentType,
+		file.ID, file.Name, file.header.Size, bucket.ID, etag, true, contentType, file.Metadata,
 		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 	)
 	if apiErr != nil {
@@ -130,35 +130,6 @@ func (ctrl *Controller) upload(
 		metadata, err := ctrl.processFile(ctx, file, bucket, request.headers)
 		if err != nil {
 			return filesMetadata, err
-		}
-		defer fileContent.Close()
-
-		apiErr := ctrl.metadataStorage.InitializeFile(
-			ctx,
-			file.ID, file.Name, file.header.Size, bucket.ID, contentType,
-			request.headers)
-		if apiErr != nil {
-			return filesMetadata, apiErr
-		}
-
-		etag, apiErr := ctrl.contentStorage.PutFile(fileContent, file.ID, contentType)
-		if apiErr != nil {
-			_ = ctrl.metadataStorage.DeleteFileByID(
-				ctx,
-				file.ID,
-				http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
-			)
-			return filesMetadata, apiErr.ExtendError("problem uploading file to storage")
-		}
-
-		metadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
-			ctx,
-			file.ID, file.Name, file.header.Size, bucket.ID, etag, true, contentType,
-			file.Metadata,
-			http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
-		)
-		if apiErr != nil {
-			return filesMetadata, apiErr.ExtendError(fmt.Sprintf("problem populating file metadata for file %s", file.Name))
 		}
 
 		filesMetadata = append(filesMetadata, metadata)
