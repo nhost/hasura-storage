@@ -38,7 +38,7 @@ integration-tests: ## Run go test with integration flags
 	 TEST_S3_ACCESS_KEY=$(shell make -s dev-s3-access-key) \
 	 TEST_S3_SECRET_KEY=$(shell make -s dev-s3-secret-key) \
 	 GIN_MODE=release \
-		richgo test -tags=integration $(GOTEST_OPTIONS) ./... # -run=UpdateFile/success
+		richgo test -tags=integration $(GOTEST_OPTIONS) ./... # -run=UploadFile/with_virus
 
 
 .PHONY: build
