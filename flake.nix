@@ -179,15 +179,16 @@
               })
               (writeTextFile {
                 name = "freshclam.conf";
-                text = pkgs.lib.fileContents ./build/clamav/freshclam.conf;
-                destination = "/etc/clamav/freshclam.conf";
+                text = pkgs.lib.fileContents ./build/clamav/freshclam.conf.tmpl;
+                destination = "/etc/clamav/freshclam.conf.tmpl";
               })
               (writeTextFile {
                 name = "clamd.conf";
-                text = pkgs.lib.fileContents ./build/clamav/clamd.conf;
-                destination = "/etc/clamav/clamd.conf";
+                text = pkgs.lib.fileContents ./build/clamav/clamd.conf.tmpl;
+                destination = "/etc/clamav/clamd.conf.tmpl";
               })
-              # busybox
+              busybox
+              envsubst
               clamav
               fakeNss
               dockerTools.caCertificates

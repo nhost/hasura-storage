@@ -1,10 +1,13 @@
 #!/bin/sh
 
+
 mkdir -p /clamav
+
+envsubst < /etc/clamav/freshclam.conf.tmpl > /etc/clamav/freshclam.conf
+envsubst < /etc/clamav/clamd.conf.tmpl > /etc/clamav/clamd.conf
 
 # we run freshclam first to download the database
 freshclam
-
 # we start the freshclam daemon
 freshclam -d &
 pid1=$!
