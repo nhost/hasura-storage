@@ -165,6 +165,18 @@ func (a *APIError) ExtendError(msg string) *APIError {
 	return a
 }
 
+func (a *APIError) GetDataString(k string) string {
+	if a.data == nil {
+		return ""
+	}
+
+	s, ok := a.data[k].(string)
+	if !ok {
+		return ""
+	}
+	return s
+}
+
 func (a *APIError) SetData(k string, v any) {
 	if a.data == nil {
 		a.data = make(map[string]interface{})

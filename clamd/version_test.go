@@ -16,8 +16,7 @@ func TestClamdVersion(t *testing.T) {
 		{
 			name: "success",
 			expected: clamd.Version{
-				Version: "1.1.0/26985",
-				Date:    "Sat Jul 29 07:26:39 2023",
+				Version: "1.1.0",
 			},
 		},
 	}
@@ -39,9 +38,6 @@ func TestClamdVersion(t *testing.T) {
 
 			if version.Version == "" {
 				t.Fatalf("version.Version is empty")
-			}
-			if version.Date == "" {
-				t.Fatalf("version.Date is empty")
 			}
 		})
 	}

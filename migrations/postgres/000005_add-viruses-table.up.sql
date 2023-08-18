@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS storage.virus (
-  id UUID PRIMARY KEY,
+  id uuid DEFAULT public.gen_random_uuid () NOT NULL PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   file_id UUID NOT NULL REFERENCES storage.files(id),

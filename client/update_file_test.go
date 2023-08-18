@@ -115,10 +115,10 @@ func TestUpdateFile(t *testing.T) {
 			expectedErr: &client.APIResponseError{
 				StatusCode: http.StatusForbidden,
 				ErrorResponse: &controller.ErrorResponse{
-					Message: `virus found: Win.Test.EICAR_HDB-1`,
+					Message: `virus found: Eicar-Signature`,
 					Data: map[string]any{
 						"file":  "eicarcom2.zip",
-						"virus": "Win.Test.EICAR_HDB-1",
+						"virus": "Eicar-Signature",
 					},
 				},
 			},

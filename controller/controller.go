@@ -63,6 +63,12 @@ type MetadataStorage interface {
 	SetIsUploaded(ctx context.Context, fileID string, isUploaded bool, headers http.Header) *APIError
 	DeleteFileByID(ctx context.Context, fileID string, headers http.Header) *APIError
 	ListFiles(ctx context.Context, headers http.Header) ([]FileSummary, *APIError)
+	InsertVirus(
+		ctx context.Context,
+		fileID, filename, virus string,
+		userSession map[string]any,
+		headers http.Header,
+	) *APIError
 }
 
 //go:generate mockgen --build_flags=--mod=mod -destination mock/content_storage.go -package mock . ContentStorage

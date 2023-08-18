@@ -2,26 +2,22 @@ package clamd
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 )
 
 type Version struct {
 	Version string
-	Date    string
 }
 
 func parseVersion(response []byte) (Version, error) {
-	// parse ClamAV 1.1.0/26984/Sat Jul 29 07:26:39 2023
-	regex := regexp.MustCompile(`^ClamAV (.*\/.*)\/(.*)\n$`)
-	match := regex.FindStringSubmatch(string(response))
-	if len(match) == 3 { //nolint:gomnd
-		return Version{
-			Version: match[1],
-			Date:    match[2],
-		}, nil
+	parts := strings.Split(string(response), " ")
+	if len(parts) != 2 { //nolint:gomnd
+		return Version{}, fmt.Errorf("failed to parse version: %s", string(response)) //nolint:goerr113
 	}
 
-	return Version{}, fmt.Errorf("failed to parse version: %s", string(response)) //nolint:goerr113
+	return Version{
+		Version: parts[1],
+	}, nil
 }
 
 func (c *Client) Version() (Version, error) {
