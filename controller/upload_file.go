@@ -62,20 +62,26 @@ func (ctrl *Controller) getMultipartFile(file fileData) (multipart.File, string,
 	return fileContent, mt.String(), nil
 }
 
-func (ctrl *Controller) reportVirus(
+func (ctrl *Controller) scanAndReportVirus(
 	ctx context.Context,
+	fileContent multipart.File,
 	fileID string,
 	filename string,
-	virus string,
 	headers http.Header,
 ) *APIError {
-	userSession := GetUserSession(headers)
+	if err := ctrl.av.ScanReader(fileContent); err != nil {
+		err.SetData("file", filename)
 
-	if err := ctrl.metadataStorage.InsertVirus(
-		ctx, fileID, filename, virus, userSession,
-		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
-	); err != nil {
-		err := err.ExtendError("problem inserting virus into database")
+		userSession := GetUserSession(headers)
+
+		if err := ctrl.metadataStorage.InsertVirus(
+			ctx, fileID, filename, err.GetDataString("virus"), userSession,
+			http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
+		); err != nil {
+			err := err.ExtendError("problem inserting virus into database")
+			return err
+		}
+
 		return err
 	}
 
@@ -104,15 +110,9 @@ func (ctrl *Controller) processFile(
 		return FileMetadata{}, err
 	}
 
-	if err := ctrl.av.ScanReader(fileContent); err != nil {
-		err.SetData("file", file.Name)
-
-		if err := ctrl.reportVirus(
-			ctx, file.ID, file.Name, err.GetDataString("virus"), headers,
-		); err != nil {
-			return FileMetadata{}, err
-		}
-
+	if err := ctrl.scanAndReportVirus(
+		ctx, fileContent, file.ID, file.Name, headers,
+	); err != nil {
 		return FileMetadata{}, err
 	}
 

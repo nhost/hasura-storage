@@ -97,15 +97,9 @@ func (ctrl *Controller) updateFile(ctx *gin.Context) (FileMetadata, *APIError) {
 	}
 	defer fileContent.Close()
 
-	if err := ctrl.av.ScanReader(fileContent); err != nil {
-		err.SetData("file", file.Name)
-
-		if err := ctrl.reportVirus(
-			ctx, file.ID, file.Name, err.GetDataString("virus"), ctx.Request.Header,
-		); err != nil {
-			return FileMetadata{}, err
-		}
-
+	if err := ctrl.scanAndReportVirus(
+		ctx, fileContent, file.ID, file.Name, ctx.Request.Header,
+	); err != nil {
 		return FileMetadata{}, err
 	}
 
