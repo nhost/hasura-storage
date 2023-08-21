@@ -192,6 +192,8 @@
               clamav
               fakeNss
               dockerTools.caCertificates
+            ] ++ lib.optionals stdenv.isLinux [
+              busybox
             ];
             config = {
               Env = [
