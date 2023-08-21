@@ -62,7 +62,7 @@ services:
       S3_ROOT_FOLDER: "f215cf48-7458-4596-9aa5-2159fc6a3caf"
       POSTGRES_MIGRATIONS: 1
       POSTGRES_MIGRATIONS_SOURCE: ${HASURA_GRAPHQL_DATABASE_URL:-postgres://postgres:hejsan@postgres:5432/postgres?sslmode=disable}
-      USE_CLAMAV_SERVER: tcp://clamd:3310
+      CLAMAV_SERVER: tcp://clamd:3310
     command: serve
 
   clamd:

@@ -41,7 +41,7 @@ const (
 	fastlyKeyFlag                = "fastly-key"
 	corsAllowOriginsFlag         = "cors-allow-origins"
 	corsAllowCredentialsFlag     = "cors-allow-credentials" //nolint: gosec
-	useClamavServerFlag          = "use-clamav-server"
+	clamavServerFlag             = "clamav-server"
 )
 
 func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
@@ -92,7 +92,7 @@ func getGin(
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	av, err := getAv(viper.GetString(useClamavServerFlag))
+	av, err := getAv(viper.GetString(clamavServerFlag))
 	if err != nil {
 		return nil, fmt.Errorf("problem trying to get av: %w", err)
 	}
@@ -238,7 +238,7 @@ func init() {
 		addStringArrayFlag(serveCmd.Flags(), corsAllowOriginsFlag, []string{"*"}, "CORS allow origins")
 		addBoolFlag(serveCmd.Flags(), corsAllowCredentialsFlag, false, "CORS allow credentials")
 		addStringFlag(
-			serveCmd.Flags(), useClamavServerFlag, "", "Use ClamAV to scan files. Example: tcp://clamavd:3310",
+			serveCmd.Flags(), clamavServerFlag, "", "If set, use ClamAV to scan files. Example: tcp://clamavd:3310",
 		)
 	}
 }
@@ -274,7 +274,7 @@ var serveCmd = &cobra.Command{
 				s3RegionFlag:           viper.GetString(s3RegionFlag),
 				s3BucketFlag:           viper.GetString(s3BucketFlag),
 				s3RootFolderFlag:       viper.GetString(s3RootFolderFlag),
-				useClamavServerFlag:    viper.GetString(useClamavServerFlag),
+				clamavServerFlag:       viper.GetString(clamavServerFlag),
 			},
 		).Debug("parameters")
 
