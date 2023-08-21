@@ -187,7 +187,6 @@
                 text = pkgs.lib.fileContents ./build/clamav/clamd.conf.tmpl;
                 destination = "/etc/clamav/clamd.conf.tmpl";
               })
-              busybox
               envsubst
               clamav
               fakeNss
