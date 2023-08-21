@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -euo pipefail
 
 mkdir -p /clamav
 
