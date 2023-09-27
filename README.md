@@ -59,7 +59,6 @@ Integration with [clamav](https://www.clamav.net) antivirus relies on an externa
 ``` mermaid
 sequenceDiagram
     actor User
-    autonumber
     User ->> storage: upload file
     storage ->>clamav: check for virus
     alt virus found
