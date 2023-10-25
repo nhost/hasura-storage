@@ -32,6 +32,10 @@ final: prev: rec {
     });
   };
 
+  govulncheck = prev.govulncheck.override rec {
+    buildGoModule = args: prev.buildGoModule.override { go = go; } (args // rec { });
+  };
+
   gqlgenc = prev.gqlgenc.override rec {
     buildGoModule = args: prev.buildGoModule.override { go = go; } (args // rec {
       version = "0.14.0";
