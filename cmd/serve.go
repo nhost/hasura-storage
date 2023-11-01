@@ -298,7 +298,7 @@ var serveCmd = &cobra.Command{
 			viper.GetBool(hasuraMetadataFlag),
 			viper.GetString(hasuraEndpointFlag),
 			viper.GetString(hasuraAdminSecretFlag),
-			viper.getString(hasuraDbNameFlag),
+			viper.GetString(hasuraDbNameFlag),
 			logger,
 		)
 
