@@ -137,12 +137,22 @@ func getMetadataStorage(endpoint string) *metadata.Hasura {
 func getContentStorage(
 	s3Endpoint, region, s3AccessKey, s3SecretKey, bucket, rootFolder string, logger *logrus.Logger,
 ) *storage.S3 {
-	config := &aws.Config{ //nolint: exhaustivestruct
-		Credentials:      credentials.NewStaticCredentials(s3AccessKey, s3SecretKey, ""),
-		Endpoint:         aws.String(s3Endpoint),
-		Region:           aws.String(region),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(true),
+	var config *aws.Config
+	if s3AccessKey != "" && s3SecretKey != "" {
+		config = &aws.Config{ //nolint: exhaustivestruct
+			Credentials:      credentials.NewStaticCredentials(s3AccessKey, s3SecretKey, ""),
+			Endpoint:         aws.String(s3Endpoint),
+			Region:           aws.String(region),
+			DisableSSL:       aws.Bool(true),
+			S3ForcePathStyle: aws.Bool(true),
+		}
+	} else {
+		config = &aws.Config{ //nolint: exhaustivestruct
+			Endpoint:         aws.String(s3Endpoint),
+			Region:           aws.String(region),
+			DisableSSL:       aws.Bool(true),
+			S3ForcePathStyle: aws.Bool(true),
+		}
 	}
 
 	st, err := storage.NewS3(config, bucket, rootFolder, s3Endpoint, logger)
