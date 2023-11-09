@@ -43,37 +43,28 @@ type S3 struct {
 	bucket     *string
 	rootFolder string
 	url        string
-	ctx        context.Context
 	logger     *logrus.Logger
 }
 
 func NewS3(
-	cfg aws.Config, bucket string, rootFolder string, url string, disableHTTPS bool, logger *logrus.Logger, ctx context.Context,
+	client *s3.Client, bucket string, rootFolder string, url string, disableHTTPS bool, logger *logrus.Logger,
 ) *S3 {
 	return &S3{
-		client: s3.NewFromConfig(
-			cfg,
-			func(o *s3.Options) {
-				o.BaseEndpoint = aws.String(url)
-				o.UsePathStyle = true
-				o.EndpointOptions.DisableHTTPS = disableHTTPS
-			},
-		),
+		client:     client,
 		bucket:     aws.String(bucket),
-		ctx:        ctx,
 		rootFolder: rootFolder,
 		url:        url,
 		logger:     logger,
 	}
 }
 
-func (s *S3) PutFile(content io.ReadSeeker, filepath string, contentType string) (string, *controller.APIError) {
+func (s *S3) PutFile(ctx context.Context, content io.ReadSeeker, filepath string, contentType string) (string, *controller.APIError) {
 	// let's make sure we are in the beginning of the content
 	if _, err := content.Seek(0, 0); err != nil {
 		return "", controller.InternalServerError(fmt.Errorf("problem going to the beginning of the content: %w", err))
 	}
 
-	object, err := s.client.PutObject(s.ctx,
+	object, err := s.client.PutObject(ctx,
 		&s3.PutObjectInput{
 			Body:        content,
 			Bucket:      s.bucket,
@@ -88,8 +79,8 @@ func (s *S3) PutFile(content io.ReadSeeker, filepath string, contentType string)
 	return *object.ETag, nil
 }
 
-func (s *S3) GetFile(filepath string, headers http.Header) (*controller.File, *controller.APIError) {
-	object, err := s.client.GetObject(s.ctx,
+func (s *S3) GetFile(ctx context.Context, filepath string, headers http.Header) (*controller.File, *controller.APIError) {
+	object, err := s.client.GetObject(ctx,
 		&s3.GetObjectInput{
 			Bucket: s.bucket,
 			Key:    aws.String(s.rootFolder + "/" + filepath),
@@ -125,9 +116,9 @@ func (s *S3) GetFile(filepath string, headers http.Header) (*controller.File, *c
 	}, nil
 }
 
-func (s *S3) CreatePresignedURL(filepath string, expire time.Duration) (string, *controller.APIError) {
+func (s *S3) CreatePresignedURL(ctx context.Context, filepath string, expire time.Duration) (string, *controller.APIError) {
 	presignClient := s3.NewPresignClient(s.client)
-	request, err := presignClient.PresignGetObject(s.ctx,
+	request, err := presignClient.PresignGetObject(ctx,
 		&s3.GetObjectInput{ //nolint:exhaustivestruct
 			Bucket: s.bucket,
 			Key:    aws.String(s.rootFolder + "/" + filepath),
@@ -200,8 +191,8 @@ func (s *S3) GetFileWithPresignedURL(
 	}, nil
 }
 
-func (s *S3) DeleteFile(filepath string) *controller.APIError {
-	_, err := s.client.DeleteObject(s.ctx,
+func (s *S3) DeleteFile(ctx context.Context, filepath string) *controller.APIError {
+	_, err := s.client.DeleteObject(ctx,
 		&s3.DeleteObjectInput{
 			Bucket: s.bucket,
 			Key:    aws.String(s.rootFolder + "/" + filepath),
@@ -213,8 +204,8 @@ func (s *S3) DeleteFile(filepath string) *controller.APIError {
 	return nil
 }
 
-func (s *S3) ListFiles() ([]string, *controller.APIError) {
-	objects, err := s.client.ListObjects(s.ctx,
+func (s *S3) ListFiles(ctx context.Context) ([]string, *controller.APIError) {
+	objects, err := s.client.ListObjects(ctx,
 		&s3.ListObjectsInput{
 			Bucket: s.bucket,
 			Prefix: aws.String(s.rootFolder + "/"),

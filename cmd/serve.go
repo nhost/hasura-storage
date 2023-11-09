@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/image"
@@ -156,7 +157,15 @@ func getContentStorage(
 	if err != nil {
 		logger.Error(err)
 	}
-	st := storage.NewS3(cfg, bucket, rootFolder, s3Endpoint, disableHTTPS, logger, ctx)
+	client := s3.NewFromConfig(
+		cfg,
+		func(o *s3.Options) {
+			o.BaseEndpoint = aws.String(s3Endpoint)
+			o.UsePathStyle = true
+			o.EndpointOptions.DisableHTTPS = disableHTTPS
+		},
+	)
+	st := storage.NewS3(client, bucket, rootFolder, s3Endpoint, disableHTTPS, logger)
 
 	return st
 }

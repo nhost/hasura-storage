@@ -22,18 +22,6 @@ import (
 )
 
 func getS3() *storage.S3 {
-	// config := &aws.Config{ //nolint: exhaustivestruct
-	// 	Credentials: credentials.NewStaticCredentials(
-	// 		os.Getenv("TEST_S3_ACCESS_KEY"),
-	// 		os.Getenv("TEST_S3_SECRET_KEY"),
-	// 		"",
-	// 	),
-	// 	Endpoint:         aws.String("http://localhost:9000"),
-	// 	Region:           aws.String("eu-central-1"),
-	// 	DisableSSL:       aws.Bool(true),
-	// 	S3ForcePathStyle: aws.Bool(true),
-	// }
-
 	logger := logrus.New()
 	ctx := context.Background()
 	config, err := config.LoadDefaultConfig(ctx,
