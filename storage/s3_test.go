@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nhost/hasura-storage/controller"
@@ -22,25 +22,36 @@ import (
 )
 
 func getS3() *storage.S3 {
-	config := &aws.Config{ //nolint: exhaustivestruct
-		Credentials: credentials.NewStaticCredentials(
-			os.Getenv("TEST_S3_ACCESS_KEY"),
-			os.Getenv("TEST_S3_SECRET_KEY"),
-			"",
-		),
-		Endpoint:         aws.String("http://localhost:9000"),
-		Region:           aws.String("eu-central-1"),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(true),
-	}
+	// config := &aws.Config{ //nolint: exhaustivestruct
+	// 	Credentials: credentials.NewStaticCredentials(
+	// 		os.Getenv("TEST_S3_ACCESS_KEY"),
+	// 		os.Getenv("TEST_S3_SECRET_KEY"),
+	// 		"",
+	// 	),
+	// 	Endpoint:         aws.String("http://localhost:9000"),
+	// 	Region:           aws.String("eu-central-1"),
+	// 	DisableSSL:       aws.Bool(true),
+	// 	S3ForcePathStyle: aws.Bool(true),
+	// }
 
 	logger := logrus.New()
+	ctx := context.Background()
+	config, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion("eu-central-1"),
+		config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(
+				os.Getenv("TEST_S3_ACCESS_KEY"),
+				os.Getenv("TEST_S3_SECRET_KEY"),
+				"",
+			),
+		),
+	)
 
-	url := "http://localhost:9000"
-	st, err := storage.NewS3(config, "default", "f215cf48-7458-4596-9aa5-2159fc6a3caf", url, logger)
 	if err != nil {
-		panic(err)
+		logger.Error(err)
 	}
+	url := "http://localhost:9000"
+	st := storage.NewS3(config, "default", "f215cf48-7458-4596-9aa5-2159fc6a3caf", url, true, logger, ctx)
 	return st
 }
 
