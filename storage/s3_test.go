@@ -40,7 +40,12 @@ func getS3() *storage.S3 {
 		logger.Error(err)
 	}
 	url := "http://localhost:9000"
-	client := s3.NewFromConfig(config, func(o *s3.Options) { o.BaseEndpoint = aws.String(url) })
+	client := s3.NewFromConfig(config,
+		func(o *s3.Options) {
+			o.BaseEndpoint = aws.String(url)
+			o.UsePathStyle = true
+			o.EndpointOptions.DisableHTTPS = true
+		})
 	st := storage.NewS3(client, "default", "f215cf48-7458-4596-9aa5-2159fc6a3caf", url, true, logger)
 	return st
 }
