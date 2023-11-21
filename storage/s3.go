@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -59,6 +60,11 @@ func NewS3(
 }
 
 func (s *S3) PutFile(ctx context.Context, content io.ReadSeeker, filepath string, contentType string) (string, *controller.APIError) {
+	key, err := url.JoinPath(s.rootFolder, filepath)
+	if err != nil {
+		return "", controller.InternalServerError(fmt.Errorf("problem joining path: %w", err))
+	}
+
 	// let's make sure we are in the beginning of the content
 	if _, err := content.Seek(0, 0); err != nil {
 		return "", controller.InternalServerError(fmt.Errorf("problem going to the beginning of the content: %w", err))
@@ -68,7 +74,7 @@ func (s *S3) PutFile(ctx context.Context, content io.ReadSeeker, filepath string
 		&s3.PutObjectInput{
 			Body:        content,
 			Bucket:      s.bucket,
-			Key:         aws.String(s.rootFolder + "/" + filepath),
+			Key:         aws.String(key),
 			ContentType: aws.String(contentType),
 		},
 	)
@@ -80,10 +86,15 @@ func (s *S3) PutFile(ctx context.Context, content io.ReadSeeker, filepath string
 }
 
 func (s *S3) GetFile(ctx context.Context, filepath string, headers http.Header) (*controller.File, *controller.APIError) {
+	key, err := url.JoinPath(s.rootFolder, filepath)
+	if err != nil {
+		return nil, controller.InternalServerError(fmt.Errorf("problem joining path: %w", err))
+	}
+
 	object, err := s.client.GetObject(ctx,
 		&s3.GetObjectInput{
 			Bucket: s.bucket,
-			Key:    aws.String(s.rootFolder + "/" + filepath),
+			Key:    aws.String(key),
 			// IfMatch:           new(string),
 			// IfModifiedSince:   &time.Time{},
 			// IfNoneMatch:       new(string),
@@ -117,11 +128,16 @@ func (s *S3) GetFile(ctx context.Context, filepath string, headers http.Header) 
 }
 
 func (s *S3) CreatePresignedURL(ctx context.Context, filepath string, expire time.Duration) (string, *controller.APIError) {
+	key, err := url.JoinPath(s.rootFolder, filepath)
+	if err != nil {
+		return "", controller.InternalServerError(fmt.Errorf("problem joining path: %w", err))
+	}
+
 	presignClient := s3.NewPresignClient(s.client)
 	request, err := presignClient.PresignGetObject(ctx,
 		&s3.GetObjectInput{ //nolint:exhaustivestruct
 			Bucket: s.bucket,
-			Key:    aws.String(s.rootFolder + "/" + filepath),
+			Key:    aws.String(key),
 		},
 		func(po *s3.PresignOptions) {
 			po.Expires = expire
@@ -192,12 +208,16 @@ func (s *S3) GetFileWithPresignedURL(
 }
 
 func (s *S3) DeleteFile(ctx context.Context, filepath string) *controller.APIError {
-	_, err := s.client.DeleteObject(ctx,
+	key, err := url.JoinPath(s.rootFolder, filepath)
+	if err != nil {
+		return controller.InternalServerError(fmt.Errorf("problem joining path: %w", err))
+	}
+
+	if _, err := s.client.DeleteObject(ctx,
 		&s3.DeleteObjectInput{
 			Bucket: s.bucket,
-			Key:    aws.String(s.rootFolder + "/" + filepath),
-		})
-	if err != nil {
+			Key:    aws.String(key),
+		}); err != nil {
 		return controller.InternalServerError(fmt.Errorf("problem deleting file in s3: %w", err))
 	}
 

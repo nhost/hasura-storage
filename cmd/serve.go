@@ -139,11 +139,11 @@ func getMetadataStorage(endpoint string) *metadata.Hasura {
 }
 
 func getContentStorage(
+	ctx context.Context,
 	s3Endpoint, region, s3AccessKey, s3SecretKey, bucket, rootFolder string, disableHTTPS bool, logger *logrus.Logger,
 ) *storage.S3 {
 	var cfg aws.Config
 	var err error
-	ctx := context.Background()
 	if s3AccessKey != "" && s3SecretKey != "" {
 		logger.Info("Using static aws credentials")
 		cfg, err = config.LoadDefaultConfig(ctx,
@@ -155,7 +155,7 @@ func getContentStorage(
 		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	}
 	if err != nil {
-		logger.Error(err)
+		panic(err)
 	}
 	client := s3.NewFromConfig(
 		cfg,
@@ -266,7 +266,7 @@ func init() {
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Starts hasura-storage server",
-	Run: func(_ *cobra.Command, _ []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		logger := getLogger()
 
 		logger.Info("storage version ", controller.Version())
@@ -300,6 +300,7 @@ var serveCmd = &cobra.Command{
 		).Debug("parameters")
 
 		contentStorage := getContentStorage(
+			cmd.Context(),
 			viper.GetString(s3EndpointFlag),
 			viper.GetString(s3RegionFlag),
 			viper.GetString(s3AccessKeyFlag),
