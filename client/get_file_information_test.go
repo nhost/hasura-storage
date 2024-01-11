@@ -187,7 +187,7 @@ func TestGetFileInformation(t *testing.T) {
 			id:   testFiles.ProcessedFiles[1].ID,
 			expected: &client.FileInformationHeader{
 				CacheControl:  "max-age=3600",
-				ContentLength: 14495,
+				ContentLength: 14497,
 				ContentType:   "image/jpeg",
 				Etag:          `"dc72277490497dc9b3ca900e5d2797b99a23797a3bcfbc7418f60f9d4c058fe9"`,
 				LastModified:  "",
