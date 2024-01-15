@@ -54,8 +54,7 @@
           ];
         };
 
-        nixops-go = nixops.lib.go { inherit pkgs; };
-        nixops-nix = nixops.lib.nix { inherit pkgs; };
+        nixops-lib = nixops.lib { inherit pkgs; };
 
         buildInputs = with pkgs; [
           vips
@@ -85,9 +84,9 @@
       in
       {
         checks = {
-          nixpkgs-fmt = nixops-nix.check { src = nix-src; };
+          nixpkgs-fmt = nixops-lib.nix.check { src = nix-src; };
 
-          go-checks = nixops-go.check {
+          go-checks = nixops-lib.go.check {
             inherit src ldflags tags buildInputs nativeBuildInputs checkDeps;
             preCheck = ''
               export GIN_MODE=release
@@ -99,7 +98,7 @@
         };
 
         devShells = flake-utils.lib.flattenTree rec {
-          default = nixops-go.devShell {
+          default = nixops-lib.go.devShell {
             buildInputs = with pkgs; [
               go-migrate
               ccls
@@ -108,11 +107,11 @@
         };
 
         packages = flake-utils.lib.flattenTree rec {
-          hasuraStorage = nixops-go.package {
+          hasuraStorage = nixops-lib.go.package {
             inherit name src version ldflags buildInputs nativeBuildInputs;
           };
 
-          dockerImage = nixops-go.docker-image {
+          dockerImage = nixops-lib.go.docker-image {
             inherit name version buildInputs;
 
             package = hasuraStorage;

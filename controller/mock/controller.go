@@ -5,6 +5,7 @@
 //
 //	mockgen -destination mock/controller.go -package mock -source=controller.go MetadataStorage
 //
+
 // Package mock is a generated GoMock package.
 package mock
 
