@@ -12,7 +12,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         localOverlay = import ./nix/overlay.nix;
-        overlays = [ nixops.overlays.default ];
+        overlays = [
+          localOverlay
+          nixops.overlays.default
+        ];
         pkgs = import nixpkgs {
           inherit system overlays;
         };
