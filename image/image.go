@@ -44,6 +44,7 @@ type Transformer struct {
 
 func NewTransformer() *Transformer {
 	if atomic.CompareAndSwapInt32(&initialized, 0, 1) {
+		vips.LoggingSettings(nil, vips.LogLevelWarning)
 		vips.Startup(nil)
 	}
 
