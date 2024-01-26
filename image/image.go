@@ -67,7 +67,54 @@ func (t *Transformer) Shutdown() {
 	vips.Shutdown()
 }
 
-func (t *Transformer) Run(orig io.Reader, length uint64, modified io.Writer, opts Options) error {
+func getExportParams(opts Options) *vips.ExportParams {
+	var ep *vips.ExportParams
+	switch opts.Format {
+	case ImageTypeJPEG:
+		ep = vips.NewDefaultJPEGExportParams()
+	case ImageTypePNG:
+		ep = vips.NewDefaultPNGExportParams()
+	case ImageTypeWEBP:
+		ep = vips.NewDefaultWEBPExportParams()
+	}
+	ep.Quality = opts.Quality
+
+	return ep
+}
+
+func processImage(image *vips.ImageRef, opts Options) error {
+	if opts.Width > 0 || opts.Height > 0 {
+		width := opts.Width
+		height := opts.Height
+
+		if width == 0 {
+			width = int((float64(height) / float64(image.Height())) * float64(image.Width()))
+		}
+
+		if height == 0 {
+			height = int((float64(width) / float64(image.Width())) * float64(image.Height()))
+		}
+
+		if err := image.Thumbnail(width, height, vips.InterestingCentre); err != nil {
+			return fmt.Errorf("failed to thumbnail: %w", err)
+		}
+	}
+
+	if opts.Blur > 0 {
+		if err := image.GaussianBlur(opts.Blur); err != nil {
+			return fmt.Errorf("failed to blur: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (t *Transformer) Run(
+	orig io.Reader,
+	length uint64,
+	modified io.Writer,
+	opts Options,
+) error {
 	// this is to avoid processing too many images at the same time in order to save memory
 	<-t.workers
 	defer func() { t.workers <- struct{}{} }()
@@ -88,36 +135,17 @@ func (t *Transformer) Run(orig io.Reader, length uint64, modified io.Writer, opt
 		panic(err)
 	}
 
-	image, err := vips.LoadThumbnailFromBuffer(
-		buf.Bytes(),
-		opts.Width,
-		opts.Height,
-		vips.InterestingAttention,
-		vips.SizeBoth,
-		vips.NewImportParams(),
-	)
+	image, err := vips.NewImageFromBuffer(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("failed to resize: %w", err)
+		return fmt.Errorf("failed to load image: %w", err)
 	}
 	defer image.Close()
 
-	if opts.Blur > 0 {
-		if err = image.GaussianBlur(opts.Blur); err != nil {
-			return fmt.Errorf("failed to blur: %w", err)
-		}
+	if err := processImage(image, opts); err != nil {
+		return err
 	}
 
-	var ep *vips.ExportParams
-	switch opts.Format {
-	case ImageTypeJPEG:
-		ep = vips.NewDefaultJPEGExportParams()
-	case ImageTypePNG:
-		ep = vips.NewDefaultPNGExportParams()
-	case ImageTypeWEBP:
-		ep = vips.NewDefaultWEBPExportParams()
-	}
-	ep.Quality = opts.Quality
-	b, _, err := image.Export(ep)
+	b, _, err := image.Export(getExportParams(opts))
 	if err != nil {
 		return fmt.Errorf("failed to export: %w", err)
 	}
