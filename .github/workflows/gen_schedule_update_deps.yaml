@@ -54,7 +54,7 @@ jobs:
         "
 
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
+      uses: peter-evans/create-pull-request@v6
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: Update dependencies
@@ -65,7 +65,7 @@ jobs:
         delete-branch: true
         title: '[Scheduled] Update dependencies'
         body: |
-          Dependencies for nix flakes and golang updated
+          Dependencies updated
 
           Note - If you see this PR and the checks haven't run, close and reopen the PR. See https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
         labels: |
