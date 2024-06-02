@@ -1,6 +1,6 @@
 module github.com/nhost/hasura-storage
 
-go 1.21
+go 1.22
 
 require (
 	github.com/Yamashou/gqlgenc v0.23.1
