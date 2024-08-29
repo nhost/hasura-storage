@@ -73,7 +73,7 @@
         ];
 
         name = "hasura-storage";
-        version = nixpkgs.lib.fileContents ./VERSION;
+        version = "0.0.0-dev";
         module = "github.com/nhost/hasura-storage";
         tags = [ "integration" ];
 

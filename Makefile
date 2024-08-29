@@ -40,7 +40,7 @@ help: ## Show this help.
 
 .PHONY: get-version
 get-version:  ## Return version
-	@echo $(VERSION) > VERSION
+	@sed -i "s/version\s*=\s*\"[^\"]*\"/version = \"${VERSION}\"/" flake.nix
 	@echo $(VERSION)
 
 
