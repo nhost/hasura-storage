@@ -82,7 +82,7 @@ build-dry-run:  ## Run nix flake check
 .PHONY: build-docker-image
 build-docker-image:  ## Build docker container for native architecture
 	./build/nix-docker-image.sh
-	docker tag hasura-auth:$(VERSION) nhost/hasura-auth:0.0.0-dev
+	docker tag hasura-storage:$(VERSION) nhost/hasura-storage:0.0.0-dev
 
 
 .PHONY: build-docker-image-clamav-dev
