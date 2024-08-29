@@ -1,7 +1,28 @@
+ifdef VER
+VERSION=$(shell echo $(VER) | sed -e 's/^v//g' -e 's/\//_/g')
+else
+VERSION=$(shell grep -oP 'version\s*=\s*"\K[^"]+' flake.nix)
+endif
+
+ifeq ($(shell uname -m),x86_64)
+  ARCH?=x86_64
+else ifeq ($(shell uname -m),arm64)
+  ARCH?=aarch64
+else ifeq ($(shell uname -m),aarch64)
+  ARCH?=aarch64
+else
+  ARCH?=FIXME-$(shell uname -m)
+endif
+
+ifeq ($(shell uname -o),Darwin)
+  OS?=darwin
+else
+  OS?=linux
+endif
+
 DEV_ENV_PATH=build/dev
 DOCKER_DEV_ENV_PATH=$(DEV_ENV_PATH)/docker
 GITHUB_REF_NAME?="0.0.0-dev"
-VERSION=$(shell echo $(GITHUB_REF_NAME) | sed -e 's/^v//g' -e 's/\//_/g')
 
 
 .PHONY: help
@@ -23,13 +44,16 @@ get-version:  ## Return version
 	@echo $(VERSION)
 
 
-.PHONY: tests
-tests:  dev-env-up check  ## Spin environment and run nix flake check
-
-
 .PHONY: check
 check:   ## Run nix flake check
 	./build/nix.sh flake check --print-build-logs
+
+
+.PHONY: check-dry-run
+check-dry-run:  ## Run nix flake check
+	@nix path-info \
+		--derivation \
+		.\#checks.$(ARCH)-$(OS).go-checks
 
 
 .PHONY: integration-tests
