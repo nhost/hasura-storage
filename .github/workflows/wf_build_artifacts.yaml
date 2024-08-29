@@ -83,7 +83,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.NAME }}-artifact-${{ matrix.os }}-${{ steps.vars.outputs.VERSION }}
-        path: result/bin/hasura-auth
+        path: result/bin/hasura-storage
         retention-days: 7
 
     - name: "Build docker image"

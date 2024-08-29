@@ -67,28 +67,36 @@ integration-tests: ## Run go test with integration flags
 
 .PHONY: build
 build:  ## Build application and places the binary under ./result/bin
-	@echo $(VERSION) > VERSION
 	./build/nix.sh build --print-build-logs
+
+
+.PHONY: build-dry-run
+build-dry-run:  ## Run nix flake check
+	nix build \
+		--dry-run \
+		--json \
+		--print-build-logs \
+		.\#packages.$(ARCH)-$(OS).default
 
 
 .PHONY: build-docker-image
 build-docker-image:  ## Build docker container for native architecture
-	@echo $(VERSION) > VERSION
 	./build/nix-docker-image.sh
-	docker tag hasura-storage:$(VERSION) hasura-storage:dev
+	docker tag hasura-auth:$(VERSION) nhost/hasura-auth:0.0.0-dev
+
 
 .PHONY: build-docker-image-clamav-dev
 build-docker-image-clamav-dev:  ## Build dev docker container for clamav
 	@echo $(VERSION) > VERSION
-	./build/nix-docker-image.sh clamavDockerImage
+	./build/nix-docker-image.sh clamav-docker-image
 	docker tag clamav:$(VERSION) clamav:dev
 
 .PHONY: build-docker-image-clamav
 build-docker-image-clamav:  ## Build docker container for clamav
 	@echo $(VERSION) > VERSION
-	./build/nix-docker-image.sh clamavDockerImage aarch64-linux
+	./build/nix-docker-image.sh clamav-docker-image aarch64-linux
 	docker tag clamav:$(VERSION) nhost/clamav:$(VERSION)-aarch64
-	./build/nix-docker-image.sh clamavDockerImage x86_64-linux
+	./build/nix-docker-image.sh clamav-docker-image x86_64-linux
 	docker tag clamav:$(VERSION) nhost/clamav:$(VERSION)-x86_64
 	docker push nhost/clamav:$(VERSION)-aarch64
 	docker push nhost/clamav:$(VERSION)-x86_64
