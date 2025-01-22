@@ -37,6 +37,7 @@ const (
 	s3SecretKeyFlag              = "s3-secret-key" //nolint: gosec
 	s3RegionFlag                 = "s3-region"
 	s3BucketFlag                 = "s3-bucket"
+	s3UseSubdomainStyle          = "s3-use-subdomain-style"
 	s3RootFolderFlag             = "s3-root-folder"
 	s3DisableHTTPS               = "s3-disable-http"
 	postgresMigrationsFlag       = "postgres-migrations"
@@ -144,7 +145,7 @@ func getMetadataStorage(endpoint string) *metadata.Hasura {
 func getContentStorage(
 	ctx context.Context,
 	s3Endpoint, region, s3AccessKey, s3SecretKey, bucket, rootFolder string,
-	disableHTTPS bool,
+	disableHTTPS, useSubdomainStyle bool,
 	logger *logrus.Logger,
 ) *storage.S3 {
 	var cfg aws.Config
@@ -169,7 +170,7 @@ func getContentStorage(
 		cfg,
 		func(o *s3.Options) {
 			o.BaseEndpoint = aws.String(s3Endpoint)
-			o.UsePathStyle = true
+			o.UsePathStyle = !useSubdomainStyle
 			o.EndpointOptions.DisableHTTPS = disableHTTPS
 		},
 	)
@@ -249,6 +250,7 @@ func init() { //nolint:funlen
 			"",
 			"All buckets will be created inside this root",
 		)
+		addBoolFlag(serveCmd.Flags(), s3UseSubdomainStyle, false, "Use Subdomain style for S3 endpoint")
 	}
 
 	{
@@ -339,6 +341,7 @@ var serveCmd = &cobra.Command{
 			viper.GetString(s3BucketFlag),
 			viper.GetString(s3RootFolderFlag),
 			viper.GetBool(s3DisableHTTPS),
+			viper.GetBool(s3UseSubdomainStyle),
 			logger,
 		)
 
