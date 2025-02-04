@@ -27,15 +27,48 @@ const (
 )
 
 type Options struct {
-	Height  int
-	Width   int
-	Blur    float64
-	Quality int
-	Format  ImageType
+	Height         int
+	Width          int
+	Blur           float64
+	Quality        int
+	OriginalFormat ImageType
+	Format         ImageType
 }
 
 func (o Options) IsEmpty() bool {
-	return o.Height == 0 && o.Width == 0 && o.Blur == 0 && o.Quality == 0
+	return o.Height == 0 && o.Width == 0 && o.Blur == 0 && o.Quality == 0 && o.OriginalFormat == o.Format
+}
+
+func (o Options) FormatChanged() bool {
+	return o.OriginalFormat != o.Format
+}
+
+func (o Options) FormatMimeType() string {
+	switch o.Format {
+	case ImageTypeJPEG:
+		return "image/jpeg"
+	case ImageTypePNG:
+		return "image/png"
+	case ImageTypeWEBP:
+		return "image/webp"
+	case ImageTypeAVIF:
+		return "image/avif"
+	}
+	return ""
+}
+
+func (o Options) FileExtension() string {
+	switch o.Format {
+	case ImageTypeJPEG:
+		return "jpeg"
+	case ImageTypePNG:
+		return "png"
+	case ImageTypeWEBP:
+		return "webp"
+	case ImageTypeAVIF:
+		return "avif"
+	}
+	return ""
 }
 
 type Transformer struct {

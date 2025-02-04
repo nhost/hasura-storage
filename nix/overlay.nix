@@ -36,6 +36,7 @@ final: prev: rec {
       "-Dpoppler=disabled"
       "-Drsvg=disabled"
       "-Dpangocairo=disabled"
+      "-Dheif=enabled"
     ];
 
   });

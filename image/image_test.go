@@ -44,7 +44,7 @@ func TestManipulate(t *testing.T) {
 		{
 			name:     "png",
 			filename: "testdata/nhost.png",
-			sum:      "58dd9460342dba786d9f1029198213fcd881433f6feb553b933f38fcbfc0a5f2",
+			sum:      "d538212aa74ad1d17261bc2126e60964e6d2dc1c7898ea3b9f9bd3b5bc94b380",
 			size:     68307,
 			options:  image.Options{Width: 300, Height: 100, Blur: 2, Format: image.ImageTypePNG},
 		},
@@ -84,10 +84,10 @@ func TestManipulate(t *testing.T) {
 			defer orig.Close()
 
 			hasher := sha256.New()
-			f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
-			defer f.Close()
-			if err := transformer.Run(orig, tc.size, f, tc.options); err != nil {
-				// if err := transformer.Run(orig, tc.size, hasher, tc.options); err != nil {
+			// f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
+			// defer f.Close()
+			// if err := transformer.Run(orig, tc.size, f, tc.options); err != nil {
+			if err := transformer.Run(orig, tc.size, hasher, tc.options); err != nil {
 				t.Fatal(err)
 			}
 
