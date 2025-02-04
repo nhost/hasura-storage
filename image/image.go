@@ -36,7 +36,8 @@ type Options struct {
 }
 
 func (o Options) IsEmpty() bool {
-	return o.Height == 0 && o.Width == 0 && o.Blur == 0 && o.Quality == 0 && o.OriginalFormat == o.Format
+	return o.Height == 0 && o.Width == 0 && o.Blur == 0 && o.Quality == 0 &&
+		o.OriginalFormat == o.Format
 }
 
 func (o Options) FormatChanged() bool {
