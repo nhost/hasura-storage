@@ -12,6 +12,7 @@ final: prev: rec {
       final.pango
       final.libarchive
       final.libhwy
+      final.libheif
     ];
     mesonFlags = [
       "-Dgtk_doc=false"
@@ -31,7 +32,6 @@ final: prev: rec {
       "-Dlcms=disabled"
       "-Dopenexr=disabled"
       "-Dorc=disabled"
-      "-Dheif=disabled"
       "-Djpeg-xl=disabled"
       "-Dpoppler=disabled"
       "-Drsvg=disabled"

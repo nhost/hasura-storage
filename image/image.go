@@ -23,6 +23,7 @@ const (
 	ImageTypeJPEG ImageType = iota
 	ImageTypePNG
 	ImageTypeWEBP
+	ImageTypeAVIF
 )
 
 type Options struct {
@@ -67,19 +68,29 @@ func (t *Transformer) Shutdown() {
 	vips.Shutdown()
 }
 
-func getExportParams(opts Options) *vips.ExportParams {
-	var ep *vips.ExportParams
+func export(image *vips.ImageRef, opts Options) ([]byte, error) {
+	var b []byte
+	var err error
+
 	switch opts.Format {
 	case ImageTypeJPEG:
-		ep = vips.NewDefaultJPEGExportParams()
+		ep := vips.NewJpegExportParams()
+		ep.Quality = opts.Quality
+		b, _, err = image.ExportJpeg(ep)
 	case ImageTypePNG:
-		ep = vips.NewDefaultPNGExportParams()
+		ep := vips.NewPngExportParams()
+		b, _, err = image.ExportPng(ep)
 	case ImageTypeWEBP:
-		ep = vips.NewDefaultWEBPExportParams()
+		ep := vips.NewWebpExportParams()
+		ep.Quality = opts.Quality
+		b, _, err = image.ExportWebp(ep)
+	case ImageTypeAVIF:
+		ep := vips.NewAvifExportParams()
+		ep.Quality = opts.Quality
+		b, _, err = image.ExportAvif(ep)
 	}
-	ep.Quality = opts.Quality
 
-	return ep
+	return b, err //nolint: wrapcheck
 }
 
 func processImage(image *vips.ImageRef, opts Options) error {
@@ -145,7 +156,7 @@ func (t *Transformer) Run(
 		return err
 	}
 
-	b, _, err := image.Export(getExportParams(opts))
+	b, err := export(image, opts)
 	if err != nil {
 		return fmt.Errorf("failed to export: %w", err)
 	}

@@ -62,6 +62,13 @@ func TestManipulate(t *testing.T) {
 			size:     33399,
 			options:  image.Options{Blur: 2, Format: image.ImageTypeJPEG},
 		},
+		{
+			name:     "webp to avif",
+			filename: "testdata/nhost.webp",
+			sum:      "720eebe382c26b5fb8abf8552f282317074a4c9f6467aa8a60bb93a20f55e063",
+			size:     17784,
+			options:  image.Options{Width: 300, Height: 100, Blur: 2, Format: image.ImageTypeAVIF},
+		},
 	}
 
 	transformer := image.NewTransformer()
@@ -77,8 +84,10 @@ func TestManipulate(t *testing.T) {
 			defer orig.Close()
 
 			hasher := sha256.New()
-			// f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
-			if err := transformer.Run(orig, tc.size, hasher, tc.options); err != nil {
+			f, _ := os.OpenFile("/tmp/nhost-test."+tc.name, os.O_WRONLY|os.O_CREATE, 0o644)
+			defer f.Close()
+			if err := transformer.Run(orig, tc.size, f, tc.options); err != nil {
+				// if err := transformer.Run(orig, tc.size, hasher, tc.options); err != nil {
 				t.Fatal(err)
 			}
 
