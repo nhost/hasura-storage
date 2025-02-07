@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,18 +94,20 @@ func chooseImageFormat( //nolint: cyclop
 		return originalFormat, image.ImageTypeAVIF, nil
 	case "auto":
 		acceptHeaders := ctx.Request.Header.Values("Accept")
-		switch {
-		case slices.Contains(acceptHeaders, "image/avif"):
-			return originalFormat, image.ImageTypeAVIF, nil
-		case slices.Contains(acceptHeaders, "image/webp"):
-			return originalFormat, image.ImageTypeWEBP, nil
-		case slices.Contains(acceptHeaders, "image/jpeg"):
-			return originalFormat, image.ImageTypeJPEG, nil
-		case slices.Contains(acceptHeaders, "image/png"):
-			return originalFormat, image.ImageTypePNG, nil
-		default:
-			return originalFormat, originalFormat, nil
+		for _, acceptHeader := range acceptHeaders {
+			acceptedTypes := strings.Split(acceptHeader, ",")
+			switch {
+			case slices.Contains(acceptedTypes, "image/avif"):
+				return originalFormat, image.ImageTypeAVIF, nil
+			case slices.Contains(acceptedTypes, "image/webp"):
+				return originalFormat, image.ImageTypeWEBP, nil
+			case slices.Contains(acceptedTypes, "image/jpeg"):
+				return originalFormat, image.ImageTypeJPEG, nil
+			case slices.Contains(acceptedTypes, "image/png"):
+				return originalFormat, image.ImageTypePNG, nil
+			}
 		}
+		return originalFormat, originalFormat, nil
 	default:
 		return 0, 0, BadDataError(
 			//nolint: goerr113
