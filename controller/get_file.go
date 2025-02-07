@@ -70,7 +70,7 @@ func chooseImageFormat( //nolint: cyclop
 	ctx *gin.Context,
 	mimeType string,
 ) (image.ImageType, image.ImageType, *APIError) {
-	format, found := ctx.GetQuery("format")
+	format, found := ctx.GetQuery("f")
 	if !found {
 		format = "same"
 	}
@@ -134,7 +134,7 @@ func getImageManipulationOptions(ctx *gin.Context, mimeType string) (image.Optio
 		return image.Options{}, err
 	}
 
-	_, outpufFormatFound := ctx.GetQuery("format")
+	_, outpufFormatFound := ctx.GetQuery("f")
 
 	opts := image.Options{
 		Height:  h,

@@ -239,7 +239,7 @@ paths:
           in: query
           schema:
             type: number
-        - name: format
+        - name: f
           description: Format to output the image in. Only applies to images. If `same` the image will be returned in the same format as it was uploaded. If `auto` the server will choose the first match in the Accept header from the client following the order `avif`, `webp`, `jpeg`, `png`.
           in: query
           schema:
