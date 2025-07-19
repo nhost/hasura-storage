@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 func (ctrl *Controller) deleteOrphans(ctx *gin.Context) ([]string, *APIError) {
@@ -38,4 +40,11 @@ func (ctrl *Controller) DeleteOrphans(ctx *gin.Context) {
 			files,
 		},
 	)
+}
+
+func (ctrl *Controller) DeleteOrphanedFiles(
+	ctx context.Context,
+	request api.DeleteOrphanedFilesRequestObject,
+) (api.DeleteOrphanedFilesResponseObject, error) {
+	return nil, nil
 }

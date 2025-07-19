@@ -4,13 +4,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/controller/mock"
 	"github.com/nhost/hasura-storage/image"
 	"github.com/sirupsen/logrus"
 	gomock "go.uber.org/mock/gomock"
 )
+
+func ptr[T any](v T) *T {
+	return &v
+}
 
 func getFileTestCases() []struct {
 	name           string
@@ -107,17 +113,17 @@ func TestGetFileInfo(t *testing.T) {
 
 			metadataStorage.EXPECT().GetFileByID(
 				gomock.Any(), "55af1e60-0f28-454e-885e-ea6aab2bb288", gomock.Any(),
-			).Return(controller.FileMetadata{
-				ID:               "55af1e60-0f28-454e-885e-ea6aab2bb288",
+			).Return(api.FileMetadata{
+				Id:               "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Name:             "my-file.txt",
 				Size:             64,
-				BucketID:         "default",
-				ETag:             "\"55af1e60-0f28-454e-885e-ea6aab2bb288\"",
-				CreatedAt:        "2021-12-27T09:58:11Z",
-				UpdatedAt:        "2021-12-27T09:58:11Z",
+				BucketId:         "default",
+				Etag:             "\"55af1e60-0f28-454e-885e-ea6aab2bb288\"",
+				CreatedAt:        time.Date(2021, 12, 27, 9, 58, 11, 0, time.UTC),
+				UpdatedAt:        time.Date(2021, 12, 27, 9, 58, 11, 0, time.UTC),
 				IsUploaded:       true,
 				MimeType:         "text/plain; charset=utf-8",
-				UploadedByUserID: "0f7f0ff0-f945-4597-89e1-3636b16775cd",
+				UploadedByUserId: ptr("0f7f0ff0-f945-4597-89e1-3636b16775cd"),
 			}, nil)
 
 			metadataStorage.EXPECT().GetBucketByID(

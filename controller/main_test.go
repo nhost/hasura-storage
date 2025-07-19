@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/nhost/hasura-storage/controller"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/sirupsen/logrus"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -45,14 +45,14 @@ func ReaderMatcher(v string) gomock.Matcher {
 }
 
 type fileMetadataMatcher struct {
-	v controller.FileMetadata
+	v api.FileMetadata
 }
 
 func (m fileMetadataMatcher) Matches(x interface{}) bool {
 	return cmp.Equal(
 		m.v,
 		x,
-		cmpopts.IgnoreFields(controller.FileMetadata{}, "CreatedAt", "UpdatedAt"),
+		cmpopts.IgnoreFields(api.FileMetadata{}, "CreatedAt", "UpdatedAt"),
 	)
 }
 
@@ -60,7 +60,7 @@ func (m fileMetadataMatcher) String() string {
 	return fmt.Sprintf("%v", m.v)
 }
 
-func FileMetadataMatcher(v controller.FileMetadata) gomock.Matcher {
+func FileMetadataMatcher(v api.FileMetadata) gomock.Matcher {
 	return fileMetadataMatcher{v}
 }
 

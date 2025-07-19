@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 func (ctrl *Controller) getFileMetadata(
@@ -16,25 +17,25 @@ func (ctrl *Controller) getFileMetadata(
 	fileID string,
 	checkIsUploaded bool,
 	headers http.Header,
-) (FileMetadata, BucketMetadata, *APIError) {
+) (api.FileMetadata, BucketMetadata, *APIError) {
 	fileMetadata, apiErr := ctrl.metadataStorage.GetFileByID(ctx, fileID, headers)
 	if apiErr != nil {
-		return FileMetadata{}, BucketMetadata{}, apiErr
+		return api.FileMetadata{}, BucketMetadata{}, apiErr
 	}
 
 	if checkIsUploaded && !fileMetadata.IsUploaded {
 		msg := "file is not uploaded"
-		return FileMetadata{}, BucketMetadata{},
+		return api.FileMetadata{}, BucketMetadata{},
 			ForbiddenError(errors.New(msg), msg) //nolint:goerr113
 	}
 
 	bucketMetadata, apiErr := ctrl.metadataStorage.GetBucketByID(
 		ctx,
-		fileMetadata.BucketID,
+		fileMetadata.BucketId,
 		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 	)
 	if apiErr != nil {
-		return FileMetadata{}, BucketMetadata{}, apiErr
+		return api.FileMetadata{}, BucketMetadata{}, apiErr
 	}
 
 	return fileMetadata, bucketMetadata, nil
@@ -139,13 +140,10 @@ func (ctrl *Controller) getFileInformationProcess(ctx *gin.Context) (*FileRespon
 		return nil, apiErr
 	}
 
-	updateAt, apiErr := timeFromRFC3339ToRFC1123(fileMetadata.UpdatedAt)
-	if apiErr != nil {
-		return nil, apiErr
-	}
+	updateAt := fileMetadata.UpdatedAt.Format(time.RFC1123)
 
 	statusCode, apiErr := checkConditionals(
-		fileMetadata.ETag, updateAt, &req.headers, http.StatusOK,
+		fileMetadata.Etag, updateAt, &req.headers, http.StatusOK,
 	)
 	if apiErr != nil {
 		return nil, apiErr
@@ -157,14 +155,14 @@ func (ctrl *Controller) getFileInformationProcess(ctx *gin.Context) (*FileRespon
 	}
 
 	if !opts.IsEmpty() {
-		download, apiErr := ctrl.contentStorage.GetFile(ctx, fileMetadata.ID, ctx.Request.Header)
+		download, apiErr := ctrl.contentStorage.GetFile(ctx, fileMetadata.Id, ctx.Request.Header)
 		if apiErr != nil {
 			return nil, apiErr
 		}
 		defer download.Body.Close()
 
 		var object io.ReadCloser
-		object, fileMetadata.Size, fileMetadata.ETag, apiErr = ctrl.manipulateImage(
+		object, fileMetadata.Size, fileMetadata.Etag, apiErr = ctrl.manipulateImage(
 			download.Body, uint64(fileMetadata.Size), opts, //nolint:gosec
 		)
 		if apiErr != nil {
@@ -175,10 +173,10 @@ func (ctrl *Controller) getFileInformationProcess(ctx *gin.Context) (*FileRespon
 	}
 
 	return NewFileResponse(
-		fileMetadata.ID,
+		fileMetadata.Id,
 		fileMetadata.MimeType,
 		fileMetadata.Size,
-		fileMetadata.ETag,
+		fileMetadata.Etag,
 		bucketMetadata.CacheControl,
 		updateAt,
 		statusCode,
@@ -200,4 +198,10 @@ func (ctrl *Controller) GetFileInformation(ctx *gin.Context) {
 	}
 
 	response.Write(ctx)
+}
+
+func (ctrl *Controller) GetFileMetadataHeaders(
+	ctx context.Context, request api.GetFileMetadataHeadersRequestObject,
+) (api.GetFileMetadataHeadersResponseObject, error) {
+	return nil, nil
 }

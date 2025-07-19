@@ -10,6 +10,9 @@ models:
   jsonb:
     model:
       - github.com/99designs/gqlgen/graphql.Map
+  timestamptz:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
 
 endpoint:
   url: http://localhost:8080/v1/graphql

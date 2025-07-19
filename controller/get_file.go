@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/image"
 )
 
@@ -193,7 +195,7 @@ func (ctrl *Controller) manipulateImage(
 	return NewP(buf.Bytes()), int64(buf.Len()), etag, nil
 }
 
-func getFileNameAndMimeType(fileMetadata FileMetadata, opts image.Options) (string, string) {
+func getFileNameAndMimeType(fileMetadata api.FileMetadata, opts image.Options) (string, string) {
 	filename := fileMetadata.Name
 	mimeType := fileMetadata.MimeType
 
@@ -210,7 +212,7 @@ type getFileFunc func() (*File, *APIError)
 func (ctrl *Controller) processFileToDownload( //nolint: funlen
 	ctx *gin.Context,
 	downloadFunc getFileFunc,
-	fileMetadata FileMetadata,
+	fileMetadata api.FileMetadata,
 	cacheControl string,
 	infoHeaders *getFileInformationHeaders,
 ) (*FileResponse, *APIError) {
@@ -232,10 +234,7 @@ func (ctrl *Controller) processFileToDownload( //nolint: funlen
 	}
 	ctx.Request.Header.Set("Range", rangeHeader)
 
-	updateAt, apiErr := timeFromRFC3339ToRFC1123(fileMetadata.UpdatedAt)
-	if apiErr != nil {
-		return nil, apiErr
-	}
+	updateAt := fileMetadata.UpdatedAt.Format(time.RFC1123)
 
 	body := download.Body
 	contentLength := download.ContentLength
@@ -271,7 +270,7 @@ func (ctrl *Controller) processFileToDownload( //nolint: funlen
 	filename, mimeType := getFileNameAndMimeType(fileMetadata, opts)
 
 	return NewFileResponse(
-		fileMetadata.ID,
+		fileMetadata.Id,
 		mimeType,
 		contentLength,
 		etag,
@@ -298,7 +297,7 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (*FileResponse, *APIErr
 	}
 
 	downloadFunc := func() (*File, *APIError) {
-		return ctrl.contentStorage.GetFile(ctx, fileMetadata.ID, ctx.Request.Header)
+		return ctrl.contentStorage.GetFile(ctx, fileMetadata.Id, ctx.Request.Header)
 	}
 
 	response, apiErr := ctrl.processFileToDownload(
@@ -318,7 +317,7 @@ func (ctrl *Controller) getFileProcess(ctx *gin.Context) (*FileResponse, *APIErr
 	return response, nil
 }
 
-func (ctrl *Controller) GetFile(ctx *gin.Context) {
+func (ctrl *Controller) GetFileGin(ctx *gin.Context) {
 	response, apiErr := ctrl.getFileProcess(ctx)
 	if apiErr != nil {
 		_ = ctx.Error(apiErr)
@@ -331,4 +330,11 @@ func (ctrl *Controller) GetFile(ctx *gin.Context) {
 	defer response.body.Close()
 
 	response.Write(ctx)
+}
+
+func (ctrl *Controller) GetFile(
+	ctx context.Context,
+	request api.GetFileRequestObject,
+) (api.GetFileResponseObject, error) {
+	return nil, nil
 }

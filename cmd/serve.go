@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"net/http"
 	"os"
 	"time"
 
@@ -11,7 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/image"
 	"github.com/nhost/hasura-storage/metadata"
@@ -19,6 +22,7 @@ import (
 	"github.com/nhost/hasura-storage/middleware/cdn/fastly"
 	"github.com/nhost/hasura-storage/migrations"
 	"github.com/nhost/hasura-storage/storage"
+	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -81,6 +85,7 @@ func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
 }
 
 func getGin(
+	bind string,
 	publicURL string,
 	apiRootPrefix string,
 	hasuraAdminSecret string,
@@ -92,10 +97,40 @@ func getGin(
 	debug bool,
 	corsAllowOrigins []string,
 	corsAllowCredentials bool,
-) (*gin.Engine, error) {
+) (*http.Server, error) {
+	router := gin.New()
+
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	loader := openapi3.NewLoader()
+	doc, err := loader.LoadFromData(controller.OpenAPISchema)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load OpenAPI schema: %w", err)
+	}
+	doc.AddServer(&openapi3.Server{ //nolint:exhaustruct
+		URL: apiRootPrefix,
+	})
+
+	handlers := []gin.HandlerFunc{
+		ginLogger(logger),
+		// cors(),
+		gin.Recovery(),
+	}
+
+	fastlyService := viper.GetString(fastlyServiceFlag)
+	if fastlyService != "" {
+		logger.Info("enabling fastly middleware")
+		handlers = append(
+			handlers,
+			fastly.New(fastlyService, viper.GetString(fastlyKeyFlag), logger),
+		)
+	}
+
+	openapi3filter.RegisterBodyDecoder("*/*", openapi3filter.FileBodyDecoder)
+
+	router.Use(handlers...)
 
 	av, err := getAv(viper.GetString(clamavServerFlag))
 	if err != nil {
@@ -113,28 +148,47 @@ func getGin(
 		logger,
 	)
 
-	opsPath, err := url.JoinPath(apiRootPrefix, "ops")
-	if err != nil {
-		return nil, fmt.Errorf("problem trying to compute ops prefix path: %w", err)
-	}
+	// opsPath, err := url.JoinPath(apiRootPrefix, "ops")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("problem trying to compute ops prefix path: %w", err)
+	// }
 
-	middlewares := []gin.HandlerFunc{
-		ginLogger(logger),
-		auth.NeedsAdmin(opsPath, hasuraAdminSecret),
-	}
+	// middlewares := []gin.HandlerFunc{
+	// 	ginLogger(logger),
+	// 	auth.NeedsAdmin(opsPath, hasuraAdminSecret),
+	// }
 
-	fastlyService := viper.GetString(fastlyServiceFlag)
-	if fastlyService != "" {
-		logger.Info("enabling fastly middleware")
-		middlewares = append(
-			middlewares,
-			fastly.New(fastlyService, viper.GetString(fastlyKeyFlag), logger),
-		)
-	}
+	// return ctrl.SetupRouter( //nolint: wrapcheck
+	// 	trustedProxies, apiRootPrefix, corsAllowOrigins, corsAllowCredentials, middlewares...,
+	// )
 
-	return ctrl.SetupRouter( //nolint: wrapcheck
-		trustedProxies, apiRootPrefix, corsAllowOrigins, corsAllowCredentials, middlewares...,
+	handler := api.NewStrictHandler(ctrl, []api.StrictMiddlewareFunc{})
+	mw := api.MiddlewareFunc(ginmiddleware.OapiRequestValidatorWithOptions(
+		doc,
+		&ginmiddleware.Options{ //nolint:exhaustruct
+			Options: openapi3filter.Options{ //nolint:exhaustruct
+				AuthenticationFunc: auth.Middleware(hasuraAdminSecret),
+			},
+			SilenceServersWarning: true,
+		},
+	))
+	api.RegisterHandlersWithOptions(
+		router,
+		handler,
+		api.GinServerOptions{
+			BaseURL:      apiRootPrefix,
+			Middlewares:  []api.MiddlewareFunc{mw},
+			ErrorHandler: nil,
+		},
 	)
+
+	server := &http.Server{ //nolint:exhaustruct
+		Addr:              bind,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second, //nolint:mnd
+	}
+
+	return server, nil
 }
 
 func getMetadataStorage(endpoint string) *metadata.Hasura {
@@ -302,6 +356,9 @@ var serveCmd = &cobra.Command{
 
 		logger.Info("storage version ", controller.Version())
 
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
+
 		if viper.GetBool(debugFlag) {
 			logger.SetLevel(logrus.DebugLevel)
 			gin.SetMode(gin.DebugMode)
@@ -331,7 +388,7 @@ var serveCmd = &cobra.Command{
 		).Debug("parameters")
 
 		contentStorage := getContentStorage(
-			cmd.Context(),
+			ctx,
 			viper.GetString(s3EndpointFlag),
 			viper.GetString(s3RegionFlag),
 			viper.GetString(s3AccessKeyFlag),
@@ -355,7 +412,8 @@ var serveCmd = &cobra.Command{
 		metadataStorage := getMetadataStorage(
 			viper.GetString(hasuraEndpointFlag) + "/graphql",
 		)
-		router, err := getGin(
+		server, err := getGin(
+			viper.GetString(bindFlag),
 			viper.GetString(publicURLFlag),
 			viper.GetString(apiRootPrefixFlag),
 			viper.GetString(hasuraAdminSecretFlag),
@@ -370,8 +428,20 @@ var serveCmd = &cobra.Command{
 		)
 		cobra.CheckErr(err)
 
-		logger.Info("starting server")
+		go func() {
+			defer cancel()
+			logger.Info("starting server")
+			if err := server.ListenAndServe(); err != nil {
+				logger.Error("server failed", logrus.Fields{
+					"error": err,
+				})
+			}
+		}()
 
-		logger.Error(router.Run(viper.GetString(bindFlag)))
+		<-ctx.Done()
+
+		logger.Info("shutting down server")
+		err = server.Shutdown(ctx)
+		cobra.CheckErr(err)
 	},
 }

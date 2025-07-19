@@ -13,7 +13,6 @@ sleep 1
 
 output=`curl $URL/ \
   -v \
-  -H "Content-Type: multipart/form-data" \
   -H "$AUTH" \
   -F "bucket-id=$BUCKET" \
   -F "metadata[]={};type=application/json" \
@@ -27,8 +26,8 @@ output=`curl $URL/ \
 
 echo $output | jq
 
-time curl -v -o nhost.jpg $URL/${FILE_ID} \
-      -H "$AUTH"
+# time curl -v -o nhost.jpg $URL/${FILE_ID} \
+#       -H "$AUTH"
 
-time curl -v -o nhost.jpg $URL/${FILE_ID}?w=600\&h\=200\&q=50\&b=5 \
-      -H "$AUTH"
+# time curl -v -o nhost.jpg $URL/${FILE_ID}?w=600\&h\=200\&q=50\&b=5 \
+#       -H "$AUTH"

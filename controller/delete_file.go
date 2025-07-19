@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 func (ctrl *Controller) deleteFile(ctx *gin.Context) *APIError {
@@ -24,7 +26,7 @@ func (ctrl *Controller) deleteFile(ctx *gin.Context) *APIError {
 	return nil
 }
 
-func (ctrl *Controller) DeleteFile(ctx *gin.Context) {
+func (ctrl *Controller) DeleteFileGin(ctx *gin.Context) {
 	if apiErr := ctrl.deleteFile(ctx); apiErr != nil {
 		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
 
@@ -34,4 +36,11 @@ func (ctrl *Controller) DeleteFile(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+func (ctrl *Controller) DeleteFile(
+	ctx context.Context,
+	request api.DeleteFileRequestObject,
+) (api.DeleteFileResponseObject, error) {
+	return nil, nil
 }

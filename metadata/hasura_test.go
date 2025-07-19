@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/metadata"
 )
@@ -193,7 +195,7 @@ func TestPopulateMetadata(t *testing.T) {
 		headers                http.Header
 		expectedStatusCode     int
 		expectedPublicResponse *controller.ErrorResponse
-		expected               controller.FileMetadata
+		expected               api.FileMetadata
 	}{
 		{
 			name:                   "success",
@@ -201,17 +203,17 @@ func TestPopulateMetadata(t *testing.T) {
 			headers:                getAuthHeader(),
 			expectedStatusCode:     0,
 			expectedPublicResponse: &controller.ErrorResponse{},
-			expected: controller.FileMetadata{
-				ID:               fileID,
+			expected: api.FileMetadata{
+				Id:               fileID,
 				Name:             "name",
 				Size:             123,
-				BucketID:         "default",
-				ETag:             "asdasd",
-				CreatedAt:        "",
-				UpdatedAt:        "",
+				BucketId:         "default",
+				Etag:             "asdasd",
+				CreatedAt:        time.Time{},
+				UpdatedAt:        time.Time{},
 				IsUploaded:       true,
 				MimeType:         "text",
-				UploadedByUserID: "",
+				UploadedByUserId: nil,
 			},
 		},
 		{
@@ -222,7 +224,7 @@ func TestPopulateMetadata(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: `{"networkErrors":null,"graphqlErrors":[{"message":"invalid input syntax for type uuid: \"asdasdasd\"","extensions":{"code":"data-exception","path":"$"}}]}`,
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 		{
 			name:               "not found",
@@ -232,7 +234,7 @@ func TestPopulateMetadata(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: "file not found",
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 		{
 			name:               "not authorized",
@@ -240,7 +242,7 @@ func TestPopulateMetadata(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: "you are not authorized",
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 	}
 
@@ -274,7 +276,7 @@ func TestPopulateMetadata(t *testing.T) {
 				}
 			} else {
 				opts := cmp.Options{
-					cmpopts.IgnoreFields(controller.FileMetadata{}, "CreatedAt", "UpdatedAt"),
+					cmpopts.IgnoreFields(api.FileMetadata{}, "CreatedAt", "UpdatedAt"),
 				}
 				if !cmp.Equal(got, tc.expected, opts...) {
 					t.Error(cmp.Diff(got, tc.expected, opts...))
@@ -304,7 +306,7 @@ func TestGetFileByID(t *testing.T) {
 		headers                http.Header
 		expectedStatusCode     int
 		expectedPublicResponse *controller.ErrorResponse
-		expected               controller.FileMetadata
+		expected               api.FileMetadata
 	}{
 		{
 			name:                   "success",
@@ -312,17 +314,17 @@ func TestGetFileByID(t *testing.T) {
 			headers:                getAuthHeader(),
 			expectedStatusCode:     0,
 			expectedPublicResponse: &controller.ErrorResponse{},
-			expected: controller.FileMetadata{
-				ID:               fileID,
+			expected: api.FileMetadata{
+				Id:               fileID,
 				Name:             "name",
 				Size:             123,
-				BucketID:         "default",
-				ETag:             "asdasd",
-				CreatedAt:        "",
-				UpdatedAt:        "",
+				BucketId:         "default",
+				Etag:             "asdasd",
+				CreatedAt:        time.Time{},
+				UpdatedAt:        time.Time{},
 				IsUploaded:       true,
 				MimeType:         "text",
-				UploadedByUserID: "",
+				UploadedByUserId: nil,
 			},
 		},
 		{
@@ -333,7 +335,7 @@ func TestGetFileByID(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: `{"networkErrors":null,"graphqlErrors":[{"message":"invalid input syntax for type uuid: \"asdasdasd\"","extensions":{"code":"data-exception","path":"$"}}]}`,
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 		{
 			name:               "not found",
@@ -343,7 +345,7 @@ func TestGetFileByID(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: "file not found",
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 		{
 			name:               "not authorized",
@@ -351,7 +353,7 @@ func TestGetFileByID(t *testing.T) {
 			expectedPublicResponse: &controller.ErrorResponse{
 				Message: "you are not authorized",
 			},
-			expected: controller.FileMetadata{},
+			expected: api.FileMetadata{},
 		},
 	}
 
@@ -374,7 +376,7 @@ func TestGetFileByID(t *testing.T) {
 				}
 			} else {
 				opts := cmp.Options{
-					cmpopts.IgnoreFields(controller.FileMetadata{}, "CreatedAt", "UpdatedAt"),
+					cmpopts.IgnoreFields(api.FileMetadata{}, "CreatedAt", "UpdatedAt"),
 					cmpopts.IgnoreFields(controller.BucketMetadata{}, "CreatedAt", "UpdatedAt"),
 				}
 				if !cmp.Equal(got, tc.expected, opts...) {

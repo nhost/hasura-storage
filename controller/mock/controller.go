@@ -16,6 +16,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	api "github.com/nhost/hasura-storage/api"
 	controller "github.com/nhost/hasura-storage/controller"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -74,10 +75,10 @@ func (mr *MockMetadataStorageMockRecorder) GetBucketByID(ctx, id, headers any) *
 }
 
 // GetFileByID mocks base method.
-func (m *MockMetadataStorage) GetFileByID(ctx context.Context, id string, headers http.Header) (controller.FileMetadata, *controller.APIError) {
+func (m *MockMetadataStorage) GetFileByID(ctx context.Context, id string, headers http.Header) (api.FileMetadata, *controller.APIError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFileByID", ctx, id, headers)
-	ret0, _ := ret[0].(controller.FileMetadata)
+	ret0, _ := ret[0].(api.FileMetadata)
 	ret1, _ := ret[1].(*controller.APIError)
 	return ret0, ret1
 }
@@ -132,10 +133,10 @@ func (mr *MockMetadataStorageMockRecorder) ListFiles(ctx, headers any) *gomock.C
 }
 
 // PopulateMetadata mocks base method.
-func (m *MockMetadataStorage) PopulateMetadata(ctx context.Context, id, name string, size int64, bucketID, etag string, IsUploaded bool, mimeType string, metadata map[string]any, headers http.Header) (controller.FileMetadata, *controller.APIError) {
+func (m *MockMetadataStorage) PopulateMetadata(ctx context.Context, id, name string, size int64, bucketID, etag string, IsUploaded bool, mimeType string, metadata map[string]any, headers http.Header) (api.FileMetadata, *controller.APIError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PopulateMetadata", ctx, id, name, size, bucketID, etag, IsUploaded, mimeType, metadata, headers)
-	ret0, _ := ret[0].(controller.FileMetadata)
+	ret0, _ := ret[0].(api.FileMetadata)
 	ret1, _ := ret[1].(*controller.APIError)
 	return ret0, ret1
 }

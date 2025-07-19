@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/image"
 	"github.com/sirupsen/logrus"
 )
@@ -32,23 +33,9 @@ type BucketMetadata struct {
 	CacheControl         string
 }
 
-type FileMetadata struct {
-	ID               string         `json:"id"`
-	Name             string         `json:"name"`
-	Size             int64          `json:"size"`
-	BucketID         string         `json:"bucketId"`
-	ETag             string         `json:"etag"`
-	CreatedAt        string         `json:"createdAt"`
-	UpdatedAt        string         `json:"updatedAt"`
-	IsUploaded       bool           `json:"isUploaded"`
-	MimeType         string         `json:"mimeType"`
-	UploadedByUserID string         `json:"uploadedByUserId"`
-	Metadata         map[string]any `json:"metadata"`
-}
-
 type MetadataStorage interface {
 	GetBucketByID(ctx context.Context, id string, headers http.Header) (BucketMetadata, *APIError)
-	GetFileByID(ctx context.Context, id string, headers http.Header) (FileMetadata, *APIError)
+	GetFileByID(ctx context.Context, id string, headers http.Header) (api.FileMetadata, *APIError)
 	InitializeFile(
 		ctx context.Context,
 		id, name string, size int64, bucketID, mimeType string,
@@ -58,7 +45,7 @@ type MetadataStorage interface {
 		ctx context.Context,
 		id, name string, size int64, bucketID, etag string, IsUploaded bool, mimeType string,
 		metadata map[string]any,
-		headers http.Header) (FileMetadata, *APIError,
+		headers http.Header) (api.FileMetadata, *APIError,
 	)
 	SetIsUploaded(
 		ctx context.Context,
@@ -184,22 +171,22 @@ func (ctrl *Controller) SetupRouter(
 	}
 	files := apiRoot.Group("/files")
 	{
-		files.POST("", ctrl.UploadFile) // To delete
-		files.POST("/", ctrl.UploadFile)
-		files.GET("/:id", ctrl.GetFile)
+		// files.POST("", ctrl.UploadFilesGin) // To delete
+		// files.POST("/", ctrl.UploadFilesGin)
+		files.GET("/:id", ctrl.GetFileGin)
 		files.HEAD("/:id", ctrl.GetFileInformation)
-		files.PUT("/:id", ctrl.UpdateFile)
-		files.DELETE("/:id", ctrl.DeleteFile)
+		files.PUT("/:id", ctrl.ReplaceFileGin)
+		files.DELETE("/:id", ctrl.DeleteFileGin)
 		files.GET("/:id/presignedurl", ctrl.GetFilePresignedURL)
 		files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
 	}
 
 	ops := apiRoot.Group("/ops")
 	{
-		ops.POST("list-orphans", ctrl.ListOrphans)
+		ops.POST("list-orphans", ctrl.ListOrphanedFilesGin)
 		ops.POST("delete-orphans", ctrl.DeleteOrphans)
-		ops.POST("list-broken-metadata", ctrl.ListBrokenMetadata)
-		ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadata)
+		ops.POST("list-broken-metadata", ctrl.ListBrokenMetadataGin)
+		ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadataGin)
 		ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
 	}
 	return router, nil

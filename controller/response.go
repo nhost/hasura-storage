@@ -6,18 +6,9 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-func timeFromRFC3339ToRFC1123(t string) (string, *APIError) {
-	datetime, err := time.Parse(time.RFC3339, t)
-	if err != nil {
-		return "", InternalServerError(err)
-	}
-	return datetime.Format(time.RFC1123), nil
-}
 
 type FileResponse struct {
 	fileID                      string

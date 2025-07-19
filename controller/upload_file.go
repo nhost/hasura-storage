@@ -3,20 +3,22 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/http"
 
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/nhost/hasura-storage/api"
+	"github.com/nhost/hasura-storage/middleware/auth"
 )
+
+const maxFormMemory = 1 << 20 // 1 MB
 
 // this type is used to ensure we respond consistently no matter the case.
 type UploadFileResponse struct {
-	ProcessedFiles []FileMetadata `json:"processedFiles,omitempty"`
-	Error          *ErrorResponse `json:"error,omitempty"`
+	ProcessedFiles []api.FileMetadata `json:"processedFiles,omitempty"`
+	Error          *ErrorResponse     `json:"error,omitempty"`
 }
 
 type fileData struct {
@@ -97,29 +99,29 @@ func (ctrl *Controller) processFile(
 	file fileData,
 	bucket BucketMetadata,
 	headers http.Header,
-) (FileMetadata, *APIError) {
+) (api.FileMetadata, *APIError) {
 	if err := checkFileSize(file.header, bucket.MinUploadFile, bucket.MaxUploadFile); err != nil {
-		return FileMetadata{}, InternalServerError(
+		return api.FileMetadata{}, InternalServerError(
 			fmt.Errorf("problem checking file size %s: %w", file.Name, err),
 		)
 	}
 
 	fileContent, contentType, err := ctrl.getMultipartFile(file)
 	if err != nil {
-		return FileMetadata{}, err
+		return api.FileMetadata{}, err
 	}
 	defer fileContent.Close()
 
 	if err := ctrl.metadataStorage.InitializeFile(
 		ctx, file.ID, file.Name, file.header.Size, bucket.ID, contentType, headers,
 	); err != nil {
-		return FileMetadata{}, err
+		return api.FileMetadata{}, err
 	}
 
 	if err := ctrl.scanAndReportVirus(
 		ctx, fileContent, file.ID, file.Name, headers,
 	); err != nil {
-		return FileMetadata{}, err
+		return api.FileMetadata{}, err
 	}
 
 	etag, apiErr := ctrl.contentStorage.PutFile(ctx, fileContent, file.ID, contentType)
@@ -129,7 +131,7 @@ func (ctrl *Controller) processFile(
 			file.ID,
 			http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 		)
-		return FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
+		return api.FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
 	}
 
 	metadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
@@ -138,7 +140,7 @@ func (ctrl *Controller) processFile(
 		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 	)
 	if apiErr != nil {
-		return FileMetadata{}, apiErr.ExtendError(
+		return api.FileMetadata{}, apiErr.ExtendError(
 			"problem populating file metadata for file " + file.Name,
 		)
 	}
@@ -149,7 +151,7 @@ func (ctrl *Controller) processFile(
 func (ctrl *Controller) upload(
 	ctx context.Context,
 	request uploadFileRequest,
-) ([]FileMetadata, *APIError) {
+) ([]api.FileMetadata, *APIError) {
 	bucket, err := ctrl.metadataStorage.GetBucketByID(
 		ctx,
 		request.bucketID,
@@ -159,7 +161,7 @@ func (ctrl *Controller) upload(
 		return nil, err
 	}
 
-	filesMetadata := make([]FileMetadata, 0, len(request.files))
+	filesMetadata := make([]api.FileMetadata, 0, len(request.files))
 
 	for _, file := range request.files {
 		metadata, err := ctrl.processFile(ctx, file, bucket, request.headers)
@@ -202,60 +204,9 @@ func getBucketIDFromFormValue(md map[string][]string) string {
 	return "default"
 }
 
-func parseUploadRequestOld(ctx *gin.Context) (uploadFileRequest, *APIError) {
-	form, err := ctx.MultipartForm()
-	if err != nil {
-		return uploadFileRequest{}, InternalServerError(
-			fmt.Errorf("problem reading multipart form: %w", err),
-		)
-	}
-
-	fileForm, ok := form.File["file"]
-	if !ok {
-		return uploadFileRequest{}, ErrMultipartFormFileNotFound
-	}
-
-	fileHeader := fileForm[0]
-
-	bucketID := ctx.Request.Header.Get("X-Nhost-Bucket-Id")
-	if bucketID == "" {
-		bucketID = "default"
-	}
-	fileName := ctx.Request.Header.Get("X-Nhost-File-Name")
-	if fileName == "" {
-		fileName = fileHeader.Filename
-	}
-	fileID := ctx.Request.Header.Get("X-Nhost-File-Id")
-	if fileID == "" {
-		fileID = uuid.New().String()
-	}
-
-	ctx.Writer.Header().Add(
-		"X-Deprecation-Warning-Old-Upload-File-Method",
-		"please, update the SDK to leverage new API endpoint or read the API docs to adapt your code",
-	)
-
-	return uploadFileRequest{
-		bucketID: bucketID,
-		files: []fileData{
-			{
-				Name:   fileName,
-				ID:     fileID,
-				header: fileHeader,
-			},
-		},
-		headers: ctx.Request.Header,
-	}, nil
-}
-
-func parseUploadRequestNew(ctx *gin.Context) (uploadFileRequest, *APIError) {
-	form, err := ctx.MultipartForm()
-	if err != nil {
-		return uploadFileRequest{}, InternalServerError(
-			fmt.Errorf("problem reading multipart form: %w", err),
-		)
-	}
-
+func parseUploadRequest(
+	form *multipart.Form, headers http.Header,
+) (uploadFileRequest, *APIError) {
 	files, ok := form.File["file[]"]
 	if !ok {
 		return uploadFileRequest{}, ErrMultipartFormFileNotFound
@@ -286,43 +237,31 @@ func parseUploadRequestNew(ctx *gin.Context) (uploadFileRequest, *APIError) {
 	return uploadFileRequest{
 		bucketID: getBucketIDFromFormValue(form.Value),
 		files:    processedFiles,
-		headers:  ctx.Request.Header,
+		headers:  headers,
 	}, nil
 }
 
-func parseUploadRequest(ctx *gin.Context) (uploadFileRequest, bool, *APIError) {
-	newMethod := true
-	req, apiErr := parseUploadRequestNew(ctx)
-	if errors.Is(apiErr, ErrMultipartFormFileNotFound) {
-		req, apiErr = parseUploadRequestOld(ctx)
-		newMethod = false
-	}
-	return req, newMethod, apiErr
-}
+func (ctrl *Controller) UploadFiles( //nolint:ireturn
+	ctx context.Context, request api.UploadFilesRequestObject,
+) (api.UploadFilesResponseObject, error) {
+	headers := auth.HeadersFromContext(ctx)
 
-func (ctrl *Controller) uploadFile(ctx *gin.Context) ([]FileMetadata, bool, *APIError) {
-	request, newMethod, apiErr := parseUploadRequest(ctx)
+	form, err := request.Body.ReadForm(maxFormMemory)
+	if err != nil {
+		return InternalServerError(err), nil
+	}
+
+	uploadFilesRequest, apiErr := parseUploadRequest(form, headers)
 	if apiErr != nil {
-		return nil, false, apiErr
+		return apiErr, nil
 	}
 
-	filesMetadata, apiErr := ctrl.upload(ctx.Request.Context(), request)
-	return filesMetadata, newMethod, apiErr
-}
-
-func (ctrl *Controller) UploadFile(ctx *gin.Context) {
-	filesMetadata, newMethod, apiErr := ctrl.uploadFile(ctx)
+	fm, apiErr := ctrl.upload(ctx, uploadFilesRequest)
 	if apiErr != nil {
-		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
-
-		ctx.JSON(apiErr.statusCode, UploadFileResponse{filesMetadata, apiErr.PublicResponse()})
-
-		return
+		return apiErr, nil
 	}
 
-	if newMethod {
-		ctx.JSON(http.StatusCreated, UploadFileResponse{filesMetadata, nil})
-	} else {
-		ctx.JSON(http.StatusCreated, filesMetadata[0])
-	}
+	return api.UploadFiles201JSONResponse{
+		ProcessedFiles: fm,
+	}, nil
 }

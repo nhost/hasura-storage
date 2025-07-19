@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 type GetFilePresignedURLResponse struct {
@@ -46,7 +48,7 @@ func (ctrl *Controller) getFilePresignedURL(
 
 	signature, apiErr := ctrl.contentStorage.CreatePresignedURL(
 		ctx,
-		fileMetadata.ID,
+		fileMetadata.Id,
 		time.Duration(bucketMetadata.DownloadExpiration)*time.Second,
 	)
 	if apiErr != nil {
@@ -58,7 +60,7 @@ func (ctrl *Controller) getFilePresignedURL(
 
 	url := fmt.Sprintf(
 		"%s%s/files/%s/presignedurl/content?%s",
-		ctrl.publicURL, ctrl.apiRootPrefix, fileMetadata.ID, signature,
+		ctrl.publicURL, ctrl.apiRootPrefix, fileMetadata.Id, signature,
 	)
 	return GetFilePresignedURLResponse{nil, url, bucketMetadata.DownloadExpiration}, nil
 }
@@ -74,4 +76,10 @@ func (ctrl *Controller) GetFilePresignedURL(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, resp)
+}
+
+func (ctrl *Controller) GetPresignedURL(
+	ctx context.Context, request api.GetPresignedURLRequestObject,
+) (api.GetPresignedURLResponseObject, error) {
+	return nil, nil
 }

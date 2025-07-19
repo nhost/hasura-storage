@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 const (
@@ -137,4 +139,11 @@ func (ctrl *Controller) GetFileWithPresignedURL(ctx *gin.Context) {
 
 	fileResponse.disableSurrageControlHeader = true
 	fileResponse.Write(ctx)
+}
+
+func (ctrl *Controller) GetPresignedURLContents(
+	ctx context.Context,
+	request api.GetPresignedURLContentsRequestObject,
+) (api.GetPresignedURLContentsResponseObject, error) {
+	return nil, nil
 }

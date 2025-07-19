@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"path"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 type ListBrokenMetadataResponse struct {
@@ -45,7 +47,7 @@ func (ctrl *Controller) listBrokenMetadata(ctx *gin.Context) ([]FileSummary, *AP
 	return missing, nil
 }
 
-func (ctrl *Controller) ListBrokenMetadata(ctx *gin.Context) {
+func (ctrl *Controller) ListBrokenMetadataGin(ctx *gin.Context) {
 	files, apiErr := ctrl.listBrokenMetadata(ctx)
 	if apiErr != nil {
 		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
@@ -61,4 +63,10 @@ func (ctrl *Controller) ListBrokenMetadata(ctx *gin.Context) {
 			files,
 		},
 	)
+}
+
+func (ctrl *Controller) ListBrokenMetadata(
+	ctx context.Context, request api.ListBrokenMetadataRequestObject,
+) (api.ListBrokenMetadataResponseObject, error) {
+	return nil, nil
 }

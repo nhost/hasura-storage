@@ -68,6 +68,7 @@
 
         checkDeps = with pkgs; [
           mockgen
+          oapi-codegen
           gqlgenc
 
         ];

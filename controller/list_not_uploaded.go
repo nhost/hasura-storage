@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 func (ctrl *Controller) listNotUploaded(ctx *gin.Context) ([]FileSummary, *APIError) {
@@ -43,4 +45,10 @@ func (ctrl *Controller) ListNotUploaded(ctx *gin.Context) {
 			files,
 		},
 	)
+}
+
+func (ctrl *Controller) ListFilesNotUploaded(
+	ctx context.Context, request api.ListFilesNotUploadedRequestObject,
+) (api.ListFilesNotUploadedResponseObject, error) {
+	return nil, nil
 }

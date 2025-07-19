@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"path"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 type ListOrphansResponse struct {
@@ -44,7 +46,7 @@ func (ctrl *Controller) listOrphans(ctx *gin.Context) ([]string, *APIError) {
 	return missing, nil
 }
 
-func (ctrl *Controller) ListOrphans(ctx *gin.Context) {
+func (ctrl *Controller) ListOrphanedFilesGin(ctx *gin.Context) {
 	files, apiErr := ctrl.listOrphans(ctx)
 	if apiErr != nil {
 		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
@@ -60,4 +62,10 @@ func (ctrl *Controller) ListOrphans(ctx *gin.Context) {
 			files,
 		},
 	)
+}
+
+func (ctrl *Controller) ListOrphanedFiles(
+	ctx context.Context, request api.ListOrphanedFilesRequestObject,
+) (api.ListOrphanedFilesResponseObject, error) {
+	return nil, nil
 }

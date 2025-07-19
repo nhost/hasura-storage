@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/nhost/hasura-storage/api"
 )
 
 var (
@@ -62,6 +65,31 @@ type APIError struct {
 	publicMessage string
 	err           error
 	data          map[string]any
+}
+
+func (a *APIError) visit(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(a.statusCode)
+
+	errorResponse := api.ErrorResponse{
+		Error: &struct {
+			Data    *map[string]interface{} "json:\"data,omitempty\""
+			Message string                  "json:\"message\""
+		}{
+			Data:    &a.data,
+			Message: a.publicMessage,
+		},
+	}
+
+	return json.NewEncoder(w).Encode(errorResponse)
+}
+
+func (a *APIError) VisitUploadFilesResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitDeleteBrokenMetadataResponse(w http.ResponseWriter) error {
+	return a.visit(w)
 }
 
 func InternalServerError(err error) *APIError {

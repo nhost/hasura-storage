@@ -11,9 +11,11 @@ import (
 	"net/textproto"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/controller/mock"
 	"github.com/sirupsen/logrus"
@@ -183,18 +185,18 @@ func TestUploadFile(t *testing.T) {
 					file.md.Metadata,
 					gomock.Any(),
 				).Return(
-					controller.FileMetadata{
-						ID:               file.md.ID,
+					api.FileMetadata{
+						Id:               file.md.ID,
 						Name:             file.md.Name,
 						Size:             int64(len(file.contents)),
-						BucketID:         "blah",
-						ETag:             "some-etag",
-						CreatedAt:        "", // ignored
-						UpdatedAt:        "", // ignored
+						BucketId:         "blah",
+						Etag:             "some-etag",
+						CreatedAt:        time.Time{}, // ignored
+						UpdatedAt:        time.Time{}, // ignored
 						IsUploaded:       true,
 						MimeType:         "text/plain; charset=utf-8",
-						UploadedByUserID: "some-valid-uuid",
-						Metadata:         map[string]any{},
+						UploadedByUserId: ptr("some-valid-uuid"),
+						Metadata:         ptr(map[string]any{}),
 					},
 					nil)
 			}
@@ -233,18 +235,18 @@ func TestUploadFile(t *testing.T) {
 					file.md.Metadata,
 					gomock.Any(),
 				).Return(
-					controller.FileMetadata{
-						ID:               file.md.ID,
+					api.FileMetadata{
+						Id:               file.md.ID,
 						Name:             file.md.Name,
 						Size:             int64(len(file.contents)),
-						BucketID:         "blah",
-						ETag:             "some-etag",
-						CreatedAt:        "", // ignored
-						UpdatedAt:        "", // ignored
+						BucketId:         "blah",
+						Etag:             "some-etag",
+						CreatedAt:        time.Time{}, // ignored
+						UpdatedAt:        time.Time{}, // ignored
 						IsUploaded:       true,
 						MimeType:         "text/markdown",
-						UploadedByUserID: "some-valid-uuid",
-						Metadata:         map[string]any{"some": "metadata"},
+						UploadedByUserId: ptr("some-valid-uuid"),
+						Metadata:         ptr(map[string]any{"some": "metadata"}),
 					},
 					nil)
 			}
@@ -282,37 +284,37 @@ func TestUploadFile(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert(t, &controller.UploadFileResponse{
-				ProcessedFiles: []controller.FileMetadata{
+				ProcessedFiles: []api.FileMetadata{
 					{
-						ID:               "38288c85-02af-416b-b075-11c4dae9",
+						Id:               "38288c85-02af-416b-b075-11c4dae9",
 						Name:             "a_file.txt",
 						Size:             12,
-						BucketID:         "blah",
-						ETag:             "some-etag",
-						CreatedAt:        "",
-						UpdatedAt:        "",
+						BucketId:         "blah",
+						Etag:             "some-etag",
+						CreatedAt:        time.Time{}, // ignored
+						UpdatedAt:        time.Time{}, // ignored
 						IsUploaded:       true,
 						MimeType:         "text/plain; charset=utf-8",
-						UploadedByUserID: "some-valid-uuid",
-						Metadata:         map[string]any{},
+						UploadedByUserId: ptr("some-valid-uuid"),
+						Metadata:         ptr(map[string]any{}),
 					},
 					{
-						ID:               "d041c7c5-10e7-410e-a599-799409b5",
+						Id:               "d041c7c5-10e7-410e-a599-799409b5",
 						Name:             "another_file.md",
 						Size:             12,
-						BucketID:         "blah",
-						ETag:             "some-etag",
-						CreatedAt:        "",
-						UpdatedAt:        "",
+						BucketId:         "blah",
+						Etag:             "some-etag",
+						CreatedAt:        time.Time{}, // ignored
+						UpdatedAt:        time.Time{}, // ignored
 						IsUploaded:       true,
 						MimeType:         "text/markdown",
-						UploadedByUserID: "some-valid-uuid",
-						Metadata:         map[string]any{"some": "metadata"},
+						UploadedByUserId: ptr("some-valid-uuid"),
+						Metadata:         ptr(map[string]any{"some": "metadata"}),
 					},
 				},
 				Error: nil,
 			}, resp,
-				cmpopts.IgnoreFields(controller.FileMetadata{}, "ID", "CreatedAt", "UpdatedAt"),
+				cmpopts.IgnoreFields(api.FileMetadata{}, "Id", "CreatedAt", "UpdatedAt"),
 			)
 		})
 	}

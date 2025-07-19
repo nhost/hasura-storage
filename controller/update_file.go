@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nhost/hasura-storage/api"
 )
 
 type updateFileMetadata struct {
@@ -14,7 +16,7 @@ type updateFileMetadata struct {
 }
 
 type UpdateFileResponse struct {
-	*FileMetadata
+	*api.FileMetadata
 	Error *ErrorResponse `json:"error,omitempty"`
 }
 
@@ -66,29 +68,29 @@ func updateFileParseRequest(ctx *gin.Context) (fileData, *APIError) {
 	return res, nil
 }
 
-func (ctrl *Controller) updateFile(ctx *gin.Context) (FileMetadata, *APIError) { //nolint:funlen
+func (ctrl *Controller) updateFile(ctx *gin.Context) (api.FileMetadata, *APIError) { //nolint:funlen
 	file, apiErr := updateFileParseRequest(ctx)
 	if apiErr != nil {
-		return FileMetadata{}, apiErr
+		return api.FileMetadata{}, apiErr
 	}
 
 	originalMetadata, bucketMetadata, apiErr := ctrl.getFileMetadata(
 		ctx.Request.Context(), file.ID, false, ctx.Request.Header,
 	)
 	if apiErr != nil {
-		return FileMetadata{}, apiErr
+		return api.FileMetadata{}, apiErr
 	}
 
 	if apiErr = checkFileSize(
 		file.header, bucketMetadata.MinUploadFile, bucketMetadata.MaxUploadFile,
 	); apiErr != nil {
-		return FileMetadata{}, InternalServerError(
+		return api.FileMetadata{}, InternalServerError(
 			fmt.Errorf("problem checking file size %s: %w", file.Name, apiErr),
 		)
 	}
 
 	if apiErr := ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, false, ctx.Request.Header); apiErr != nil {
-		return FileMetadata{}, apiErr.ExtendError(
+		return api.FileMetadata{}, apiErr.ExtendError(
 			fmt.Sprintf(
 				"problem flagging file as pending upload %s: %s",
 				file.Name,
@@ -99,14 +101,14 @@ func (ctrl *Controller) updateFile(ctx *gin.Context) (FileMetadata, *APIError) {
 
 	fileContent, contentType, err := ctrl.getMultipartFile(file)
 	if err != nil {
-		return FileMetadata{}, err
+		return api.FileMetadata{}, err
 	}
 	defer fileContent.Close()
 
 	if err := ctrl.scanAndReportVirus(
 		ctx, fileContent, file.ID, file.Name, ctx.Request.Header,
 	); err != nil {
-		return FileMetadata{}, err
+		return api.FileMetadata{}, err
 	}
 
 	etag, apiErr := ctrl.contentStorage.PutFile(ctx, fileContent, file.ID, contentType)
@@ -114,17 +116,17 @@ func (ctrl *Controller) updateFile(ctx *gin.Context) (FileMetadata, *APIError) {
 		// let's revert the change to isUploaded
 		_ = ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, true, ctx.Request.Header)
 
-		return FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
+		return api.FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
 	}
 
 	newMetadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
 		ctx,
-		file.ID, file.Name, file.header.Size, originalMetadata.BucketID, etag, true, contentType,
+		file.ID, file.Name, file.header.Size, originalMetadata.BucketId, etag, true, contentType,
 		file.Metadata,
 		ctx.Request.Header,
 	)
 	if apiErr != nil {
-		return FileMetadata{}, apiErr.ExtendError(
+		return api.FileMetadata{}, apiErr.ExtendError(
 			"problem populating file metadata for file " + file.Name,
 		)
 	}
@@ -133,7 +135,7 @@ func (ctrl *Controller) updateFile(ctx *gin.Context) (FileMetadata, *APIError) {
 	return newMetadata, nil
 }
 
-func (ctrl *Controller) UpdateFile(ctx *gin.Context) {
+func (ctrl *Controller) ReplaceFileGin(ctx *gin.Context) {
 	metadata, apiErr := ctrl.updateFile(ctx)
 	if apiErr != nil {
 		_ = ctx.Error(fmt.Errorf("problem parsing request: %w", apiErr))
@@ -147,4 +149,11 @@ func (ctrl *Controller) UpdateFile(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, UpdateFileResponse{&metadata, nil})
+}
+
+func (ctrl *Controller) ReplaceFile(
+	ctx context.Context,
+	request api.ReplaceFileRequestObject,
+) (api.ReplaceFileResponseObject, error) {
+	return nil, nil
 }
