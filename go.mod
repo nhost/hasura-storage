@@ -25,6 +25,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	go.uber.org/mock v0.5.2
 	golang.org/x/net v0.40.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

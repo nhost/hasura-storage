@@ -10,6 +10,12 @@ import (
 )
 
 var (
+	ErrUnexpectedStatusCode = &APIError{
+		http.StatusInternalServerError,
+		"unexpected status code",
+		errors.New("unexpected status code"), //nolint
+		nil,
+	}
 	ErrMultipartFormFileNotFound = &APIError{
 		http.StatusBadRequest,
 		"file[] not found in Multipart form",
@@ -69,22 +75,31 @@ type APIError struct {
 
 func (a *APIError) visit(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Error", a.publicMessage)
 	w.WriteHeader(a.statusCode)
 
 	errorResponse := api.ErrorResponse{
 		Error: &struct {
-			Data    *map[string]interface{} "json:\"data,omitempty\""
-			Message string                  "json:\"message\""
+			Data    *map[string]any `json:"data,omitempty"`
+			Message string          `json:"message"`
 		}{
 			Data:    &a.data,
 			Message: a.publicMessage,
 		},
 	}
 
-	return json.NewEncoder(w).Encode(errorResponse)
+	return json.NewEncoder(w).Encode(errorResponse) //nolint:wrapcheck
 }
 
 func (a *APIError) VisitUploadFilesResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitGetFileResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
 
@@ -180,6 +195,13 @@ func (a *APIError) StatusCode() int {
 		return 0
 	}
 	return a.statusCode
+}
+
+func (a *APIError) PublicMessage() string {
+	if a == nil {
+		return ""
+	}
+	return a.publicMessage
 }
 
 func (a *APIError) PublicResponse() *ErrorResponse {

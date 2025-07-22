@@ -69,7 +69,7 @@ type ContentStorage interface {
 		content io.ReadSeeker,
 		filepath, contentType string,
 	) (string, *APIError)
-	GetFile(ctx context.Context, filepath string, headers http.Header) (*File, *APIError)
+	GetFile(ctx context.Context, filepath string, downloadRange *string) (*File, *APIError)
 	CreatePresignedURL(
 		ctx context.Context,
 		filepath string,
@@ -173,12 +173,12 @@ func (ctrl *Controller) SetupRouter(
 	{
 		// files.POST("", ctrl.UploadFilesGin) // To delete
 		// files.POST("/", ctrl.UploadFilesGin)
-		files.GET("/:id", ctrl.GetFileGin)
-		files.HEAD("/:id", ctrl.GetFileInformation)
+		// files.GET("/:id", ctrl.GetFileGin)
+		// files.HEAD("/:id", ctrl.GetFileInformation)
 		files.PUT("/:id", ctrl.ReplaceFileGin)
 		files.DELETE("/:id", ctrl.DeleteFileGin)
 		files.GET("/:id/presignedurl", ctrl.GetFilePresignedURL)
-		files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
+		// files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
 	}
 
 	ops := apiRoot.Group("/ops")

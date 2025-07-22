@@ -77,7 +77,7 @@ func WithHeaders(header http.Header) clientv2.RequestInterceptor {
 		ctx context.Context,
 		req *http.Request,
 		gqlInfo *clientv2.GQLRequestInfo,
-		res interface{},
+		res any,
 		next clientv2.RequestInterceptorFunc,
 	) error {
 		for k, v := range header {

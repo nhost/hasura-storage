@@ -10,7 +10,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/nhost/hasura-storage/api"
-	"github.com/nhost/hasura-storage/middleware/auth"
+	"github.com/nhost/hasura-storage/middleware"
 )
 
 const maxFormMemory = 1 << 20 // 1 MB
@@ -31,7 +31,6 @@ type fileData struct {
 type uploadFileRequest struct {
 	bucketID string
 	files    []fileData
-	headers  http.Header
 }
 
 func checkFileSize(file *multipart.FileHeader, minSize, maxSize int) *APIError {
@@ -98,7 +97,7 @@ func (ctrl *Controller) processFile(
 	ctx context.Context,
 	file fileData,
 	bucket BucketMetadata,
-	headers http.Header,
+	sessionHeaders http.Header,
 ) (api.FileMetadata, *APIError) {
 	if err := checkFileSize(file.header, bucket.MinUploadFile, bucket.MaxUploadFile); err != nil {
 		return api.FileMetadata{}, InternalServerError(
@@ -113,13 +112,13 @@ func (ctrl *Controller) processFile(
 	defer fileContent.Close()
 
 	if err := ctrl.metadataStorage.InitializeFile(
-		ctx, file.ID, file.Name, file.header.Size, bucket.ID, contentType, headers,
+		ctx, file.ID, file.Name, file.header.Size, bucket.ID, contentType, sessionHeaders,
 	); err != nil {
 		return api.FileMetadata{}, err
 	}
 
 	if err := ctrl.scanAndReportVirus(
-		ctx, fileContent, file.ID, file.Name, headers,
+		ctx, fileContent, file.ID, file.Name, sessionHeaders,
 	); err != nil {
 		return api.FileMetadata{}, err
 	}
@@ -151,6 +150,7 @@ func (ctrl *Controller) processFile(
 func (ctrl *Controller) upload(
 	ctx context.Context,
 	request uploadFileRequest,
+	sessionHeaders http.Header,
 ) ([]api.FileMetadata, *APIError) {
 	bucket, err := ctrl.metadataStorage.GetBucketByID(
 		ctx,
@@ -164,7 +164,7 @@ func (ctrl *Controller) upload(
 	filesMetadata := make([]api.FileMetadata, 0, len(request.files))
 
 	for _, file := range request.files {
-		metadata, err := ctrl.processFile(ctx, file, bucket, request.headers)
+		metadata, err := ctrl.processFile(ctx, file, bucket, sessionHeaders)
 		if err != nil {
 			return filesMetadata, err
 		}
@@ -204,9 +204,7 @@ func getBucketIDFromFormValue(md map[string][]string) string {
 	return "default"
 }
 
-func parseUploadRequest(
-	form *multipart.Form, headers http.Header,
-) (uploadFileRequest, *APIError) {
+func parseUploadRequest(form *multipart.Form) (uploadFileRequest, *APIError) {
 	files, ok := form.File["file[]"]
 	if !ok {
 		return uploadFileRequest{}, ErrMultipartFormFileNotFound
@@ -237,28 +235,43 @@ func parseUploadRequest(
 	return uploadFileRequest{
 		bucketID: getBucketIDFromFormValue(form.Value),
 		files:    processedFiles,
-		headers:  headers,
 	}, nil
 }
 
 func (ctrl *Controller) UploadFiles( //nolint:ireturn
 	ctx context.Context, request api.UploadFilesRequestObject,
 ) (api.UploadFilesResponseObject, error) {
-	headers := auth.HeadersFromContext(ctx)
+	logger := middleware.LoggerFromContext(ctx)
+	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
 
 	form, err := request.Body.ReadForm(maxFormMemory)
 	if err != nil {
+		logger.WithError(err).Error("problem reading multipart form")
 		return InternalServerError(err), nil
 	}
 
-	uploadFilesRequest, apiErr := parseUploadRequest(form, headers)
+	uploadFilesRequest, apiErr := parseUploadRequest(form)
 	if apiErr != nil {
+		logger.WithError(apiErr).Error("problem parsing upload request")
 		return apiErr, nil
 	}
 
-	fm, apiErr := ctrl.upload(ctx, uploadFilesRequest)
+	fm, apiErr := ctrl.upload(ctx, uploadFilesRequest, sessionHeaders)
 	if apiErr != nil {
-		return apiErr, nil
+		logger.WithError(apiErr).Error("problem uploading files")
+		return api.UploadFilesdefaultJSONResponse{
+			Body: api.ErrorResponseWithProcessedFiles{
+				Error: &struct {
+					Data    *map[string]any `json:"data,omitempty"`
+					Message string          `json:"message"`
+				}{
+					Data:    &apiErr.data,
+					Message: apiErr.PublicMessage(),
+				},
+				ProcessedFiles: &fm,
+			},
+			StatusCode: apiErr.StatusCode(),
+		}, nil
 	}
 
 	return api.UploadFiles201JSONResponse{

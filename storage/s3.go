@@ -115,7 +115,7 @@ func (s *S3) PutFile(
 func (s *S3) GetFile(
 	ctx context.Context,
 	filepath string,
-	headers http.Header,
+	downloadRange *string,
 ) (*controller.File, *controller.APIError) {
 	key, err := url.JoinPath(s.rootFolder, filepath)
 	if err != nil {
@@ -130,7 +130,7 @@ func (s *S3) GetFile(
 			// IfModifiedSince:   &time.Time{},
 			// IfNoneMatch:       new(string),
 			// IfUnmodifiedSince: &time.Time{},
-			Range: aws.String(headers.Get("Range")),
+			Range: downloadRange,
 		},
 	)
 	if err != nil {

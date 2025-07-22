@@ -36,7 +36,6 @@ paths:
                   type: array
                   description: "Optional custom metadata for each uploaded file. Must match the order of the file[] array."
                   items:
-                    # type: string
                     $ref: "#/components/schemas/UploadFileMetadata"
                 file[]:
                   description: "Array of files to upload."
@@ -66,7 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/ErrorResponseWithProcessedFiles"
 
   /files/{id}:
     delete:
@@ -135,20 +134,20 @@ paths:
           description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
             maximum: 100
         - name: h
           description: "Maximum height to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
         - name: w
           description: "Maximum width to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
         - name: b
           description: "Blur the image using this sigma value. Only applies to image files"
@@ -160,15 +159,13 @@ paths:
           description: "Output format for image files. Use 'auto' for content negotiation based on Accept header"
           in: query
           schema:
+            $ref: '#/components/schemas/OutputImageFormat'
+        - name: Range
+          description: "Range of bytes to retrieve from the file. Format: bytes=start-end"
+          in: header
+          schema:
             type: string
-            default: same
-            enum:
-              - auto
-              - same
-              - jpeg
-              - webp
-              - png
-              - avif
+            pattern: '^bytes=\d+-\d+$'
       responses:
         "200":
           description: "File content retrieved successfully"
@@ -177,10 +174,6 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
             Content-Type:
               description: "MIME type of the file"
               schema:
@@ -189,11 +182,65 @@ paths:
               description: "Entity tag for cache validation"
               schema:
                 type: string
+            Content-Disposition:
+              description: "Indicates if the content should be displayed inline or as an attachment"
+              schema:
+                type: string
             Last-Modified:
               description: "Date and time the file was last modified"
               schema:
                 type: string
                 format: date-time
+            Surrogate-Key:
+              description: "Cache key for surrogate caching"
+              schema:
+                type: string
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
+              schema:
+                type: string
+            Accept-Ranges:
+              description: Always set to bytes. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges
+              schema:
+                type: string
+          content:
+            application/octet-stream: {}
+        "206":
+          description: "Partial file content retrieved successfully"
+          headers:
+            Cache-Control:
+              description: "Directives for caching mechanisms"
+              schema:
+                type: string
+            Content-Type:
+              description: "MIME type of the file"
+              schema:
+                type: string
+            Content-Range:
+              description: "Range of bytes returned in the response"
+              schema:
+                type: string
+            Etag:
+              description: "Entity tag for cache validation"
+              schema:
+                type: string
+            Content-Disposition:
+              description: "Indicates if the content should be displayed inline or as an attachment"
+              schema:
+                type: string
+            Last-Modified:
+              description: "Date and time the file was last modified"
+              schema:
+                type: string
+                format: date-time
+            Surrogate-Key:
+              description: "Cache key for surrogate caching"
+              schema:
+                type: string
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
+              schema:
+                type: string
           content:
             application/octet-stream: {}
         "304":
@@ -203,23 +250,14 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
-            Content-Type:
-              description: "MIME type of the file"
-              schema:
-                type: string
             Etag:
               description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: "Date and time the file was last modified"
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
-                format: date-time
         "400":
           description: "Error occurred"
           headers:
@@ -234,23 +272,14 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
-            Content-Type:
-              description: "MIME type of the file"
-              schema:
-                type: string
             Etag:
               description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: "Date and time the file was last modified"
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
-                format: date-time
 
     head:
       summary: "Check file information"
@@ -293,20 +322,20 @@ paths:
           description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
             maximum: 100
         - name: h
           description: "Maximum height to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
         - name: w
           description: "Maximum width to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
             minimum: 1
         - name: b
           description: "Blur the image using this sigma value. Only applies to image files"
@@ -318,15 +347,7 @@ paths:
           description: "Output format for image files. Use 'auto' for content negotiation based on Accept header"
           in: query
           schema:
-            type: string
-            default: same
-            enum:
-              - auto
-              - same
-              - jpeg
-              - webp
-              - png
-              - avif
+            $ref: '#/components/schemas/OutputImageFormat'
 
       responses:
         "200":
@@ -336,16 +357,20 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
             Content-Type:
               description: "MIME type of the file"
               schema:
                 type: string
+            Content-Length:
+              description: "Size of the file in bytes"
+              schema:
+                type: integer
             Etag:
               description: "Entity tag for cache validation"
+              schema:
+                type: string
+            Content-Disposition:
+              description: "Indicates if the content should be displayed inline or as an attachment"
               schema:
                 type: string
             Last-Modified:
@@ -353,6 +378,18 @@ paths:
               schema:
                 type: string
                 format: date-time
+            Accept-Ranges:
+              description: "Always set to bytes. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges"
+              schema:
+                type: string
+            Surrogate-Key:
+              description: "Cache key for surrogate caching"
+              schema:
+                type: string
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
+              schema:
+                type: string
         "304":
           description: "File not modified since the condition specified in If-Modified-Since or If-None-Match headers"
           headers:
@@ -360,28 +397,12 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
-            Content-Type:
-              description: "MIME type of the file"
-              schema:
-                type: string
             Etag:
               description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: "Date and time the file was last modified"
-              schema:
-                type: string
-                format: date-time
-        "400":
-          description: "Error occurred"
-          headers:
-            X-Error:
-              description: "Error message details"
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
         "412":
@@ -391,23 +412,21 @@ paths:
               description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: "Size of the file in bytes"
-              schema:
-                type: number
-            Content-Type:
-              description: "MIME type of the file"
-              schema:
-                type: string
             Etag:
               description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: "Date and time the file was last modified"
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
-                format: date-time
+        default:
+          description: "Error occurred"
+          headers:
+            X-Error:
+              description: "Error message details"
+              schema:
+                type: string
 
     put:
       summary: "Replace file"
@@ -911,6 +930,32 @@ components:
             - message
       additionalProperties: false
 
+    ErrorResponseWithProcessedFiles:
+      type: object
+      description: "Error information returned by the API."
+      properties:
+        processedFiles:
+          type: array
+          description: "List of files that were successfully processed before the error occurred."
+          items:
+            $ref: "#/components/schemas/FileMetadata"
+        error:
+          type: object
+          additionalProperties: false
+          description: "Error details."
+          properties:
+            message:
+              type: string
+              description: "Human-readable error message."
+              example: "File not found"
+            data:
+              type: object
+              additionalProperties: true
+              description: "Additional data related to the error, if any."
+          required:
+            - message
+      additionalProperties: false
+
     FileMetadata:
       type: object
       description: "Comprehensive metadata information about a file in storage."
@@ -1056,3 +1101,16 @@ components:
           example: "1.2.3"
       required:
         - buildVersion
+
+    OutputImageFormat:
+      type: string
+      description: "Output format for image files. Use 'auto' for content negotiation based on Accept header"
+      default: same
+      enum:
+        - auto
+        - same
+        - jpeg
+        - webp
+        - png
+        - avif
+      example: same

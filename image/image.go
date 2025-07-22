@@ -29,7 +29,7 @@ const (
 type Options struct {
 	Height         int
 	Width          int
-	Blur           float64
+	Blur           float32
 	Quality        int
 	OriginalFormat ImageType
 	Format         ImageType
@@ -147,7 +147,7 @@ func processImage(image *vips.ImageRef, opts Options) error {
 	}
 
 	if opts.Blur > 0 {
-		if err := image.GaussianBlur(opts.Blur); err != nil {
+		if err := image.GaussianBlur(float64(opts.Blur)); err != nil {
 			return fmt.Errorf("failed to blur: %w", err)
 		}
 	}

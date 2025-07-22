@@ -18,7 +18,7 @@ import (
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/image"
 	"github.com/nhost/hasura-storage/metadata"
-	"github.com/nhost/hasura-storage/middleware/auth"
+	"github.com/nhost/hasura-storage/middleware"
 	"github.com/nhost/hasura-storage/middleware/cdn/fastly"
 	"github.com/nhost/hasura-storage/migrations"
 	"github.com/nhost/hasura-storage/storage"
@@ -53,37 +53,6 @@ const (
 	hasuraDBNameFlag             = "hasura-db-name"
 )
 
-func ginLogger(logger *logrus.Logger) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		startTime := time.Now()
-
-		ctx.Next()
-
-		endTime := time.Now()
-
-		latencyTime := endTime.Sub(startTime)
-		reqMethod := ctx.Request.Method
-		reqURL := ctx.Request.RequestURI
-		statusCode := ctx.Writer.Status()
-		clientIP := ctx.ClientIP()
-
-		fields := logrus.Fields{
-			"status_code":  statusCode,
-			"latency_time": latencyTime,
-			"client_ip":    clientIP,
-			"method":       reqMethod,
-			"url":          reqURL,
-			"errors":       ctx.Errors.Errors(),
-		}
-
-		if len(ctx.Errors.Errors()) > 0 {
-			logger.WithFields(fields).Error("call completed with some errors")
-		} else {
-			logger.WithFields(fields).Info()
-		}
-	}
-}
-
 func getGin(
 	bind string,
 	publicURL string,
@@ -114,7 +83,7 @@ func getGin(
 	})
 
 	handlers := []gin.HandlerFunc{
-		ginLogger(logger),
+		middleware.Logger(logger),
 		// cors(),
 		gin.Recovery(),
 	}
@@ -167,7 +136,7 @@ func getGin(
 		doc,
 		&ginmiddleware.Options{ //nolint:exhaustruct
 			Options: openapi3filter.Options{ //nolint:exhaustruct
-				AuthenticationFunc: auth.Middleware(hasuraAdminSecret),
+				AuthenticationFunc: middleware.AuthenticationFunc(hasuraAdminSecret),
 			},
 			SilenceServersWarning: true,
 		},

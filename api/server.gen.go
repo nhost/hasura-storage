@@ -257,6 +257,25 @@ func (siw *ServerInterfaceWrapper) GetFile(c *gin.Context) {
 
 	}
 
+	// ------------- Optional header parameter "Range" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Range")]; found {
+		var Range string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for Range, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Range", valueList[0], &Range, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter Range: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.Range = &Range
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -860,7 +879,7 @@ func (response UploadFiles201JSONResponse) VisitUploadFilesResponse(w http.Respo
 }
 
 type UploadFilesdefaultJSONResponse struct {
-	Body       ErrorResponse
+	Body       ErrorResponseWithProcessedFiles
 	StatusCode int
 }
 
@@ -906,11 +925,14 @@ type GetFileResponseObject interface {
 }
 
 type GetFile200ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	AcceptRanges       string
+	CacheControl       string
+	ContentDisposition string
+	ContentType        string
+	Etag               string
+	LastModified       time.Time
+	SurrogateControl   string
+	SurrogateKey       string
 }
 
 type GetFile200ApplicationoctetStreamResponse struct {
@@ -924,11 +946,14 @@ func (response GetFile200ApplicationoctetStreamResponse) VisitGetFileResponse(w 
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
 	}
+	w.Header().Set("Accept-Ranges", fmt.Sprint(response.Headers.AcceptRanges))
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
+	w.Header().Set("Content-Disposition", fmt.Sprint(response.Headers.ContentDisposition))
 	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
 	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
+	w.Header().Set("Surrogate-Key", fmt.Sprint(response.Headers.SurrogateKey))
 	w.WriteHeader(200)
 
 	if closer, ok := response.Body.(io.ReadCloser); ok {
@@ -938,12 +963,49 @@ func (response GetFile200ApplicationoctetStreamResponse) VisitGetFileResponse(w 
 	return err
 }
 
+type GetFile206ResponseHeaders struct {
+	CacheControl       string
+	ContentDisposition string
+	ContentRange       string
+	ContentType        string
+	Etag               string
+	LastModified       time.Time
+	SurrogateControl   string
+	SurrogateKey       string
+}
+
+type GetFile206ApplicationoctetStreamResponse struct {
+	Body          io.Reader
+	Headers       GetFile206ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetFile206ApplicationoctetStreamResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
+	w.Header().Set("Content-Disposition", fmt.Sprint(response.Headers.ContentDisposition))
+	w.Header().Set("Content-Range", fmt.Sprint(response.Headers.ContentRange))
+	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
+	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
+	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
+	w.Header().Set("Surrogate-Key", fmt.Sprint(response.Headers.SurrogateKey))
+	w.WriteHeader(206)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
 type GetFile304ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetFile304Response struct {
@@ -952,10 +1014,8 @@ type GetFile304Response struct {
 
 func (response GetFile304Response) VisitGetFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(304)
 	return nil
 }
@@ -975,11 +1035,9 @@ func (response GetFile400Response) VisitGetFileResponse(w http.ResponseWriter) e
 }
 
 type GetFile412ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetFile412Response struct {
@@ -988,10 +1046,8 @@ type GetFile412Response struct {
 
 func (response GetFile412Response) VisitGetFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(412)
 	return nil
 }
@@ -1006,11 +1062,15 @@ type GetFileMetadataHeadersResponseObject interface {
 }
 
 type GetFileMetadataHeaders200ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	AcceptRanges       string
+	CacheControl       string
+	ContentDisposition string
+	ContentLength      int
+	ContentType        string
+	Etag               string
+	LastModified       time.Time
+	SurrogateControl   string
+	SurrogateKey       string
 }
 
 type GetFileMetadataHeaders200Response struct {
@@ -1018,21 +1078,23 @@ type GetFileMetadataHeaders200Response struct {
 }
 
 func (response GetFileMetadataHeaders200Response) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Accept-Ranges", fmt.Sprint(response.Headers.AcceptRanges))
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
+	w.Header().Set("Content-Disposition", fmt.Sprint(response.Headers.ContentDisposition))
 	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
 	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
 	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
+	w.Header().Set("Surrogate-Key", fmt.Sprint(response.Headers.SurrogateKey))
 	w.WriteHeader(200)
 	return nil
 }
 
 type GetFileMetadataHeaders304ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetFileMetadataHeaders304Response struct {
@@ -1041,34 +1103,16 @@ type GetFileMetadataHeaders304Response struct {
 
 func (response GetFileMetadataHeaders304Response) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(304)
 	return nil
 }
 
-type GetFileMetadataHeaders400ResponseHeaders struct {
-	XError string
-}
-
-type GetFileMetadataHeaders400Response struct {
-	Headers GetFileMetadataHeaders400ResponseHeaders
-}
-
-func (response GetFileMetadataHeaders400Response) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
-	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
-	w.WriteHeader(400)
-	return nil
-}
-
 type GetFileMetadataHeaders412ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  time.Time
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetFileMetadataHeaders412Response struct {
@@ -1077,11 +1121,25 @@ type GetFileMetadataHeaders412Response struct {
 
 func (response GetFileMetadataHeaders412Response) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(412)
+	return nil
+}
+
+type GetFileMetadataHeadersdefaultResponseHeaders struct {
+	XError string
+}
+
+type GetFileMetadataHeadersdefaultResponse struct {
+	Headers GetFileMetadataHeadersdefaultResponseHeaders
+
+	StatusCode int
+}
+
+func (response GetFileMetadataHeadersdefaultResponse) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) error {
+	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
+	w.WriteHeader(response.StatusCode)
 	return nil
 }
 
@@ -1894,77 +1952,82 @@ func (sh *strictHandler) GetVersion(ctx *gin.Context) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"NGS4Jzc3/x8AAP//L5s0p4VqAAA=",
+	"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",
+	"AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

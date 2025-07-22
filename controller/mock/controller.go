@@ -215,18 +215,18 @@ func (mr *MockContentStorageMockRecorder) DeleteFile(ctx, filepath any) *gomock.
 }
 
 // GetFile mocks base method.
-func (m *MockContentStorage) GetFile(ctx context.Context, filepath string, headers http.Header) (*controller.File, *controller.APIError) {
+func (m *MockContentStorage) GetFile(ctx context.Context, filepath string, downloadRange *string) (*controller.File, *controller.APIError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFile", ctx, filepath, headers)
+	ret := m.ctrl.Call(m, "GetFile", ctx, filepath, downloadRange)
 	ret0, _ := ret[0].(*controller.File)
 	ret1, _ := ret[1].(*controller.APIError)
 	return ret0, ret1
 }
 
 // GetFile indicates an expected call of GetFile.
-func (mr *MockContentStorageMockRecorder) GetFile(ctx, filepath, headers any) *gomock.Call {
+func (mr *MockContentStorageMockRecorder) GetFile(ctx, filepath, downloadRange any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFile", reflect.TypeOf((*MockContentStorage)(nil).GetFile), ctx, filepath, headers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFile", reflect.TypeOf((*MockContentStorage)(nil).GetFile), ctx, filepath, downloadRange)
 }
 
 // GetFileWithPresignedURL mocks base method.

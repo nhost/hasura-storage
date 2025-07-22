@@ -14,24 +14,14 @@ const (
 	X_Hasura_Admin_SecretScopes = "X_Hasura_Admin_Secret.Scopes"
 )
 
-// Defines values for GetFileParamsF.
+// Defines values for OutputImageFormat.
 const (
-	GetFileParamsFAuto GetFileParamsF = "auto"
-	GetFileParamsFAvif GetFileParamsF = "avif"
-	GetFileParamsFJpeg GetFileParamsF = "jpeg"
-	GetFileParamsFPng  GetFileParamsF = "png"
-	GetFileParamsFSame GetFileParamsF = "same"
-	GetFileParamsFWebp GetFileParamsF = "webp"
-)
-
-// Defines values for GetFileMetadataHeadersParamsF.
-const (
-	GetFileMetadataHeadersParamsFAuto GetFileMetadataHeadersParamsF = "auto"
-	GetFileMetadataHeadersParamsFAvif GetFileMetadataHeadersParamsF = "avif"
-	GetFileMetadataHeadersParamsFJpeg GetFileMetadataHeadersParamsF = "jpeg"
-	GetFileMetadataHeadersParamsFPng  GetFileMetadataHeadersParamsF = "png"
-	GetFileMetadataHeadersParamsFSame GetFileMetadataHeadersParamsF = "same"
-	GetFileMetadataHeadersParamsFWebp GetFileMetadataHeadersParamsF = "webp"
+	Auto OutputImageFormat = "auto"
+	Avif OutputImageFormat = "avif"
+	Jpeg OutputImageFormat = "jpeg"
+	Png  OutputImageFormat = "png"
+	Same OutputImageFormat = "same"
+	Webp OutputImageFormat = "webp"
 )
 
 // ErrorResponse Error information returned by the API.
@@ -44,6 +34,21 @@ type ErrorResponse struct {
 		// Message Human-readable error message.
 		Message string `json:"message"`
 	} `json:"error,omitempty"`
+}
+
+// ErrorResponseWithProcessedFiles Error information returned by the API.
+type ErrorResponseWithProcessedFiles struct {
+	// Error Error details.
+	Error *struct {
+		// Data Additional data related to the error, if any.
+		Data *map[string]interface{} `json:"data,omitempty"`
+
+		// Message Human-readable error message.
+		Message string `json:"message"`
+	} `json:"error,omitempty"`
+
+	// ProcessedFiles List of files that were successfully processed before the error occurred.
+	ProcessedFiles *[]FileMetadata `json:"processedFiles,omitempty"`
 }
 
 // FileMetadata Comprehensive metadata information about a file in storage.
@@ -97,6 +102,9 @@ type FileSummary struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// OutputImageFormat Output format for image files. Use 'auto' for content negotiation based on Accept header
+type OutputImageFormat string
+
 // PresignedURLResponse Contains a presigned URL for direct file operations.
 type PresignedURLResponse struct {
 	// Expiration The time in seconds until the URL expires.
@@ -148,19 +156,19 @@ type UploadFilesMultipartBody struct {
 // GetFileParams defines parameters for GetFile.
 type GetFileParams struct {
 	// Q Image quality (1-100). Only applies to JPEG, WebP and PNG files
-	Q *float32 `form:"q,omitempty" json:"q,omitempty"`
+	Q *int `form:"q,omitempty" json:"q,omitempty"`
 
 	// H Maximum height to resize image to while maintaining aspect ratio. Only applies to image files
-	H *float32 `form:"h,omitempty" json:"h,omitempty"`
+	H *int `form:"h,omitempty" json:"h,omitempty"`
 
 	// W Maximum width to resize image to while maintaining aspect ratio. Only applies to image files
-	W *float32 `form:"w,omitempty" json:"w,omitempty"`
+	W *int `form:"w,omitempty" json:"w,omitempty"`
 
 	// B Blur the image using this sigma value. Only applies to image files
 	B *float32 `form:"b,omitempty" json:"b,omitempty"`
 
 	// F Output format for image files. Use 'auto' for content negotiation based on Accept header
-	F *GetFileParamsF `form:"f,omitempty" json:"f,omitempty"`
+	F *OutputImageFormat `form:"f,omitempty" json:"f,omitempty"`
 
 	// IfMatch Only return the file if the current ETag matches one of the values provided
 	IfMatch *string `json:"if-match,omitempty"`
@@ -173,27 +181,27 @@ type GetFileParams struct {
 
 	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
 	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
-}
 
-// GetFileParamsF defines parameters for GetFile.
-type GetFileParamsF string
+	// Range Range of bytes to retrieve from the file. Format: bytes=start-end
+	Range *string `json:"Range,omitempty"`
+}
 
 // GetFileMetadataHeadersParams defines parameters for GetFileMetadataHeaders.
 type GetFileMetadataHeadersParams struct {
 	// Q Image quality (1-100). Only applies to JPEG, WebP and PNG files
-	Q *float32 `form:"q,omitempty" json:"q,omitempty"`
+	Q *int `form:"q,omitempty" json:"q,omitempty"`
 
 	// H Maximum height to resize image to while maintaining aspect ratio. Only applies to image files
-	H *float32 `form:"h,omitempty" json:"h,omitempty"`
+	H *int `form:"h,omitempty" json:"h,omitempty"`
 
 	// W Maximum width to resize image to while maintaining aspect ratio. Only applies to image files
-	W *float32 `form:"w,omitempty" json:"w,omitempty"`
+	W *int `form:"w,omitempty" json:"w,omitempty"`
 
 	// B Blur the image using this sigma value. Only applies to image files
 	B *float32 `form:"b,omitempty" json:"b,omitempty"`
 
 	// F Output format for image files. Use 'auto' for content negotiation based on Accept header
-	F *GetFileMetadataHeadersParamsF `form:"f,omitempty" json:"f,omitempty"`
+	F *OutputImageFormat `form:"f,omitempty" json:"f,omitempty"`
 
 	// IfMatch Only return the file if the current ETag matches one of the values provided
 	IfMatch *string `json:"if-match,omitempty"`
@@ -207,9 +215,6 @@ type GetFileMetadataHeadersParams struct {
 	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
 	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
 }
-
-// GetFileMetadataHeadersParamsF defines parameters for GetFileMetadataHeaders.
-type GetFileMetadataHeadersParamsF string
 
 // ReplaceFileMultipartBody defines parameters for ReplaceFile.
 type ReplaceFileMultipartBody struct {

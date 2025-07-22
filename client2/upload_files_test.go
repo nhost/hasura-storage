@@ -1,0 +1,374 @@
+package client2_test
+
+import (
+	"context"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
+	"github.com/nhost/hasura-storage/client2"
+)
+
+func compareContentLength() cmp.Option {
+	return cmp.FilterPath(
+		func(p cmp.Path) bool {
+			return p.Last().String() == `["Content-Length"]`
+		},
+		cmp.Comparer(func(a, b []string) bool {
+			if len(a) != 1 || len(b) != 1 {
+				return false
+			}
+
+			if a[0] == b[0] {
+				return true
+			}
+
+			x, _ := strconv.Atoi(a[0])
+			y, _ := strconv.Atoi(b[0])
+
+			if y-3 <= x && x <= y+3 {
+				return true
+			}
+
+			return false
+		}),
+	)
+}
+
+func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
+	t.Parallel()
+
+	cl, err := client2.NewClientWithResponses(testBaseURL)
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	id1 := uuid.NewString()
+	id2 := uuid.NewString()
+
+	cases := []struct {
+		name        string
+		requestBody func(t *testing.T) (io.Reader, string)
+		interceptor func(ctx context.Context, req *http.Request) error
+		expected    *struct {
+			ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+		}
+		expectedHeader  http.Header
+		expectedCmpOpts []cmp.Option
+		expectedErr     *client2.ErrorResponseWithProcessedFiles
+	}{
+		{
+			name: "simple upload",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client2.CreateUploadMultiForm(
+					"default",
+					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor: WithAccessToken(accessTokenValidUser),
+			expected: &struct {
+				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+			}{
+				ProcessedFiles: []client2.FileMetadata{
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"65a8e27d8879283831b664bd8b7f0ad4"`,
+						Id:         "69045896-4b8e-4bd1-a87b-e1386cb7",
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "testfile.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       13,
+					},
+				},
+			},
+			expectedHeader: http.Header{
+				"Content-Length": {"323"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{
+				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "multi-upload",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client2.CreateUploadMultiForm(
+					"default",
+					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client2.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor: WithAccessToken(accessTokenValidUser),
+			expected: &struct {
+				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+			}{
+				ProcessedFiles: []client2.FileMetadata{
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"65a8e27d8879283831b664bd8b7f0ad4"`,
+						Id:         "69045896-4b8e-4bd1-a87b-e1386cb7",
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "testfile.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       13,
+					},
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"2562b24d9ca6633770dec8cbb190cca8"`,
+						Id:         "69045896-4b8e-4bd1-a87b-e1386cb7",
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "morefiles.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       12,
+					},
+				},
+			},
+			expectedHeader: http.Header{
+				"Content-Length": {"626"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{
+				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "with metadata",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client2.CreateUploadMultiForm(
+					"default",
+					client2.NewFile(
+						"testfile.txt",
+						strings.NewReader("Hello, World!"),
+						&client2.UploadFileMetadata{
+							Id:       ptr(id1),
+							Metadata: ptr(map[string]any{"key": "value"}),
+							Name:     ptr("Custom Name.txt"),
+						},
+					),
+					client2.NewFile(
+						"morefiles.txt",
+						strings.NewReader("More content"),
+						&client2.UploadFileMetadata{
+							Id:       ptr(id2),
+							Metadata: nil,
+							Name:     nil,
+						},
+					),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor: WithAccessToken(accessTokenValidUser),
+			expected: &struct {
+				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+			}{
+				ProcessedFiles: []client2.FileMetadata{
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"65a8e27d8879283831b664bd8b7f0ad4"`,
+						Id:         id1,
+						IsUploaded: true,
+						Metadata:   ptr(map[string]any{"key": "value"}),
+						Name:       "Custom Name.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       13,
+					},
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"2562b24d9ca6633770dec8cbb190cca8"`,
+						Id:         id2,
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "morefiles.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       12,
+					},
+				},
+			},
+			expectedHeader: http.Header{
+				"Content-Length": {"640"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{},
+			expectedErr:     nil,
+		},
+		{
+			name: "wrong bucket",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client2.CreateUploadMultiForm(
+					"wrong-bucket",
+					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor: WithAccessToken(accessTokenValidUser),
+			expected:    nil,
+			expectedHeader: http.Header{
+				"Content-Length": {"75"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{},
+			expectedErr: &client2.ErrorResponseWithProcessedFiles{
+				ProcessedFiles: nil,
+				Error: &struct {
+					Data    *map[string]any `json:"data,omitempty"`
+					Message string          `json:"message"`
+				}{
+					Data:    nil,
+					Message: "bucket not found",
+				},
+			},
+		},
+		{
+			name: "with virus",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client2.CreateUploadMultiForm(
+					"default",
+					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client2.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
+					client2.NewFile("blah.txt", strings.NewReader(eicarTestFile), nil),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor: WithAccessToken(accessTokenValidUser),
+			expected:    nil,
+			expectedHeader: http.Header{
+				"Content-Length": {"740"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{
+				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+			},
+			expectedErr: &client2.ErrorResponseWithProcessedFiles{
+				Error: &struct {
+					Data    *map[string]any `json:"data,omitempty"`
+					Message string          `json:"message"`
+				}{
+					Data:    &map[string]any{"file": "blah.txt", "virus": "Win.Test.EICAR_HDB-1"},
+					Message: "virus found: Win.Test.EICAR_HDB-1",
+				},
+				ProcessedFiles: &[]client2.FileMetadata{
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"65a8e27d8879283831b664bd8b7f0ad4"`,
+						Id:         "69045896-4b8e-4bd1-a87b-e1386cb7",
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "testfile.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       13,
+					},
+					{
+						BucketId:   "default",
+						CreatedAt:  time.Time{},
+						Etag:       `"2562b24d9ca6633770dec8cbb190cca8"`,
+						Id:         "69045896-4b8e-4bd1-a87b-e1386cb7",
+						IsUploaded: true,
+						Metadata:   nil,
+						Name:       "morefiles.txt",
+						MimeType:   "text/plain; charset=utf-8",
+						Size:       12,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			body, contentType := tc.requestBody(t)
+			resp, err := cl.UploadFilesWithBodyWithResponse(
+				t.Context(),
+				contentType,
+				body,
+				tc.interceptor,
+			)
+			if err != nil {
+				t.Fatalf("failed to upload files: %v", err)
+			}
+
+			opts := append(
+				cmp.Options{
+					cmpopts.IgnoreFields(client2.FileMetadata{}, "CreatedAt", "UpdatedAt"),
+				},
+				tc.expectedCmpOpts...,
+			)
+
+			if diff := cmp.Diff(resp.JSON201, tc.expected, opts...); diff != "" {
+				t.Errorf("unexpected response: %s", diff)
+			}
+
+			if diff := cmp.Diff(resp.JSONDefault, tc.expectedErr, opts); diff != "" {
+				t.Errorf("unexpected error response: %s", diff)
+			}
+
+			if diff := cmp.Diff(
+				resp.HTTPResponse.Header,
+				tc.expectedHeader,
+				compareContentLength(),
+				cmp.Options{
+					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
+						return key == "Date"
+					}),
+				},
+			); diff != "" {
+				t.Errorf("unexpected headers: %s", diff)
+			}
+		})
+	}
+}
