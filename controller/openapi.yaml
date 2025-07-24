@@ -165,7 +165,7 @@ paths:
           in: header
           schema:
             type: string
-            pattern: '^bytes=\d+-\d+$'
+            pattern: '^bytes=(\d+-\d*|\d*-\d+)(,(\d+-\d*|\d*-\d+))*$'
       responses:
         "200":
           description: "File content retrieved successfully"
@@ -258,13 +258,6 @@ paths:
               description: "Cache control directives for surrogate caching"
               schema:
                 type: string
-        "400":
-          description: "Error occurred"
-          headers:
-            X-Error:
-              description: "Error message details"
-              schema:
-                type: string
         "412":
           description: "Precondition failed for conditional request headers (If-Match, If-Unmodified-Since, If-None-Match)"
           headers:
@@ -278,6 +271,13 @@ paths:
                 type: string
             Surrogate-Control:
               description: "Cache control directives for surrogate caching"
+              schema:
+                type: string
+        default:
+          description: "Error occurred"
+          headers:
+            X-Error:
+              description: "Error message details"
               schema:
                 type: string
 
@@ -480,7 +480,7 @@ paths:
   /files/{id}/presignedurl:
     get:
       summary: Retrieve presigned URL to retrieve the file
-      operationId: getPresignedURL
+      operationId: getFilePresignedURL
       description: |
         Retrieve presigned URL to retrieve the file. Expiration of the URL is
         determined by bucket configuration
@@ -502,7 +502,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PresignedURLResponse"
 
-        "400":
+        default:
           description: Some error occurred
           content:
             application/json:
@@ -561,68 +561,107 @@ paths:
           in: query
           schema:
             type: string
+        - name: X-Amz-Checksum-Mode
+          description: Use presignedurl endpoint to generate this automatically
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: x-id
+          description: Use presignedurl endpoint to generate this automatically
+          required: true
+          in: query
+          schema:
+            type: string
         - name: if-match
-          description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match
+          description: "Only return the file if the current ETag matches one of the values provided"
           in: header
           schema:
             type: string
         - name: if-none-match
-          description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+          description: "Only return the file if the current ETag does not match any of the values provided"
           in: header
           schema:
             type: string
         - name: if-modified-since
-          description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
+          description: "Only return the file if it has been modified after the given date"
           in: header
           schema:
             type: string
+            format: date-time
         - name: if-unmodified-since
-          description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since
+          description: "Only return the file if it has not been modified after the given date"
           in: header
           schema:
             type: string
+            format: date-time
         - name: q
-          description: Quality of the image. Only applies to jpeg, webp and png files
+          description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
           schema:
-            type: number
+            type: integer
+            minimum: 1
+            maximum: 100
         - name: h
-          description: Resize image up to h maintaining aspect ratio. Only applies to jpeg, webp and png files
+          description: "Maximum height to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
+            minimum: 1
         - name: w
-          description: Resize image up to w maintaining aspect ratio. Only applies to jpeg, webp and png files
+          description: "Maximum width to resize image to while maintaining aspect ratio. Only applies to image files"
           in: query
           schema:
-            type: number
+            type: integer
+            minimum: 1
         - name: b
-          description: Blur the image according to this sigma value. Only applies to jpeg, webp and png files
+          description: "Blur the image using this sigma value. Only applies to image files"
           in: query
           schema:
             type: number
+            minimum: 0
+        - name: f
+          description: "Output format for image files. Use 'auto' for content negotiation based on Accept header"
+          in: query
+          schema:
+            $ref: '#/components/schemas/OutputImageFormat'
+        - name: Range
+          description: "Range of bytes to retrieve from the file. Format: bytes=start-end"
+          in: header
+          schema:
+            type: string
+            pattern: '^bytes=(\d+-\d*|\d*-\d+)(,(\d+-\d*|\d*-\d+))*$'
       responses:
         "200":
-          description: File gathered successfully
+          description: "File content retrieved successfully"
           headers:
             Cache-Control:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+              description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-              schema:
-                type: number
             Content-Type:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+              description: "MIME type of the file"
               schema:
                 type: string
             Etag:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Etag
+              description: "Entity tag for cache validation"
+              schema:
+                type: string
+            Content-Disposition:
+              description: "Indicates if the content should be displayed inline or as an attachment"
               schema:
                 type: string
             Last-Modified:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
+              description: "Date and time the file was last modified"
+              schema:
+                type: string
+                format: date-time
+            Surrogate-Key:
+              description: "Cache key for surrogate caching"
+              schema:
+                type: string
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
             Accept-Ranges:
@@ -632,95 +671,78 @@ paths:
           content:
             application/octet-stream: {}
         "206":
-          description: File partially gathered successfully
+          description: "Partial file content retrieved successfully"
           headers:
             Cache-Control:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+              description: "Directives for caching mechanisms"
               schema:
                 type: string
-            Content-Length:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-              schema:
-                type: number
             Content-Type:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
-              schema:
-                type: string
-            Etag:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Etag
-              schema:
-                type: string
-            Last-Modified:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
-              schema:
-                type: string
-            Accept-Ranges:
-              description: Always set to bytes. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges
+              description: "MIME type of the file"
               schema:
                 type: string
             Content-Range:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range
+              description: "Range of bytes returned in the response"
+              schema:
+                type: string
+            Etag:
+              description: "Entity tag for cache validation"
+              schema:
+                type: string
+            Content-Disposition:
+              description: "Indicates if the content should be displayed inline or as an attachment"
+              schema:
+                type: string
+            Last-Modified:
+              description: "Date and time the file was last modified"
+              schema:
+                type: string
+                format: date-time
+            Surrogate-Key:
+              description: "Cache key for surrogate caching"
+              schema:
+                type: string
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
           content:
             application/octet-stream: {}
         "304":
-          description: |
-            File hasn't been modified based on:
-            - file modification time is older than If-Modified-Since
+          description: "File not modified since the condition specified in If-Modified-Since or If-None-Match headers"
           headers:
             Cache-Control:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
-              schema:
-                type: string
-            Content-Length:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-              schema:
-                type: number
-            Content-Type:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+              description: "Directives for caching mechanisms"
               schema:
                 type: string
             Etag:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Etag
+              description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
-              schema:
-                type: string
-        "400":
-          description: Some error occurred
-          headers:
-            X-Error:
-              description: An error message
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
               schema:
                 type: string
         "412":
-          description: |
-            Some of the conditions specified in the headers failed to match. For instance:
-              - etag doesn't match one of If-Match
-              - etag matches one of If-None-Match
-              - if-unmodified-since is false
+          description: "Precondition failed for conditional request headers (If-Match, If-Unmodified-Since, If-None-Match)"
           headers:
             Cache-Control:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
-              schema:
-                type: string
-            Content-Length:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
-              schema:
-                type: number
-            Content-Type:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+              description: "Directives for caching mechanisms"
               schema:
                 type: string
             Etag:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Etag
+              description: "Entity tag for cache validation"
               schema:
                 type: string
-            Last-Modified:
-              description: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
+            Surrogate-Control:
+              description: "Cache control directives for surrogate caching"
+              schema:
+                type: string
+        default:
+          description: "Error occurred"
+          headers:
+            X-Error:
+              description: "Error message details"
               schema:
                 type: string
 
@@ -1051,9 +1073,12 @@ components:
           description: "The presigned URL for file operations."
           example: "https://storage.example.com/files/abc123?signature=xyz"
         expiration:
-          type: number
+          type: integer
           description: "The time in seconds until the URL expires."
           example: 3600
+      required:
+        - url
+        - expiration
       additionalProperties: false
 
     UpdateFileMetadata:

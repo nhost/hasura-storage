@@ -108,10 +108,10 @@ type OutputImageFormat string
 // PresignedURLResponse Contains a presigned URL for direct file operations.
 type PresignedURLResponse struct {
 	// Expiration The time in seconds until the URL expires.
-	Expiration *float32 `json:"expiration,omitempty"`
+	Expiration int `json:"expiration"`
 
 	// Url The presigned URL for file operations.
-	Url *string `json:"url,omitempty"`
+	Url string `json:"url"`
 }
 
 // UpdateFileMetadata Metadata that can be updated for an existing file.
@@ -245,29 +245,41 @@ type GetPresignedURLContentsParams struct {
 	// XAmzSignedHeaders Use presignedurl endpoint to generate this automatically
 	XAmzSignedHeaders string `form:"X-Amz-SignedHeaders" json:"X-Amz-SignedHeaders"`
 
-	// Q Quality of the image. Only applies to jpeg, webp and png files
-	Q *float32 `form:"q,omitempty" json:"q,omitempty"`
+	// XAmzChecksumMode Use presignedurl endpoint to generate this automatically
+	XAmzChecksumMode string `form:"X-Amz-Checksum-Mode" json:"X-Amz-Checksum-Mode"`
 
-	// H Resize image up to h maintaining aspect ratio. Only applies to jpeg, webp and png files
-	H *float32 `form:"h,omitempty" json:"h,omitempty"`
+	// XId Use presignedurl endpoint to generate this automatically
+	XId string `form:"x-id" json:"x-id"`
 
-	// W Resize image up to w maintaining aspect ratio. Only applies to jpeg, webp and png files
-	W *float32 `form:"w,omitempty" json:"w,omitempty"`
+	// Q Image quality (1-100). Only applies to JPEG, WebP and PNG files
+	Q *int `form:"q,omitempty" json:"q,omitempty"`
 
-	// B Blur the image according to this sigma value. Only applies to jpeg, webp and png files
+	// H Maximum height to resize image to while maintaining aspect ratio. Only applies to image files
+	H *int `form:"h,omitempty" json:"h,omitempty"`
+
+	// W Maximum width to resize image to while maintaining aspect ratio. Only applies to image files
+	W *int `form:"w,omitempty" json:"w,omitempty"`
+
+	// B Blur the image using this sigma value. Only applies to image files
 	B *float32 `form:"b,omitempty" json:"b,omitempty"`
 
-	// IfMatch https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match
+	// F Output format for image files. Use 'auto' for content negotiation based on Accept header
+	F *OutputImageFormat `form:"f,omitempty" json:"f,omitempty"`
+
+	// IfMatch Only return the file if the current ETag matches one of the values provided
 	IfMatch *string `json:"if-match,omitempty"`
 
-	// IfNoneMatch https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+	// IfNoneMatch Only return the file if the current ETag does not match any of the values provided
 	IfNoneMatch *string `json:"if-none-match,omitempty"`
 
-	// IfModifiedSince https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
-	IfModifiedSince *string `json:"if-modified-since,omitempty"`
+	// IfModifiedSince Only return the file if it has been modified after the given date
+	IfModifiedSince *time.Time `json:"if-modified-since,omitempty"`
 
-	// IfUnmodifiedSince https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since
-	IfUnmodifiedSince *string `json:"if-unmodified-since,omitempty"`
+	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
+	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
+
+	// Range Range of bytes to retrieve from the file. Format: bytes=start-end
+	Range *string `json:"Range,omitempty"`
 }
 
 // UploadFilesMultipartRequestBody defines body for UploadFiles for multipart/form-data ContentType.

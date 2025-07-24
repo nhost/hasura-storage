@@ -147,15 +147,18 @@ func (ctrl *Controller) getFileMetadataHeaders(
 	case http.StatusOK:
 		return api.GetFileMetadataHeaders200Response{
 			Headers: api.GetFileMetadataHeaders200ResponseHeaders{
-				AcceptRanges:       "bytes",
-				CacheControl:       bucketMetadata.CacheControl,
-				ContentType:        fileMetadata.MimeType,
-				Etag:               fileMetadata.Etag,
-				LastModified:       fileMetadata.UpdatedAt,
-				SurrogateControl:   bucketMetadata.CacheControl,
-				SurrogateKey:       fileMetadata.Id,
-				ContentDisposition: fmt.Sprintf(`inline; filename="%s"`, url.QueryEscape(fileMetadata.Name)),
-				ContentLength:      int(fileMetadata.Size),
+				AcceptRanges:     "bytes",
+				CacheControl:     bucketMetadata.CacheControl,
+				ContentType:      fileMetadata.MimeType,
+				Etag:             fileMetadata.Etag,
+				LastModified:     fileMetadata.UpdatedAt,
+				SurrogateControl: bucketMetadata.CacheControl,
+				SurrogateKey:     fileMetadata.Id,
+				ContentDisposition: fmt.Sprintf(
+					`inline; filename="%s"`,
+					url.QueryEscape(fileMetadata.Name),
+				),
+				ContentLength: int(fileMetadata.Size),
 			},
 		}, nil
 	case http.StatusNotModified:

@@ -107,6 +107,14 @@ func (a *APIError) VisitDeleteBrokenMetadataResponse(w http.ResponseWriter) erro
 	return a.visit(w)
 }
 
+func (a *APIError) VisitGetFilePresignedURLResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
 func InternalServerError(err error) *APIError {
 	return &APIError{
 		statusCode:    http.StatusInternalServerError,

@@ -17,11 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Only used if the request fails.
-type GetFileResponse struct {
-	Error *ErrorResponse `json:"error"`
-}
-
 func deptr[T any](v *T) T { //nolint:ireturn
 	if v == nil {
 		var zero T
@@ -172,14 +167,29 @@ func getFileNameAndMimeType(fileMetadata api.FileMetadata, opts image.Options) (
 
 type getFileFunc func() (*File, *APIError)
 
-func (ctrl *Controller) processFileToDownload( //nolint: ireturn
+type processFiler interface {
+	ImageManipulationOptionsGetter
+	ConditionalChecksGetter
+}
+
+type processedFile struct {
+	statusCode    int
+	body          io.ReadCloser
+	fileMetadata  api.FileMetadata
+	filename      string
+	cacheControl  string
+	mimeType      string
+	contentLength int64
+	extraHeaders  http.Header
+}
+
+func (ctrl *Controller) processFileToDownload(
 	downloadFunc getFileFunc,
 	fileMetadata api.FileMetadata,
 	cacheControl string,
-	params api.GetFileParams,
+	params processFiler,
 	acceptHeader []string,
-	logger logrus.FieldLogger,
-) (api.GetFileResponseObject, *APIError) {
+) (*processedFile, *APIError) {
 	opts, apiErr := getImageManipulationOptions(params, fileMetadata.MimeType, acceptHeader)
 	if apiErr != nil {
 		return nil, apiErr
@@ -208,87 +218,91 @@ func (ctrl *Controller) processFileToDownload( //nolint: ireturn
 		updateAt = time.Now().Format(time.RFC3339)
 	}
 
-	statusCode, apiErr := checkConditionals(fileMetadata.Etag, updateAt, params, download.StatusCode)
+	statusCode, apiErr := checkConditionals(
+		fileMetadata.Etag,
+		updateAt,
+		params,
+		download.StatusCode,
+	)
 	if apiErr != nil {
 		return nil, apiErr
 	}
 
 	filename, mimeType := getFileNameAndMimeType(fileMetadata, opts)
 
-	return ctrl.getFileResponse(
-		statusCode,
-		body,
-		fileMetadata,
-		filename,
-		cacheControl,
-		mimeType,
-		contentLength,
-		download.ExtraHeaders,
-		logger,
-	)
+	return &processedFile{
+		statusCode:    statusCode,
+		body:          body,
+		fileMetadata:  fileMetadata,
+		filename:      filename,
+		cacheControl:  cacheControl,
+		mimeType:      mimeType,
+		contentLength: contentLength,
+		extraHeaders:  download.ExtraHeaders,
+	}, nil
 }
 
-func (ctrl *Controller) getFileResponse( //nolint: ireturn,funlen
-	statusCode int,
-	body io.ReadCloser,
-	fileMetadata api.FileMetadata,
-	filename string,
-	cacheControl string,
-	mimeType string,
-	contentLength int64,
-	downloadHeaders http.Header,
+func (ctrl *Controller) getFileResponse( //nolint: ireturn,funlen,dupl
+	file *processedFile,
 	logger logrus.FieldLogger,
-) (api.GetFileResponseObject, *APIError) {
-	switch statusCode {
+) api.GetFileResponseObject {
+	switch file.statusCode {
 	case http.StatusOK:
 		return api.GetFile200ApplicationoctetStreamResponse{
-			Body: body,
+			Body: file.body,
 			Headers: api.GetFile200ResponseHeaders{
-				AcceptRanges:       "bytes",
-				CacheControl:       cacheControl,
-				ContentDisposition: fmt.Sprintf(`inline; filename="%s"`, url.QueryEscape(filename)),
-				ContentType:        mimeType,
-				Etag:               fileMetadata.Etag,
-				LastModified:       fileMetadata.UpdatedAt,
-				SurrogateControl:   cacheControl,
-				SurrogateKey:       fileMetadata.Id,
+				AcceptRanges: "bytes",
+				CacheControl: file.cacheControl,
+				ContentDisposition: fmt.Sprintf(
+					`inline; filename="%s"`,
+					url.QueryEscape(file.filename),
+				),
+				ContentType:      file.mimeType,
+				Etag:             file.fileMetadata.Etag,
+				LastModified:     file.fileMetadata.UpdatedAt,
+				SurrogateControl: file.cacheControl,
+				SurrogateKey:     file.fileMetadata.Id,
 			},
-			ContentLength: contentLength,
-		}, nil
+			ContentLength: file.contentLength,
+		}
 	case http.StatusPartialContent:
 		return api.GetFile206ApplicationoctetStreamResponse{
-			Body: body,
+			Body: file.body,
 			Headers: api.GetFile206ResponseHeaders{
-				CacheControl:       cacheControl,
-				ContentDisposition: fmt.Sprintf(`inline; filename="%s"`, url.QueryEscape(filename)),
-				ContentRange:       downloadHeaders.Get("Content-Range"),
-				ContentType:        mimeType,
-				Etag:               fileMetadata.Etag,
-				LastModified:       fileMetadata.UpdatedAt,
-				SurrogateControl:   cacheControl,
-				SurrogateKey:       fileMetadata.Id,
+				CacheControl: file.cacheControl,
+				ContentDisposition: fmt.Sprintf(
+					`inline; filename="%s"`,
+					url.QueryEscape(file.filename),
+				),
+				ContentRange:     file.extraHeaders.Get("Content-Range"),
+				ContentType:      file.mimeType,
+				Etag:             file.fileMetadata.Etag,
+				LastModified:     file.fileMetadata.UpdatedAt,
+				SurrogateControl: file.cacheControl,
+				SurrogateKey:     file.fileMetadata.Id,
 			},
-			ContentLength: contentLength,
-		}, nil
+			ContentLength: file.contentLength,
+		}
 	case http.StatusNotModified:
 		return api.GetFile304Response{
 			Headers: api.GetFile304ResponseHeaders{
-				CacheControl:     cacheControl,
-				Etag:             fileMetadata.Etag,
-				SurrogateControl: cacheControl,
+				CacheControl:     file.cacheControl,
+				Etag:             file.fileMetadata.Etag,
+				SurrogateControl: file.cacheControl,
 			},
-		}, nil
+		}
 	case http.StatusPreconditionFailed:
 		return api.GetFile412Response{
 			Headers: api.GetFile412ResponseHeaders{
-				CacheControl:     cacheControl,
-				Etag:             fileMetadata.Etag,
-				SurrogateControl: cacheControl,
+				CacheControl:     file.cacheControl,
+				Etag:             file.fileMetadata.Etag,
+				SurrogateControl: file.cacheControl,
 			},
-		}, nil
+		}
 	default:
-		logger.WithField("statusCode", statusCode).Error("unexpected status code from download")
-		return nil, ErrUnexpectedStatusCode
+		logger.WithField("statusCode", file.statusCode).
+			Error("unexpected status code from download")
+		return ErrUnexpectedStatusCode
 	}
 }
 
@@ -297,7 +311,6 @@ func (ctrl *Controller) GetFile( //nolint:ireturn
 	request api.GetFileRequestObject,
 ) (api.GetFileResponseObject, error) {
 	logger := middleware.LoggerFromContext(ctx)
-
 	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
 	acceptHeader := middleware.AcceptHeaderFromContext(ctx)
 
@@ -313,18 +326,17 @@ func (ctrl *Controller) GetFile( //nolint:ireturn
 		return ctrl.contentStorage.GetFile(ctx, fileMetadata.Id, request.Params.Range)
 	}
 
-	response, apiErr := ctrl.processFileToDownload(
+	processedFile, apiErr := ctrl.processFileToDownload(
 		downloadFunc,
 		fileMetadata,
 		bucketMetadata.CacheControl,
 		request.Params,
 		acceptHeader,
-		logger,
 	)
 	if apiErr != nil {
 		logger.WithError(apiErr).Error("failed to process file for download")
 		return apiErr, nil
 	}
 
-	return response, nil
+	return ctrl.getFileResponse(processedFile, logger), nil
 }

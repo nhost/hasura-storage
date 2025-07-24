@@ -43,7 +43,7 @@ type ServerInterface interface {
 	ReplaceFile(c *gin.Context, id string)
 	// Retrieve presigned URL to retrieve the file
 	// (GET /files/{id}/presignedurl)
-	GetPresignedURL(c *gin.Context, id string)
+	GetFilePresignedURL(c *gin.Context, id string)
 	// Retrieve contents of file
 	// (GET /files/{id}/presignedurl/contents)
 	GetPresignedURLContents(c *gin.Context, id string, params GetPresignedURLContentsParams)
@@ -459,8 +459,8 @@ func (siw *ServerInterfaceWrapper) ReplaceFile(c *gin.Context) {
 	siw.Handler.ReplaceFile(c, id)
 }
 
-// GetPresignedURL operation middleware
-func (siw *ServerInterfaceWrapper) GetPresignedURL(c *gin.Context) {
+// GetFilePresignedURL operation middleware
+func (siw *ServerInterfaceWrapper) GetFilePresignedURL(c *gin.Context) {
 
 	var err error
 
@@ -482,7 +482,7 @@ func (siw *ServerInterfaceWrapper) GetPresignedURL(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetPresignedURL(c, id)
+	siw.Handler.GetFilePresignedURL(c, id)
 }
 
 // GetPresignedURLContents operation middleware
@@ -594,6 +594,36 @@ func (siw *ServerInterfaceWrapper) GetPresignedURLContents(c *gin.Context) {
 		return
 	}
 
+	// ------------- Required query parameter "X-Amz-Checksum-Mode" -------------
+
+	if paramValue := c.Query("X-Amz-Checksum-Mode"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument X-Amz-Checksum-Mode is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "X-Amz-Checksum-Mode", c.Request.URL.Query(), &params.XAmzChecksumMode)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Amz-Checksum-Mode: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Required query parameter "x-id" -------------
+
+	if paramValue := c.Query("x-id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandler(c, fmt.Errorf("Query argument x-id is required, but not found"), http.StatusBadRequest)
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "x-id", c.Request.URL.Query(), &params.XId)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter x-id: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	// ------------- Optional query parameter "q" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "q", c.Request.URL.Query(), &params.Q)
@@ -623,6 +653,14 @@ func (siw *ServerInterfaceWrapper) GetPresignedURLContents(c *gin.Context) {
 	err = runtime.BindQueryParameter("form", true, false, "b", c.Request.URL.Query(), &params.B)
 	if err != nil {
 		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter b: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "f" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "f", c.Request.URL.Query(), &params.F)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter f: %w", err), http.StatusBadRequest)
 		return
 	}
 
@@ -668,7 +706,7 @@ func (siw *ServerInterfaceWrapper) GetPresignedURLContents(c *gin.Context) {
 
 	// ------------- Optional header parameter "if-modified-since" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("if-modified-since")]; found {
-		var IfModifiedSince string
+		var IfModifiedSince time.Time
 		n := len(valueList)
 		if n != 1 {
 			siw.ErrorHandler(c, fmt.Errorf("Expected one value for if-modified-since, got %d", n), http.StatusBadRequest)
@@ -687,7 +725,7 @@ func (siw *ServerInterfaceWrapper) GetPresignedURLContents(c *gin.Context) {
 
 	// ------------- Optional header parameter "if-unmodified-since" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("if-unmodified-since")]; found {
-		var IfUnmodifiedSince string
+		var IfUnmodifiedSince time.Time
 		n := len(valueList)
 		if n != 1 {
 			siw.ErrorHandler(c, fmt.Errorf("Expected one value for if-unmodified-since, got %d", n), http.StatusBadRequest)
@@ -701,6 +739,25 @@ func (siw *ServerInterfaceWrapper) GetPresignedURLContents(c *gin.Context) {
 		}
 
 		params.IfUnmodifiedSince = &IfUnmodifiedSince
+
+	}
+
+	// ------------- Optional header parameter "Range" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Range")]; found {
+		var Range string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for Range, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Range", valueList[0], &Range, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter Range: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.Range = &Range
 
 	}
 
@@ -847,7 +904,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.GET(options.BaseURL+"/files/:id", wrapper.GetFile)
 	router.HEAD(options.BaseURL+"/files/:id", wrapper.GetFileMetadataHeaders)
 	router.PUT(options.BaseURL+"/files/:id", wrapper.ReplaceFile)
-	router.GET(options.BaseURL+"/files/:id/presignedurl", wrapper.GetPresignedURL)
+	router.GET(options.BaseURL+"/files/:id/presignedurl", wrapper.GetFilePresignedURL)
 	router.GET(options.BaseURL+"/files/:id/presignedurl/contents", wrapper.GetPresignedURLContents)
 	router.GET(options.BaseURL+"/openapi.yaml", wrapper.GetOpenAPISpec)
 	router.POST(options.BaseURL+"/ops/delete-broken-metadata", wrapper.DeleteBrokenMetadata)
@@ -1020,20 +1077,6 @@ func (response GetFile304Response) VisitGetFileResponse(w http.ResponseWriter) e
 	return nil
 }
 
-type GetFile400ResponseHeaders struct {
-	XError string
-}
-
-type GetFile400Response struct {
-	Headers GetFile400ResponseHeaders
-}
-
-func (response GetFile400Response) VisitGetFileResponse(w http.ResponseWriter) error {
-	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
-	w.WriteHeader(400)
-	return nil
-}
-
 type GetFile412ResponseHeaders struct {
 	CacheControl     string
 	Etag             string
@@ -1049,6 +1092,22 @@ func (response GetFile412Response) VisitGetFileResponse(w http.ResponseWriter) e
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
 	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(412)
+	return nil
+}
+
+type GetFiledefaultResponseHeaders struct {
+	XError string
+}
+
+type GetFiledefaultResponse struct {
+	Headers GetFiledefaultResponseHeaders
+
+	StatusCode int
+}
+
+func (response GetFiledefaultResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
+	w.WriteHeader(response.StatusCode)
 	return nil
 }
 
@@ -1170,30 +1229,33 @@ func (response ReplaceFile400JSONResponse) VisitReplaceFileResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetPresignedURLRequestObject struct {
+type GetFilePresignedURLRequestObject struct {
 	Id string `json:"id"`
 }
 
-type GetPresignedURLResponseObject interface {
-	VisitGetPresignedURLResponse(w http.ResponseWriter) error
+type GetFilePresignedURLResponseObject interface {
+	VisitGetFilePresignedURLResponse(w http.ResponseWriter) error
 }
 
-type GetPresignedURL200JSONResponse PresignedURLResponse
+type GetFilePresignedURL200JSONResponse PresignedURLResponse
 
-func (response GetPresignedURL200JSONResponse) VisitGetPresignedURLResponse(w http.ResponseWriter) error {
+func (response GetFilePresignedURL200JSONResponse) VisitGetFilePresignedURLResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetPresignedURL400JSONResponse ErrorResponse
+type GetFilePresignedURLdefaultJSONResponse struct {
+	Body       ErrorResponse
+	StatusCode int
+}
 
-func (response GetPresignedURL400JSONResponse) VisitGetPresignedURLResponse(w http.ResponseWriter) error {
+func (response GetFilePresignedURLdefaultJSONResponse) VisitGetFilePresignedURLResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
+	w.WriteHeader(response.StatusCode)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type GetPresignedURLContentsRequestObject struct {
@@ -1206,12 +1268,14 @@ type GetPresignedURLContentsResponseObject interface {
 }
 
 type GetPresignedURLContents200ResponseHeaders struct {
-	AcceptRanges  string
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  string
+	AcceptRanges       string
+	CacheControl       string
+	ContentDisposition string
+	ContentType        string
+	Etag               string
+	LastModified       time.Time
+	SurrogateControl   string
+	SurrogateKey       string
 }
 
 type GetPresignedURLContents200ApplicationoctetStreamResponse struct {
@@ -1227,10 +1291,12 @@ func (response GetPresignedURLContents200ApplicationoctetStreamResponse) VisitGe
 	}
 	w.Header().Set("Accept-Ranges", fmt.Sprint(response.Headers.AcceptRanges))
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
+	w.Header().Set("Content-Disposition", fmt.Sprint(response.Headers.ContentDisposition))
 	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
 	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
+	w.Header().Set("Surrogate-Key", fmt.Sprint(response.Headers.SurrogateKey))
 	w.WriteHeader(200)
 
 	if closer, ok := response.Body.(io.ReadCloser); ok {
@@ -1241,13 +1307,14 @@ func (response GetPresignedURLContents200ApplicationoctetStreamResponse) VisitGe
 }
 
 type GetPresignedURLContents206ResponseHeaders struct {
-	AcceptRanges  string
-	CacheControl  string
-	ContentLength float32
-	ContentRange  string
-	ContentType   string
-	Etag          string
-	LastModified  string
+	CacheControl       string
+	ContentDisposition string
+	ContentRange       string
+	ContentType        string
+	Etag               string
+	LastModified       time.Time
+	SurrogateControl   string
+	SurrogateKey       string
 }
 
 type GetPresignedURLContents206ApplicationoctetStreamResponse struct {
@@ -1261,13 +1328,14 @@ func (response GetPresignedURLContents206ApplicationoctetStreamResponse) VisitGe
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
 	}
-	w.Header().Set("Accept-Ranges", fmt.Sprint(response.Headers.AcceptRanges))
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
+	w.Header().Set("Content-Disposition", fmt.Sprint(response.Headers.ContentDisposition))
 	w.Header().Set("Content-Range", fmt.Sprint(response.Headers.ContentRange))
 	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
 	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
+	w.Header().Set("Surrogate-Key", fmt.Sprint(response.Headers.SurrogateKey))
 	w.WriteHeader(206)
 
 	if closer, ok := response.Body.(io.ReadCloser); ok {
@@ -1278,11 +1346,9 @@ func (response GetPresignedURLContents206ApplicationoctetStreamResponse) VisitGe
 }
 
 type GetPresignedURLContents304ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  string
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetPresignedURLContents304Response struct {
@@ -1291,34 +1357,16 @@ type GetPresignedURLContents304Response struct {
 
 func (response GetPresignedURLContents304Response) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(304)
 	return nil
 }
 
-type GetPresignedURLContents400ResponseHeaders struct {
-	XError string
-}
-
-type GetPresignedURLContents400Response struct {
-	Headers GetPresignedURLContents400ResponseHeaders
-}
-
-func (response GetPresignedURLContents400Response) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
-	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
-	w.WriteHeader(400)
-	return nil
-}
-
 type GetPresignedURLContents412ResponseHeaders struct {
-	CacheControl  string
-	ContentLength float32
-	ContentType   string
-	Etag          string
-	LastModified  string
+	CacheControl     string
+	Etag             string
+	SurrogateControl string
 }
 
 type GetPresignedURLContents412Response struct {
@@ -1327,11 +1375,25 @@ type GetPresignedURLContents412Response struct {
 
 func (response GetPresignedURLContents412Response) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Cache-Control", fmt.Sprint(response.Headers.CacheControl))
-	w.Header().Set("Content-Length", fmt.Sprint(response.Headers.ContentLength))
-	w.Header().Set("Content-Type", fmt.Sprint(response.Headers.ContentType))
 	w.Header().Set("Etag", fmt.Sprint(response.Headers.Etag))
-	w.Header().Set("Last-Modified", fmt.Sprint(response.Headers.LastModified))
+	w.Header().Set("Surrogate-Control", fmt.Sprint(response.Headers.SurrogateControl))
 	w.WriteHeader(412)
+	return nil
+}
+
+type GetPresignedURLContentsdefaultResponseHeaders struct {
+	XError string
+}
+
+type GetPresignedURLContentsdefaultResponse struct {
+	Headers GetPresignedURLContentsdefaultResponseHeaders
+
+	StatusCode int
+}
+
+func (response GetPresignedURLContentsdefaultResponse) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("X-Error", fmt.Sprint(response.Headers.XError))
+	w.WriteHeader(response.StatusCode)
 	return nil
 }
 
@@ -1531,7 +1593,7 @@ type StrictServerInterface interface {
 	ReplaceFile(ctx context.Context, request ReplaceFileRequestObject) (ReplaceFileResponseObject, error)
 	// Retrieve presigned URL to retrieve the file
 	// (GET /files/{id}/presignedurl)
-	GetPresignedURL(ctx context.Context, request GetPresignedURLRequestObject) (GetPresignedURLResponseObject, error)
+	GetFilePresignedURL(ctx context.Context, request GetFilePresignedURLRequestObject) (GetFilePresignedURLResponseObject, error)
 	// Retrieve contents of file
 	// (GET /files/{id}/presignedurl/contents)
 	GetPresignedURLContents(ctx context.Context, request GetPresignedURLContentsRequestObject) (GetPresignedURLContentsResponseObject, error)
@@ -1719,17 +1781,17 @@ func (sh *strictHandler) ReplaceFile(ctx *gin.Context, id string) {
 	}
 }
 
-// GetPresignedURL operation middleware
-func (sh *strictHandler) GetPresignedURL(ctx *gin.Context, id string) {
-	var request GetPresignedURLRequestObject
+// GetFilePresignedURL operation middleware
+func (sh *strictHandler) GetFilePresignedURL(ctx *gin.Context, id string) {
+	var request GetFilePresignedURLRequestObject
 
 	request.Id = id
 
 	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPresignedURL(ctx, request.(GetPresignedURLRequestObject))
+		return sh.ssi.GetFilePresignedURL(ctx, request.(GetFilePresignedURLRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPresignedURL")
+		handler = middleware(handler, "GetFilePresignedURL")
 	}
 
 	response, err := handler(ctx, request)
@@ -1737,8 +1799,8 @@ func (sh *strictHandler) GetPresignedURL(ctx *gin.Context, id string) {
 	if err != nil {
 		ctx.Error(err)
 		ctx.Status(http.StatusInternalServerError)
-	} else if validResponse, ok := response.(GetPresignedURLResponseObject); ok {
-		if err := validResponse.VisitGetPresignedURLResponse(ctx.Writer); err != nil {
+	} else if validResponse, ok := response.(GetFilePresignedURLResponseObject); ok {
+		if err := validResponse.VisitGetFilePresignedURLResponse(ctx.Writer); err != nil {
 			ctx.Error(err)
 		}
 	} else if response != nil {
@@ -1952,82 +2014,77 @@ func (sh *strictHandler) GetVersion(ctx *gin.Context) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"AAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
