@@ -101,3 +101,18 @@ func CreateUploadMultiForm(
 
 	return bytes.NewReader(body.Bytes()), writer.FormDataContentType(), nil
 }
+
+func CreateUpdateMultiForm(
+	file *File,
+) (io.Reader, string, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	if err := createMultiForm(writer, "file", file, false); err != nil {
+		return nil, "", fmt.Errorf("problem creating form for file %s: %w", file.name, err)
+	}
+
+	writer.Close()
+
+	return bytes.NewReader(body.Bytes()), writer.FormDataContentType(), nil
+}

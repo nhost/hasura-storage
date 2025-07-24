@@ -59,9 +59,10 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 		expected    *struct {
 			ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 		}
-		expectedHeader  http.Header
-		expectedCmpOpts []cmp.Option
-		expectedErr     *client.ErrorResponseWithProcessedFiles
+		expectedStatusCode int
+		expectedHeader     http.Header
+		expectedCmpOpts    []cmp.Option
+		expectedErr        *client.ErrorResponseWithProcessedFiles
 	}{
 		{
 			name: "simple upload",
@@ -78,7 +79,8 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 				return body, contentType
 			},
-			interceptor: WithAccessToken(accessTokenValidUser),
+			interceptor:        WithAccessToken(accessTokenValidUser),
+			expectedStatusCode: http.StatusCreated,
 			expected: &struct {
 				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
@@ -122,7 +124,8 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 				return body, contentType
 			},
-			interceptor: WithAccessToken(accessTokenValidUser),
+			interceptor:        WithAccessToken(accessTokenValidUser),
+			expectedStatusCode: http.StatusCreated,
 			expected: &struct {
 				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
@@ -193,7 +196,8 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 				return body, contentType
 			},
-			interceptor: WithAccessToken(accessTokenValidUser),
+			interceptor:        WithAccessToken(accessTokenValidUser),
+			expectedStatusCode: http.StatusCreated,
 			expected: &struct {
 				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
@@ -245,8 +249,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 				return body, contentType
 			},
-			interceptor: WithAccessToken(accessTokenValidUser),
-			expected:    nil,
+			interceptor:        WithAccessToken(accessTokenValidUser),
+			expected:           nil,
+			expectedStatusCode: http.StatusNotFound,
 			expectedHeader: http.Header{
 				"Content-Length": {"75"},
 				"Content-Type":   {"application/json"},
@@ -281,8 +286,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 				return body, contentType
 			},
-			interceptor: WithAccessToken(accessTokenValidUser),
-			expected:    nil,
+			interceptor:        WithAccessToken(accessTokenValidUser),
+			expected:           nil,
+			expectedStatusCode: http.StatusForbidden,
 			expectedHeader: http.Header{
 				"Content-Length": {"740"},
 				"Content-Type":   {"application/json"},
@@ -325,21 +331,73 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 				},
 			},
 		},
+		{
+			name: "unauthorized",
+			requestBody: func(t *testing.T) (io.Reader, string) {
+				t.Helper()
+
+				body, contentType, err := client.CreateUploadMultiForm(
+					"default",
+					client.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
+					client.NewFile("blah.txt", strings.NewReader(eicarTestFile), nil),
+				)
+				if err != nil {
+					t.Fatalf("failed to create upload multi-form: %v", err)
+				}
+
+				return body, contentType
+			},
+			interceptor:        nil,
+			expected:           nil,
+			expectedStatusCode: http.StatusForbidden,
+			expectedHeader: http.Header{
+				"Content-Length": {"79"},
+				"Content-Type":   {"application/json"},
+				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
+			},
+			expectedCmpOpts: []cmp.Option{
+				cmpopts.IgnoreFields(client.FileMetadata{}, "Id"),
+			},
+			expectedErr: &client.ErrorResponseWithProcessedFiles{
+				Error: &struct {
+					Data    *map[string]any `json:"data,omitempty"`
+					Message string          `json:"message"`
+				}{
+					Data:    nil,
+					Message: "you are not authorized",
+				},
+				ProcessedFiles: &[]client.FileMetadata{},
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			var interceptor []client.RequestEditorFn
+			if tc.interceptor != nil {
+				interceptor = []client.RequestEditorFn{
+					tc.interceptor,
+				}
+			}
+
 			body, contentType := tc.requestBody(t)
 			resp, err := cl.UploadFilesWithBodyWithResponse(
 				t.Context(),
 				contentType,
 				body,
-				tc.interceptor,
+				interceptor...,
 			)
 			if err != nil {
 				t.Fatalf("failed to upload files: %v", err)
+			}
+
+			if resp.StatusCode() != tc.expectedStatusCode {
+				t.Errorf(
+					"expected status code %d, got %d", tc.expectedStatusCode, resp.StatusCode(),
+				)
 			}
 
 			opts := append(

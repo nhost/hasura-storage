@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/api"
+	"github.com/nhost/hasura-storage/middleware"
 )
 
 type updateFileMetadata struct {
@@ -20,12 +19,12 @@ type UpdateFileResponse struct {
 	Error *ErrorResponse `json:"error,omitempty"`
 }
 
-func updateFileParseRequest(ctx *gin.Context) (fileData, *APIError) {
+func updateFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *APIError) {
 	res := fileData{
-		ID: ctx.Param("id"),
+		ID: request.Id,
 	}
 
-	form, err := ctx.MultipartForm()
+	form, err := request.Body.ReadForm(maxFormMemory)
 	if err != nil {
 		return fileData{}, InternalServerError(
 			fmt.Errorf("problem reading multipart form: %w", err),
@@ -38,9 +37,10 @@ func updateFileParseRequest(ctx *gin.Context) (fileData, *APIError) {
 	}
 
 	res.header = file[0]
+	res.Name = file[0].Filename
 
 	metadata, ok := form.Value["metadata"]
-	if ok { //nolint: nestif
+	if ok {
 		if len(metadata) != len(file) {
 			return fileData{}, ErrMetadataLength
 		}
@@ -52,108 +52,79 @@ func updateFileParseRequest(ctx *gin.Context) (fileData, *APIError) {
 
 		res.Name = d.Name
 		res.Metadata = d.Metadata
-	} else {
-		fileName := ctx.Request.Header.Get("X-Nhost-File-Name")
-		if fileName == "" {
-			fileName = res.header.Filename
-		} else {
-			ctx.Writer.Header().Add(
-				"X-Deprecation-Warning-Old-Upload-File-Method",
-				"please, update the SDK to leverage new API endpoint or read the API docs to adapt your code",
-			)
-		}
-		res.Name = fileName
 	}
 
 	return res, nil
-}
-
-func (ctrl *Controller) updateFile(ctx *gin.Context) (api.FileMetadata, *APIError) { //nolint:funlen
-	file, apiErr := updateFileParseRequest(ctx)
-	if apiErr != nil {
-		return api.FileMetadata{}, apiErr
-	}
-
-	originalMetadata, bucketMetadata, apiErr := ctrl.getFileMetadata(
-		ctx.Request.Context(), file.ID, false, ctx.Request.Header,
-	)
-	if apiErr != nil {
-		return api.FileMetadata{}, apiErr
-	}
-
-	if apiErr = checkFileSize(
-		file.header, bucketMetadata.MinUploadFile, bucketMetadata.MaxUploadFile,
-	); apiErr != nil {
-		return api.FileMetadata{}, InternalServerError(
-			fmt.Errorf("problem checking file size %s: %w", file.Name, apiErr),
-		)
-	}
-
-	if apiErr := ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, false, ctx.Request.Header); apiErr != nil {
-		return api.FileMetadata{}, apiErr.ExtendError(
-			fmt.Sprintf(
-				"problem flagging file as pending upload %s: %s",
-				file.Name,
-				apiErr.Error(),
-			),
-		)
-	}
-
-	fileContent, contentType, err := ctrl.getMultipartFile(file)
-	if err != nil {
-		return api.FileMetadata{}, err
-	}
-	defer fileContent.Close()
-
-	if err := ctrl.scanAndReportVirus(
-		ctx, fileContent, file.ID, file.Name, ctx.Request.Header,
-	); err != nil {
-		return api.FileMetadata{}, err
-	}
-
-	etag, apiErr := ctrl.contentStorage.PutFile(ctx, fileContent, file.ID, contentType)
-	if apiErr != nil {
-		// let's revert the change to isUploaded
-		_ = ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, true, ctx.Request.Header)
-
-		return api.FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
-	}
-
-	newMetadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
-		ctx,
-		file.ID, file.Name, file.header.Size, originalMetadata.BucketId, etag, true, contentType,
-		file.Metadata,
-		ctx.Request.Header,
-	)
-	if apiErr != nil {
-		return api.FileMetadata{}, apiErr.ExtendError(
-			"problem populating file metadata for file " + file.Name,
-		)
-	}
-
-	ctx.Set("FileChanged", file.ID)
-	return newMetadata, nil
-}
-
-func (ctrl *Controller) ReplaceFileGin(ctx *gin.Context) {
-	metadata, apiErr := ctrl.updateFile(ctx)
-	if apiErr != nil {
-		_ = ctx.Error(fmt.Errorf("problem parsing request: %w", apiErr))
-
-		ctx.Header("X-Error", apiErr.publicMessage)
-		ctx.AbortWithStatus(apiErr.statusCode)
-
-		ctx.JSON(apiErr.statusCode, UpdateFileResponse{nil, apiErr.PublicResponse()})
-
-		return
-	}
-
-	ctx.JSON(http.StatusOK, UpdateFileResponse{&metadata, nil})
 }
 
 func (ctrl *Controller) ReplaceFile(
 	ctx context.Context,
 	request api.ReplaceFileRequestObject,
 ) (api.ReplaceFileResponseObject, error) {
-	return nil, nil
+	logger := middleware.LoggerFromContext(ctx)
+	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
+
+	file, apiErr := updateFileParseRequest(request)
+	if apiErr != nil {
+		logger.WithError(apiErr).Error("problem parsing request")
+		return apiErr, nil
+	}
+
+	originalMetadata, bucketMetadata, apiErr := ctrl.getFileMetadata(
+		ctx, request.Id, false, sessionHeaders,
+	)
+	if apiErr != nil {
+		logger.WithError(apiErr).Error("problem getting file metadata")
+		return apiErr, nil
+	}
+
+	if apiErr = checkFileSize(
+		file.header, bucketMetadata.MinUploadFile, bucketMetadata.MaxUploadFile,
+	); apiErr != nil {
+		apiErr := fmt.Errorf("problem checking file size %s: %w", file.Name, apiErr)
+		logger.WithError(apiErr).Errorf("problem checking file size %s", file.Name)
+		return InternalServerError(apiErr), nil
+	}
+
+	fileContent, contentType, apiErr := ctrl.getMultipartFile(file)
+	if apiErr != nil {
+		logger.WithError(apiErr).Errorf("problem getting multipart file %s", file.Name)
+		return apiErr, nil
+	}
+	defer fileContent.Close()
+
+	if apiErr := ctrl.scanAndReportVirus(
+		ctx, fileContent, file.ID, file.Name, sessionHeaders,
+	); apiErr != nil {
+		logger.WithError(apiErr).Errorf("problem scanning file %s for viruses", file.Name)
+		return apiErr, nil
+	}
+
+	if apiErr := ctrl.metadataStorage.SetIsUploaded(
+		ctx, file.ID, false, sessionHeaders,
+	); apiErr != nil {
+		logger.WithError(apiErr).Errorf("problem flagging file as pending upload %s", file.Name)
+		return apiErr, nil
+	}
+
+	etag, apiErr := ctrl.contentStorage.PutFile(ctx, fileContent, file.ID, contentType)
+	if apiErr != nil {
+		// let's revert the change to isUploaded
+		_ = ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, true, sessionHeaders)
+		logger.WithError(apiErr).Errorf("problem uploading file %s to storage", file.Name)
+		return apiErr, nil
+	}
+
+	newMetadata, apiErr := ctrl.metadataStorage.PopulateMetadata(
+		ctx,
+		file.ID, file.Name, file.header.Size, originalMetadata.BucketId, etag, true, contentType,
+		file.Metadata,
+		sessionHeaders,
+	)
+	if apiErr != nil {
+		logger.WithError(apiErr).Errorf("problem populating file metadata for file %s", file.Name)
+		return apiErr, nil
+	}
+
+	return api.ReplaceFile200JSONResponse(newMetadata), nil
 }

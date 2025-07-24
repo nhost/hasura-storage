@@ -175,7 +175,7 @@ func (ctrl *Controller) SetupRouter(
 		// files.POST("/", ctrl.UploadFilesGin)
 		// files.GET("/:id", ctrl.GetFileGin)
 		// files.HEAD("/:id", ctrl.GetFileInformation)
-		files.PUT("/:id", ctrl.ReplaceFileGin)
+		// files.PUT("/:id", ctrl.ReplaceFileGin)
 		files.DELETE("/:id", ctrl.DeleteFileGin)
 		// files.GET("/:id/presignedurl", ctrl.GetFilePresignedURLGin)
 		// files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)

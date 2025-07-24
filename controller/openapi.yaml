@@ -470,7 +470,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FileMetadata"
-        "400":
+        default:
           description: "Error occurred during file replacement"
           content:
             application/json:

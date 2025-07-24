@@ -95,6 +95,10 @@ func (a *APIError) VisitUploadFilesResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
 
+func (a *APIError) VisitReplaceFileResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
 func (a *APIError) VisitGetFileResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
