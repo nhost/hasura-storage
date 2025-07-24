@@ -1,9 +1,8 @@
-package client2_test
+package client_test
 
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -11,62 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nhost/hasura-storage/client2"
+	"github.com/nhost/hasura-storage/client"
 )
 
-func uploadInitialFile(t *testing.T, cl client2.ClientWithResponsesInterface, id1, id2 string) {
-	t.Helper()
-
-	f, err := os.OpenFile("testdata/nhost.jpg", os.O_RDONLY, 0o644)
-	if err != nil {
-		t.Fatalf("failed to read test file: %v", err)
-	}
-	defer f.Close()
-
-	body, contentType, err := client2.CreateUploadMultiForm(
-		"default",
-		client2.NewFile(
-			"testfile.txt",
-			strings.NewReader("Hello, World!"),
-			&client2.UploadFileMetadata{
-				Id: ptr(id1),
-			},
-		),
-		client2.NewFile(
-			"nhost.jpg",
-			f,
-			&client2.UploadFileMetadata{
-				Id: ptr(id2),
-			},
-		),
-	)
-	if err != nil {
-		t.Fatalf("failed to create upload multi-form: %v", err)
-	}
-
-	resp, err := cl.UploadFilesWithBodyWithResponse(
-		t.Context(),
-		contentType,
-		body,
-		WithAccessToken(accessTokenValidUser),
-	)
-	if err != nil {
-		t.Fatalf("failed to upload files: %v", err)
-	}
-
-	if resp.JSONDefault != nil {
-		t.Fatalf("unexpected error response: %v", resp.JSONDefault)
-	}
-
-	if len(resp.JSON201.ProcessedFiles) == 0 {
-		t.Fatal("no files were processed")
-	}
-}
-
-func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
+func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
-	cl, err := client2.NewClientWithResponses(testBaseURL)
+	cl, err := client.NewClientWithResponses(testBaseURL)
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -79,10 +29,9 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 	cases := []struct {
 		name               string
 		id                 string
-		params             *client2.GetFileParams
+		params             *client.GetFileMetadataHeadersParams
 		interceptor        func(ctx context.Context, req *http.Request) error
 		expectedStatusCode int
-		expectedBody       string
 		expectedHeaders    http.Header
 	}{
 		{
@@ -91,7 +40,6 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 			params:             nil,
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -108,12 +56,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfMatch matches",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfMatch: ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -130,15 +77,13 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfMatch does not match",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfMatch: ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusPreconditionFailed,
-			expectedBody:       "",
 			expectedHeaders: http.Header{
 				"Cache-Control":     []string{"max-age=3600"},
-				"Content-Length":    []string{"0"},
 				"Date":              []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
 				"Etag":              []string{`"65a8e27d8879283831b664bd8b7f0ad4"`},
 				"Last-Modified":     []string{"2025-07-21 13:24:53.586273 +0000 +0000"},
@@ -149,12 +94,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfNoneMatch matches",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfNoneMatch: ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusNotModified,
-			expectedBody:       "",
 			expectedHeaders: http.Header{
 				"Cache-Control":     []string{"max-age=3600"},
 				"Date":              []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
@@ -167,12 +111,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfNoneMatch does not match",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfNoneMatch: ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -189,12 +132,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfModifiedSince matches",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfModifiedSince: ptr(time.Now().Add(-time.Hour)),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -211,12 +153,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfModifiedSince does not match",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfModifiedSince: ptr(time.Now().Add(time.Hour)),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusNotModified,
-			expectedBody:       "",
 			expectedHeaders: http.Header{
 				"Cache-Control":     []string{"max-age=3600"},
 				"Date":              []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
@@ -229,15 +170,13 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfUnmodifiedSince matches",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfUnmodifiedSince: ptr(time.Now().Add(-time.Hour)),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusPreconditionFailed,
-			expectedBody:       "",
 			expectedHeaders: http.Header{
 				"Cache-Control":     []string{"max-age=3600"},
-				"Content-Length":    []string{"0"},
 				"Date":              []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
 				"Etag":              []string{`"65a8e27d8879283831b664bd8b7f0ad4"`},
 				"Last-Modified":     []string{"2025-07-21 13:24:53.586273 +0000 +0000"},
@@ -248,12 +187,11 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfUnmodifiedSince does not match",
 			id:   id1,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				IfUnmodifiedSince: ptr(time.Now().Add(time.Hour)),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -275,7 +213,6 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 				"x-hasura-admin-secret": []string{"nhost-admin-secret"},
 			}),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "Hello, World!",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -298,12 +235,9 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 				"x-hasura-role":         []string{"user"},
 			}),
 			expectedStatusCode: http.StatusForbidden,
-			expectedBody:       "{\"error\":{\"data\":null,\"message\":\"you are not authorized\"}}\n",
 			expectedHeaders: http.Header{
-				"Content-Length": {"59"},
-				"Content-Type":   {"application/json"},
-				"Date":           {"Mon, 21 Jul 2025 13:44:26 GMT"},
-				"X-Error":        {"you are not authorized"},
+				"Date":    {"Mon, 21 Jul 2025 13:44:26 GMT"},
+				"X-Error": {"you are not authorized"},
 			},
 		},
 		{
@@ -312,56 +246,9 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 			params:             nil,
 			interceptor:        nil,
 			expectedStatusCode: http.StatusForbidden,
-			expectedBody:       "{\"error\":{\"data\":null,\"message\":\"you are not authorized\"}}\n",
 			expectedHeaders: http.Header{
-				"Content-Length": {"59"},
-				"Content-Type":   {"application/json"},
-				"Date":           {"Mon, 21 Jul 2025 13:44:26 GMT"},
-				"X-Error":        {"you are not authorized"},
-			},
-		},
-		{
-			name: "range",
-			id:   id1,
-			params: &client2.GetFileParams{
-				Range: ptr("bytes=0-4"),
-			},
-			interceptor:        WithAccessToken(accessTokenValidUser),
-			expectedStatusCode: http.StatusPartialContent,
-			expectedBody:       "Hello",
-			expectedHeaders: http.Header{
-				"Cache-Control":       []string{"max-age=3600"},
-				"Content-Disposition": []string{`inline; filename="testfile.txt"`},
-				"Content-Length":      []string{"5"},
-				"Content-Range":       []string{"bytes 0-4/13"},
-				"Content-Type":        []string{"text/plain; charset=utf-8"},
-				"Date":                []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
-				"Etag":                []string{`"65a8e27d8879283831b664bd8b7f0ad4"`},
-				"Last-Modified":       []string{"2025-07-21 13:24:53.586273 +0000 +0000"},
-				"Surrogate-Control":   []string{"max-age=3600"},
-				"Surrogate-Key":       []string{"d505075a-ee28-4a02-b27a-5973fd2ea35f"},
-			},
-		},
-		{
-			name: "range middle",
-			id:   id1,
-			params: &client2.GetFileParams{
-				Range: ptr("bytes=2-8"),
-			},
-			interceptor:        WithAccessToken(accessTokenValidUser),
-			expectedStatusCode: http.StatusPartialContent,
-			expectedBody:       "llo, Wo",
-			expectedHeaders: http.Header{
-				"Cache-Control":       []string{"max-age=3600"},
-				"Content-Disposition": []string{`inline; filename="testfile.txt"`},
-				"Content-Length":      []string{"7"},
-				"Content-Range":       []string{"bytes 2-8/13"},
-				"Content-Type":        []string{"text/plain; charset=utf-8"},
-				"Date":                []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
-				"Etag":                []string{`"65a8e27d8879283831b664bd8b7f0ad4"`},
-				"Last-Modified":       []string{"2025-07-21 13:24:53.586273 +0000 +0000"},
-				"Surrogate-Control":   []string{"max-age=3600"},
-				"Surrogate-Key":       []string{"d505075a-ee28-4a02-b27a-5973fd2ea35f"},
+				"Date":    {"Mon, 21 Jul 2025 13:44:26 GMT"},
+				"X-Error": {"you are not authorized"},
 			},
 		},
 		{
@@ -370,7 +257,6 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 			params:             nil,
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "ignoreme",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -387,7 +273,7 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "image manipulation",
 			id:   id2,
-			params: &client2.GetFileParams{
+			params: &client.GetFileMetadataHeadersParams{
 				Q: ptr(80),
 				H: ptr(100),
 				W: ptr(100),
@@ -395,7 +281,6 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       "ignoreme",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
 				"Cache-Control":       []string{"max-age=3600"},
@@ -415,14 +300,14 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var interceptor []client2.RequestEditorFn
+			var interceptor []client.RequestEditorFn
 			if tc.interceptor != nil {
-				interceptor = []client2.RequestEditorFn{
+				interceptor = []client.RequestEditorFn{
 					tc.interceptor,
 				}
 			}
 
-			resp, err := cl.GetFileWithResponse(
+			resp, err := cl.GetFileMetadataHeadersWithResponse(
 				t.Context(),
 				tc.id,
 				tc.params,
@@ -438,21 +323,13 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 				)
 			}
 
-			if tc.expectedBody != "ignoreme" {
-				if diff := cmp.Diff(string(resp.Body), tc.expectedBody); diff != "" {
-					t.Errorf("unexpected response body: %s", diff)
-				}
-			}
-
 			if diff := cmp.Diff(
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
-				cmp.Options{
-					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-						return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
-							strings.HasPrefix(key, "X-B3-")
-					}),
-				},
+				cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
+					return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
+						strings.HasPrefix(key, "X-B3-")
+				}),
 			); diff != "" {
 				t.Errorf("unexpected response headers: %s", diff)
 			}

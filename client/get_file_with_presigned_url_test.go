@@ -1,4 +1,4 @@
-package client2_test
+package client_test
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nhost/hasura-storage/client2"
+	"github.com/nhost/hasura-storage/client"
 )
 
-func TestGetPresignedURLContents(t *testing.T) {
+func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 	t.Parallel()
 
-	cl, err := client2.NewClientWithResponses(testBaseURL)
+	cl, err := client.NewClientWithResponses(testBaseURL)
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -39,8 +39,8 @@ func TestGetPresignedURLContents(t *testing.T) {
 		t.Fatalf("failed to parse presigned URL: %v", err)
 	}
 
-	params1 := func() *client2.GetPresignedURLContentsParams {
-		return &client2.GetPresignedURLContentsParams{
+	params1 := func() *client.GetPresignedURLContentsParams {
+		return &client.GetPresignedURLContentsParams{
 			XAmzAlgorithm:     presignedURL1.Query().Get("X-Amz-Algorithm"),
 			XAmzChecksumMode:  presignedURL1.Query().Get("X-Amz-Checksum-Mode"),
 			XAmzCredential:    presignedURL1.Query().Get("X-Amz-Credential"),
@@ -64,8 +64,8 @@ func TestGetPresignedURLContents(t *testing.T) {
 		t.Fatalf("failed to parse presigned URL: %v", err)
 	}
 
-	params2 := func() *client2.GetPresignedURLContentsParams {
-		return &client2.GetPresignedURLContentsParams{
+	params2 := func() *client.GetPresignedURLContentsParams {
+		return &client.GetPresignedURLContentsParams{
 			XAmzAlgorithm:     presignedURL2.Query().Get("X-Amz-Algorithm"),
 			XAmzChecksumMode:  presignedURL2.Query().Get("X-Amz-Checksum-Mode"),
 			XAmzCredential:    presignedURL2.Query().Get("X-Amz-Credential"),
@@ -80,18 +80,18 @@ func TestGetPresignedURLContents(t *testing.T) {
 	cases := []struct {
 		name               string
 		id                 string
-		requestParams      func() *client2.GetPresignedURLContentsParams
+		requestParams      func() *client.GetPresignedURLContentsParams
 		interceptor        func(ctx context.Context, req *http.Request) error
 		expectedStatusCode int
 		expectedBody       string
-		expectedErr        *client2.ErrorResponse
+		expectedErr        *client.ErrorResponse
 		expectedHeaders    http.Header
 	}{
 		{
 			name:        "simple get",
 			id:          id1,
 			interceptor: WithAccessToken(accessTokenValidUser),
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				return params1()
 			},
 			expectedStatusCode: http.StatusOK,
@@ -113,7 +113,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 			name:        "IfMatch matches",
 			id:          id1,
 			interceptor: WithAccessToken(accessTokenValidUser),
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfMatch = ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -136,7 +136,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfMatch does not match",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfMatch = ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -157,7 +157,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfNoneMatch matches",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfNoneMatch = ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -177,7 +177,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfNoneMatch does not match",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfNoneMatch = ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -201,7 +201,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfModifiedSince matches",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfModifiedSince = ptr(time.Now().Add(-time.Hour))
 				return req
@@ -225,7 +225,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfModifiedSince does not match",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfModifiedSince = ptr(time.Now().Add(time.Hour))
 				return req
@@ -245,7 +245,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfUnmodifiedSince matches",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfUnmodifiedSince = ptr(time.Now().Add(-time.Hour))
 				return req
@@ -266,7 +266,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "IfUnmodifiedSince does not match",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.IfUnmodifiedSince = ptr(time.Now().Add(time.Hour))
 				return req
@@ -290,7 +290,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "x-hasura-admin-secret",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				return req
 			},
@@ -315,7 +315,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "x-hasura-role",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				return req
 			},
@@ -341,7 +341,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "unauthenticated request",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				return params1()
 			},
 			interceptor:        nil,
@@ -363,7 +363,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "range",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.Range = ptr("bytes=0-4")
 				return req
@@ -387,7 +387,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "range middle",
 			id:   id1,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params1()
 				req.Range = ptr("bytes=2-8")
 				return req
@@ -411,7 +411,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "image",
 			id:   id2,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				return params2()
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
@@ -433,7 +433,7 @@ func TestGetPresignedURLContents(t *testing.T) {
 		{
 			name: "image manipulation",
 			id:   id2,
-			requestParams: func() *client2.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetPresignedURLContentsParams {
 				req := params2()
 				req.Q = ptr(80)
 				req.H = ptr(100)
@@ -463,9 +463,9 @@ func TestGetPresignedURLContents(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var interceptor []client2.RequestEditorFn
+			var interceptor []client.RequestEditorFn
 			if tc.interceptor != nil {
-				interceptor = []client2.RequestEditorFn{
+				interceptor = []client.RequestEditorFn{
 					tc.interceptor,
 				}
 			}

@@ -1,4 +1,4 @@
-package client2_test
+package client_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nhost/hasura-storage/client2"
+	"github.com/nhost/hasura-storage/client"
 )
 
 func compareContentLength() cmp.Option {
@@ -44,7 +44,7 @@ func compareContentLength() cmp.Option {
 func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 	t.Parallel()
 
-	cl, err := client2.NewClientWithResponses(testBaseURL)
+	cl, err := client.NewClientWithResponses(testBaseURL)
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -57,20 +57,20 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 		requestBody func(t *testing.T) (io.Reader, string)
 		interceptor func(ctx context.Context, req *http.Request) error
 		expected    *struct {
-			ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+			ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 		}
 		expectedHeader  http.Header
 		expectedCmpOpts []cmp.Option
-		expectedErr     *client2.ErrorResponseWithProcessedFiles
+		expectedErr     *client.ErrorResponseWithProcessedFiles
 	}{
 		{
 			name: "simple upload",
 			requestBody: func(t *testing.T) (io.Reader, string) {
 				t.Helper()
 
-				body, contentType, err := client2.CreateUploadMultiForm(
+				body, contentType, err := client.CreateUploadMultiForm(
 					"default",
-					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
 				)
 				if err != nil {
 					t.Fatalf("failed to create upload multi-form: %v", err)
@@ -80,9 +80,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			},
 			interceptor: WithAccessToken(accessTokenValidUser),
 			expected: &struct {
-				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
-				ProcessedFiles: []client2.FileMetadata{
+				ProcessedFiles: []client.FileMetadata{
 					{
 						BucketId:   "default",
 						CreatedAt:  time.Time{},
@@ -102,7 +102,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
 			},
 			expectedCmpOpts: []cmp.Option{
-				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+				cmpopts.IgnoreFields(client.FileMetadata{}, "Id"),
 			},
 			expectedErr: nil,
 		},
@@ -111,10 +111,10 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			requestBody: func(t *testing.T) (io.Reader, string) {
 				t.Helper()
 
-				body, contentType, err := client2.CreateUploadMultiForm(
+				body, contentType, err := client.CreateUploadMultiForm(
 					"default",
-					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
-					client2.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
+					client.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
 				)
 				if err != nil {
 					t.Fatalf("failed to create upload multi-form: %v", err)
@@ -124,9 +124,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			},
 			interceptor: WithAccessToken(accessTokenValidUser),
 			expected: &struct {
-				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
-				ProcessedFiles: []client2.FileMetadata{
+				ProcessedFiles: []client.FileMetadata{
 					{
 						BucketId:   "default",
 						CreatedAt:  time.Time{},
@@ -157,7 +157,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
 			},
 			expectedCmpOpts: []cmp.Option{
-				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+				cmpopts.IgnoreFields(client.FileMetadata{}, "Id"),
 			},
 			expectedErr: nil,
 		},
@@ -166,21 +166,21 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			requestBody: func(t *testing.T) (io.Reader, string) {
 				t.Helper()
 
-				body, contentType, err := client2.CreateUploadMultiForm(
+				body, contentType, err := client.CreateUploadMultiForm(
 					"default",
-					client2.NewFile(
+					client.NewFile(
 						"testfile.txt",
 						strings.NewReader("Hello, World!"),
-						&client2.UploadFileMetadata{
+						&client.UploadFileMetadata{
 							Id:       ptr(id1),
 							Metadata: ptr(map[string]any{"key": "value"}),
 							Name:     ptr("Custom Name.txt"),
 						},
 					),
-					client2.NewFile(
+					client.NewFile(
 						"morefiles.txt",
 						strings.NewReader("More content"),
-						&client2.UploadFileMetadata{
+						&client.UploadFileMetadata{
 							Id:       ptr(id2),
 							Metadata: nil,
 							Name:     nil,
@@ -195,9 +195,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			},
 			interceptor: WithAccessToken(accessTokenValidUser),
 			expected: &struct {
-				ProcessedFiles []client2.FileMetadata `json:"processedFiles"`
+				ProcessedFiles []client.FileMetadata `json:"processedFiles"`
 			}{
-				ProcessedFiles: []client2.FileMetadata{
+				ProcessedFiles: []client.FileMetadata{
 					{
 						BucketId:   "default",
 						CreatedAt:  time.Time{},
@@ -235,9 +235,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			requestBody: func(t *testing.T) (io.Reader, string) {
 				t.Helper()
 
-				body, contentType, err := client2.CreateUploadMultiForm(
+				body, contentType, err := client.CreateUploadMultiForm(
 					"wrong-bucket",
-					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
 				)
 				if err != nil {
 					t.Fatalf("failed to create upload multi-form: %v", err)
@@ -253,7 +253,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
 			},
 			expectedCmpOpts: []cmp.Option{},
-			expectedErr: &client2.ErrorResponseWithProcessedFiles{
+			expectedErr: &client.ErrorResponseWithProcessedFiles{
 				ProcessedFiles: nil,
 				Error: &struct {
 					Data    *map[string]any `json:"data,omitempty"`
@@ -269,11 +269,11 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			requestBody: func(t *testing.T) (io.Reader, string) {
 				t.Helper()
 
-				body, contentType, err := client2.CreateUploadMultiForm(
+				body, contentType, err := client.CreateUploadMultiForm(
 					"default",
-					client2.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
-					client2.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
-					client2.NewFile("blah.txt", strings.NewReader(eicarTestFile), nil),
+					client.NewFile("testfile.txt", strings.NewReader("Hello, World!"), nil),
+					client.NewFile("morefiles.txt", strings.NewReader("More content"), nil),
+					client.NewFile("blah.txt", strings.NewReader(eicarTestFile), nil),
 				)
 				if err != nil {
 					t.Fatalf("failed to create upload multi-form: %v", err)
@@ -289,9 +289,9 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 				"Date":           {"Mon, 21 Jul 2025 14:45:00 GMT"},
 			},
 			expectedCmpOpts: []cmp.Option{
-				cmpopts.IgnoreFields(client2.FileMetadata{}, "Id"),
+				cmpopts.IgnoreFields(client.FileMetadata{}, "Id"),
 			},
-			expectedErr: &client2.ErrorResponseWithProcessedFiles{
+			expectedErr: &client.ErrorResponseWithProcessedFiles{
 				Error: &struct {
 					Data    *map[string]any `json:"data,omitempty"`
 					Message string          `json:"message"`
@@ -299,7 +299,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 					Data:    &map[string]any{"file": "blah.txt", "virus": "Win.Test.EICAR_HDB-1"},
 					Message: "virus found: Win.Test.EICAR_HDB-1",
 				},
-				ProcessedFiles: &[]client2.FileMetadata{
+				ProcessedFiles: &[]client.FileMetadata{
 					{
 						BucketId:   "default",
 						CreatedAt:  time.Time{},
@@ -344,7 +344,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 
 			opts := append(
 				cmp.Options{
-					cmpopts.IgnoreFields(client2.FileMetadata{}, "CreatedAt", "UpdatedAt"),
+					cmpopts.IgnoreFields(client.FileMetadata{}, "CreatedAt", "UpdatedAt"),
 				},
 				tc.expectedCmpOpts...,
 			)

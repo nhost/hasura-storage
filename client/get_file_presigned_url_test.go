@@ -1,4 +1,4 @@
-package client2_test
+package client_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nhost/hasura-storage/client2"
+	"github.com/nhost/hasura-storage/client"
 )
 
 func compareURLWithRegexp() cmp.Option {
@@ -28,7 +28,7 @@ func compareURLWithRegexp() cmp.Option {
 func TestGetFilePresignedURL(t *testing.T) {
 	t.Parallel()
 
-	cl, err := client2.NewClientWithResponses(testBaseURL)
+	cl, err := client.NewClientWithResponses(testBaseURL)
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -43,8 +43,8 @@ func TestGetFilePresignedURL(t *testing.T) {
 		id                 string
 		interceptor        func(ctx context.Context, req *http.Request) error
 		expectedStatusCode int
-		expected           *client2.PresignedURLResponse
-		expectedErr        *client2.ErrorResponse
+		expected           *client.PresignedURLResponse
+		expectedErr        *client.ErrorResponse
 		expectedHeaders    http.Header
 	}{
 		{
@@ -52,7 +52,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 			id:                 id1,
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
-			expected: &client2.PresignedURLResponse{
+			expected: &client.PresignedURLResponse{
 				Expiration: 30,
 				Url:        "http://localhost:8000/v1/files/.*/presignedurl/content?.*",
 			},
@@ -69,7 +69,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 				"x-hasura-admin-secret": []string{"nhost-admin-secret"},
 			}),
 			expectedStatusCode: http.StatusOK,
-			expected: &client2.PresignedURLResponse{
+			expected: &client.PresignedURLResponse{
 				Expiration: 30,
 				Url:        "http://localhost:8000/v1/files/.*/presignedurl/content?.*",
 			},
@@ -88,7 +88,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 			}),
 			expectedStatusCode: http.StatusForbidden,
 			expected:           nil,
-			expectedErr: &client2.ErrorResponse{
+			expectedErr: &client.ErrorResponse{
 				Error: &struct {
 					Data    *map[string]any `json:"data,omitempty"`
 					Message string          `json:"message"`
@@ -109,7 +109,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 			interceptor:        nil,
 			expectedStatusCode: http.StatusForbidden,
 			expected:           nil,
-			expectedErr: &client2.ErrorResponse{
+			expectedErr: &client.ErrorResponse{
 				Error: &struct {
 					Data    *map[string]any `json:"data,omitempty"`
 					Message string          `json:"message"`
@@ -130,9 +130,9 @@ func TestGetFilePresignedURL(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var interceptor []client2.RequestEditorFn
+			var interceptor []client.RequestEditorFn
 			if tc.interceptor != nil {
-				interceptor = []client2.RequestEditorFn{
+				interceptor = []client.RequestEditorFn{
 					tc.interceptor,
 				}
 			}
