@@ -783,7 +783,7 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/FileSummary"
-        "400":
+        default:
           description: En error occured
           content:
             application/json:
@@ -811,7 +811,7 @@ paths:
                     type: array
                     items:
                       type: string
-        "400":
+        default:
           description: En error occured
           content:
             application/json:
@@ -839,7 +839,7 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/FileSummary"
-        "400":
+        default:
           description: En error occured
           content:
             application/json:
@@ -867,7 +867,7 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/FileSummary"
-        "400":
+        default:
           description: En error occured
           content:
             application/json:
@@ -895,7 +895,7 @@ paths:
                     type: array
                     items:
                       type: string
-        "400":
+        default:
           description: En error occured
           content:
             application/json:

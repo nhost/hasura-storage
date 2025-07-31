@@ -182,14 +182,14 @@ func (ctrl *Controller) SetupRouter(
 	// 	files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
 	// }
 
-	ops := apiRoot.Group("/ops")
-	{
-		ops.POST("list-orphans", ctrl.ListOrphanedFilesGin)
-		ops.POST("delete-orphans", ctrl.DeleteOrphans)
-		ops.POST("list-broken-metadata", ctrl.ListBrokenMetadataGin)
-		ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadataGin)
-		ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
-	}
+	// ops := apiRoot.Group("/ops")
+	// {
+	// 	ops.POST("list-orphans", ctrl.ListOrphanedFilesGin)
+	// 	ops.POST("delete-orphans", ctrl.DeleteOrphans)
+	// 	ops.POST("list-broken-metadata", ctrl.ListBrokenMetadataGin)
+	// 	ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadataGin)
+	// 	ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
+	// }
 
 	return router, nil
 }

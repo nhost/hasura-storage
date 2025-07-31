@@ -7,12 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/api"
+	"github.com/nhost/hasura-storage/middleware"
 )
 
-func (ctrl *Controller) listNotUploaded(ctx *gin.Context) ([]FileSummary, *APIError) {
+func (ctrl *Controller) listNotUploaded(ctx context.Context) ([]FileSummary, *APIError) {
 	filesInHasura, apiErr := ctrl.metadataStorage.ListFiles(
-		ctx.Request.Context(),
-		ctx.Request.Header,
+		ctx,
+		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 	)
 	if apiErr != nil {
 		return nil, apiErr
@@ -50,5 +51,15 @@ func (ctrl *Controller) ListNotUploaded(ctx *gin.Context) {
 func (ctrl *Controller) ListFilesNotUploaded(
 	ctx context.Context, request api.ListFilesNotUploadedRequestObject,
 ) (api.ListFilesNotUploadedResponseObject, error) {
-	return nil, nil
+	logger := middleware.LoggerFromContext(ctx)
+
+	files, apiErr := ctrl.listNotUploaded(ctx)
+	if apiErr != nil {
+		logger.WithError(apiErr).Error("failed to list not uploaded files")
+		return apiErr, nil
+	}
+
+	return api.ListFilesNotUploaded200JSONResponse{
+		Metadata: fileListSummary(files),
+	}, nil
 }

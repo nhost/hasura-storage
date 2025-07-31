@@ -107,10 +107,6 @@ func (a *APIError) VisitGetFileMetadataHeadersResponse(w http.ResponseWriter) er
 	return a.visit(w)
 }
 
-func (a *APIError) VisitDeleteBrokenMetadataResponse(w http.ResponseWriter) error {
-	return a.visit(w)
-}
-
 func (a *APIError) VisitGetFilePresignedURLResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
@@ -120,6 +116,26 @@ func (a *APIError) VisitGetFileWithPresignedURLResponse(w http.ResponseWriter) e
 }
 
 func (a *APIError) VisitDeleteFileResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitDeleteBrokenMetadataResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitListBrokenMetadataResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitListOrphanedFilesResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitDeleteOrphanedFilesResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitListFilesNotUploadedResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
 
