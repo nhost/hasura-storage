@@ -2,45 +2,28 @@ package controller
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/api"
+	"github.com/nhost/hasura-storage/middleware"
 )
 
-func (ctrl *Controller) deleteFile(ctx *gin.Context) *APIError {
-	id := ctx.Param("id")
-
-	apiErr := ctrl.metadataStorage.DeleteFileByID(ctx.Request.Context(), id, ctx.Request.Header)
-	if apiErr != nil {
-		return apiErr
-	}
-
-	if apiErr := ctrl.contentStorage.DeleteFile(ctx, id); apiErr != nil {
-		return apiErr
-	}
-
-	ctx.Set("FileChanged", id)
-
-	return nil
-}
-
-func (ctrl *Controller) DeleteFileGin(ctx *gin.Context) {
-	if apiErr := ctrl.deleteFile(ctx); apiErr != nil {
-		_ = ctx.Error(fmt.Errorf("problem processing request: %w", apiErr))
-
-		ctx.JSON(apiErr.statusCode, apiErr.PublicResponse())
-
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
-}
-
-func (ctrl *Controller) DeleteFile(
+func (ctrl *Controller) DeleteFile( //nolint:ireturn
 	ctx context.Context,
 	request api.DeleteFileRequestObject,
 ) (api.DeleteFileResponseObject, error) {
-	return nil, nil
+	logger := middleware.LoggerFromContext(ctx)
+	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
+
+	apiErr := ctrl.metadataStorage.DeleteFileByID(ctx, request.Id, sessionHeaders)
+	if apiErr != nil {
+		logger.WithError(apiErr).Error("problem deleting file metadata")
+		return apiErr, nil
+	}
+
+	if apiErr := ctrl.contentStorage.DeleteFile(ctx, request.Id); apiErr != nil {
+		logger.WithError(apiErr).Error("problem deleting file content")
+		return apiErr, nil
+	}
+
+	return api.DeleteFile204Response{}, nil
 }

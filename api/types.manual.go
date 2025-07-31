@@ -93,46 +93,46 @@ func (g GetFileMetadataHeadersParams) GetIfUnmodifiedSince() *time.Time {
 }
 
 // GetQ returns the Q field value.
-func (g GetPresignedURLContentsParams) GetQ() *int {
+func (g GetFileWithPresignedURLParams) GetQ() *int {
 	return g.Q
 }
 
 // GetH returns the H field value.
-func (g GetPresignedURLContentsParams) GetH() *int {
+func (g GetFileWithPresignedURLParams) GetH() *int {
 	return g.H
 }
 
 // GetW returns the W field value.
-func (g GetPresignedURLContentsParams) GetW() *int {
+func (g GetFileWithPresignedURLParams) GetW() *int {
 	return g.W
 }
 
 // GetB returns the B field value.
-func (g GetPresignedURLContentsParams) GetB() *float32 {
+func (g GetFileWithPresignedURLParams) GetB() *float32 {
 	return g.B
 }
 
 // GetF returns the F field value.
-func (g GetPresignedURLContentsParams) GetF() *OutputImageFormat {
+func (g GetFileWithPresignedURLParams) GetF() *OutputImageFormat {
 	return g.F
 }
 
 // GetIfMatch returns the IfMatch field value.
-func (g GetPresignedURLContentsParams) GetIfMatch() *string {
+func (g GetFileWithPresignedURLParams) GetIfMatch() *string {
 	return g.IfMatch
 }
 
 // GetIfNoneMatch returns the IfNoneMatch field value.
-func (g GetPresignedURLContentsParams) GetIfNoneMatch() *string {
+func (g GetFileWithPresignedURLParams) GetIfNoneMatch() *string {
 	return g.IfNoneMatch
 }
 
 // GetIfModifiedSince returns the IfModifiedSince field value.
-func (g GetPresignedURLContentsParams) GetIfModifiedSince() *time.Time {
+func (g GetFileWithPresignedURLParams) GetIfModifiedSince() *time.Time {
 	return g.IfModifiedSince
 }
 
 // GetIfUnmodifiedSince returns the IfUnmodifiedSince field value.
-func (g GetPresignedURLContentsParams) GetIfUnmodifiedSince() *time.Time {
+func (g GetFileWithPresignedURLParams) GetIfUnmodifiedSince() *time.Time {
 	return g.IfUnmodifiedSince
 }

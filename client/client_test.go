@@ -3,6 +3,10 @@ package client_test
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 const testBaseURL = "http://localhost:8000/v1"
@@ -32,4 +36,11 @@ func WithHeaders(headers http.Header) func(ctx context.Context, req *http.Reques
 
 		return nil
 	}
+}
+
+func IgnoreResponseHeaders() cmp.Option {
+	return cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
+		return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
+			strings.HasPrefix(key, "X-B3-")
+	})
 }

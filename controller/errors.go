@@ -115,7 +115,11 @@ func (a *APIError) VisitGetFilePresignedURLResponse(w http.ResponseWriter) error
 	return a.visit(w)
 }
 
-func (a *APIError) VisitGetPresignedURLContentsResponse(w http.ResponseWriter) error {
+func (a *APIError) VisitGetFileWithPresignedURLResponse(w http.ResponseWriter) error {
+	return a.visit(w)
+}
+
+func (a *APIError) VisitDeleteFileResponse(w http.ResponseWriter) error {
 	return a.visit(w)
 }
 

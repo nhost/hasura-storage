@@ -235,8 +235,8 @@ type ReplaceFileMultipartBody struct {
 	Metadata *UpdateFileMetadata `json:"metadata,omitempty"`
 }
 
-// GetPresignedURLContentsParams defines parameters for GetPresignedURLContents.
-type GetPresignedURLContentsParams struct {
+// GetFileWithPresignedURLParams defines parameters for GetFileWithPresignedURL.
+type GetFileWithPresignedURLParams struct {
 	// XAmzAlgorithm Use presignedurl endpoint to generate this automatically
 	XAmzAlgorithm string `form:"X-Amz-Algorithm" json:"X-Amz-Algorithm"`
 
@@ -389,8 +389,8 @@ type ClientInterface interface {
 	// GetFilePresignedURL request
 	GetFilePresignedURL(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetPresignedURLContents request
-	GetPresignedURLContents(ctx context.Context, id string, params *GetPresignedURLContentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetFileWithPresignedURL request
+	GetFileWithPresignedURL(ctx context.Context, id string, params *GetFileWithPresignedURLParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetOpenAPISpec request
 	GetOpenAPISpec(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -486,8 +486,8 @@ func (c *Client) GetFilePresignedURL(ctx context.Context, id string, reqEditors 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPresignedURLContents(ctx context.Context, id string, params *GetPresignedURLContentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPresignedURLContentsRequest(c.Server, id, params)
+func (c *Client) GetFileWithPresignedURL(ctx context.Context, id string, params *GetFileWithPresignedURLParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFileWithPresignedURLRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1062,8 +1062,8 @@ func NewGetFilePresignedURLRequest(server string, id string) (*http.Request, err
 	return req, nil
 }
 
-// NewGetPresignedURLContentsRequest generates requests for GetPresignedURLContents
-func NewGetPresignedURLContentsRequest(server string, id string, params *GetPresignedURLContentsParams) (*http.Request, error) {
+// NewGetFileWithPresignedURLRequest generates requests for GetFileWithPresignedURL
+func NewGetFileWithPresignedURLRequest(server string, id string, params *GetFileWithPresignedURLParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1587,8 +1587,8 @@ type ClientWithResponsesInterface interface {
 	// GetFilePresignedURLWithResponse request
 	GetFilePresignedURLWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*GetFilePresignedURLR, error)
 
-	// GetPresignedURLContentsWithResponse request
-	GetPresignedURLContentsWithResponse(ctx context.Context, id string, params *GetPresignedURLContentsParams, reqEditors ...RequestEditorFn) (*GetPresignedURLContentsR, error)
+	// GetFileWithPresignedURLWithResponse request
+	GetFileWithPresignedURLWithResponse(ctx context.Context, id string, params *GetFileWithPresignedURLParams, reqEditors ...RequestEditorFn) (*GetFileWithPresignedURLR, error)
 
 	// GetOpenAPISpecWithResponse request
 	GetOpenAPISpecWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOpenAPISpecR, error)
@@ -1641,7 +1641,7 @@ func (r UploadFilesR) StatusCode() int {
 type DeleteFileR struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON400      *ErrorResponse
+	JSONDefault  *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1748,13 +1748,13 @@ func (r GetFilePresignedURLR) StatusCode() int {
 	return 0
 }
 
-type GetPresignedURLContentsR struct {
+type GetFileWithPresignedURLR struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r GetPresignedURLContentsR) Status() string {
+func (r GetFileWithPresignedURLR) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1762,7 +1762,7 @@ func (r GetPresignedURLContentsR) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetPresignedURLContentsR) StatusCode() int {
+func (r GetFileWithPresignedURLR) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1992,13 +1992,13 @@ func (c *ClientWithResponses) GetFilePresignedURLWithResponse(ctx context.Contex
 	return ParseGetFilePresignedURLR(rsp)
 }
 
-// GetPresignedURLContentsWithResponse request returning *GetPresignedURLContentsR
-func (c *ClientWithResponses) GetPresignedURLContentsWithResponse(ctx context.Context, id string, params *GetPresignedURLContentsParams, reqEditors ...RequestEditorFn) (*GetPresignedURLContentsR, error) {
-	rsp, err := c.GetPresignedURLContents(ctx, id, params, reqEditors...)
+// GetFileWithPresignedURLWithResponse request returning *GetFileWithPresignedURLR
+func (c *ClientWithResponses) GetFileWithPresignedURLWithResponse(ctx context.Context, id string, params *GetFileWithPresignedURLParams, reqEditors ...RequestEditorFn) (*GetFileWithPresignedURLR, error) {
+	rsp, err := c.GetFileWithPresignedURL(ctx, id, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetPresignedURLContentsR(rsp)
+	return ParseGetFileWithPresignedURLR(rsp)
 }
 
 // GetOpenAPISpecWithResponse request returning *GetOpenAPISpecR
@@ -2114,12 +2114,12 @@ func ParseDeleteFileR(rsp *http.Response) (*DeleteFileR, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 
@@ -2224,15 +2224,15 @@ func ParseGetFilePresignedURLR(rsp *http.Response) (*GetFilePresignedURLR, error
 	return response, nil
 }
 
-// ParseGetPresignedURLContentsR parses an HTTP response from a GetPresignedURLContentsWithResponse call
-func ParseGetPresignedURLContentsR(rsp *http.Response) (*GetPresignedURLContentsR, error) {
+// ParseGetFileWithPresignedURLR parses an HTTP response from a GetFileWithPresignedURLWithResponse call
+func ParseGetFileWithPresignedURLR(rsp *http.Response) (*GetFileWithPresignedURLR, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetPresignedURLContentsR{
+	response := &GetFileWithPresignedURLR{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

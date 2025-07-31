@@ -51,60 +51,7 @@ func expiresIn(xAmzExpires string, datestr string) (int, *APIError) {
 	return int(expires.Seconds()), nil
 }
 
-// func (ctrl *Controller) getFileWithPresignedURL(ctx *gin.Context) (*FileResponse, *APIError) {
-// 	req, apiErr := ctrl.getFileWithPresignedURLParse(ctx)
-// 	if apiErr != nil {
-// 		return nil, apiErr
-// 	}
-
-// 	fileMetadata, _, apiErr := ctrl.getFileMetadata(
-// 		ctx.Request.Context(),
-// 		req.fileID,
-// 		true,
-// 		http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
-// 	)
-// 	if apiErr != nil {
-// 		return nil, apiErr
-// 	}
-
-// 	downloadFunc := func() (*File, *APIError) {
-// 		return ctrl.contentStorage.GetFileWithPresignedURL(
-// 			ctx.Request.Context(),
-// 			req.fileID,
-// 			req.signature,
-// 			ctx.Request.Header,
-// 		)
-// 	}
-// 	if apiErr != nil {
-// 		return nil, apiErr
-// 	}
-
-// 	return ctrl.processFileToDownload(
-// 		ctx,
-// 		downloadFunc,
-// 		fileMetadata,
-// 		fmt.Sprintf("max-age=%d", req.Expires),
-// 		nil,
-// 	)
-// }
-
-// func (ctrl *Controller) GetFileWithPresignedURL(ctx *gin.Context) {
-// 	fileResponse, apiErr := ctrl.getFileWithPresignedURL(ctx)
-// 	if apiErr != nil {
-// 		_ = ctx.Error(apiErr)
-
-// 		ctx.JSON(apiErr.statusCode, GetFileResponse{apiErr.PublicResponse()})
-
-// 		return
-// 	}
-
-// 	defer fileResponse.body.Close()
-
-// 	fileResponse.disableSurrageControlHeader = true
-// 	fileResponse.Write(ctx)
-// }
-
-func getAmazonSignature(request api.GetPresignedURLContentsRequestObject) string {
+func getAmazonSignature(request api.GetFileWithPresignedURLRequestObject) string {
 	return fmt.Sprintf(
 		"X-Amz-Algorithm=%s&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-Signature=%s&X-Amz-SignedHeaders=%s&X-Amz-Checksum-Mode=%s&x-id=%s", //nolint:lll
 		request.Params.XAmzAlgorithm,
@@ -118,15 +65,15 @@ func getAmazonSignature(request api.GetPresignedURLContentsRequestObject) string
 	)
 }
 
-func (ctrl *Controller) getPresignedURLContentsResponse( //nolint: ireturn,funlen,dupl
+func (ctrl *Controller) getFileWithPresignedURLResponseObject( //nolint: ireturn,funlen,dupl
 	file *processedFile,
 	logger logrus.FieldLogger,
-) api.GetPresignedURLContentsResponseObject {
+) api.GetFileWithPresignedURLResponseObject {
 	switch file.statusCode {
 	case http.StatusOK:
-		return api.GetPresignedURLContents200ApplicationoctetStreamResponse{
+		return api.GetFileWithPresignedURL200ApplicationoctetStreamResponse{
 			Body: file.body,
-			Headers: api.GetPresignedURLContents200ResponseHeaders{
+			Headers: api.GetFileWithPresignedURL200ResponseHeaders{
 				AcceptRanges: "bytes",
 				CacheControl: file.cacheControl,
 				ContentDisposition: fmt.Sprintf(
@@ -142,9 +89,9 @@ func (ctrl *Controller) getPresignedURLContentsResponse( //nolint: ireturn,funle
 			ContentLength: file.contentLength,
 		}
 	case http.StatusPartialContent:
-		return api.GetPresignedURLContents206ApplicationoctetStreamResponse{
+		return api.GetFileWithPresignedURL206ApplicationoctetStreamResponse{
 			Body: file.body,
-			Headers: api.GetPresignedURLContents206ResponseHeaders{
+			Headers: api.GetFileWithPresignedURL206ResponseHeaders{
 				CacheControl: file.cacheControl,
 				ContentDisposition: fmt.Sprintf(
 					`inline; filename="%s"`,
@@ -160,16 +107,16 @@ func (ctrl *Controller) getPresignedURLContentsResponse( //nolint: ireturn,funle
 			ContentLength: file.contentLength,
 		}
 	case http.StatusNotModified:
-		return api.GetPresignedURLContents304Response{
-			Headers: api.GetPresignedURLContents304ResponseHeaders{
+		return api.GetFileWithPresignedURL304Response{
+			Headers: api.GetFileWithPresignedURL304ResponseHeaders{
 				CacheControl:     file.cacheControl,
 				Etag:             file.fileMetadata.Etag,
 				SurrogateControl: file.cacheControl,
 			},
 		}
 	case http.StatusPreconditionFailed:
-		return api.GetPresignedURLContents412Response{
-			Headers: api.GetPresignedURLContents412ResponseHeaders{
+		return api.GetFileWithPresignedURL412Response{
+			Headers: api.GetFileWithPresignedURL412ResponseHeaders{
 				CacheControl:     file.cacheControl,
 				Etag:             file.fileMetadata.Etag,
 				SurrogateControl: file.cacheControl,
@@ -183,10 +130,10 @@ func (ctrl *Controller) getPresignedURLContentsResponse( //nolint: ireturn,funle
 	}
 }
 
-func (ctrl *Controller) GetPresignedURLContents( //nolint: ireturn
+func (ctrl *Controller) GetFileWithPresignedURL( //nolint: ireturn
 	ctx context.Context,
-	request api.GetPresignedURLContentsRequestObject,
-) (api.GetPresignedURLContentsResponseObject, error) {
+	request api.GetFileWithPresignedURLRequestObject,
+) (api.GetFileWithPresignedURLResponseObject, error) {
 	logger := middleware.LoggerFromContext(ctx)
 	acceptHeader := middleware.AcceptHeaderFromContext(ctx)
 
@@ -214,8 +161,6 @@ func (ctrl *Controller) GetPresignedURLContents( //nolint: ireturn
 		return apiErr, nil
 	}
 
-	fmt.Println("Signature:", getAmazonSignature(request))
-
 	downloadFunc := func() (*File, *APIError) {
 		return ctrl.contentStorage.GetFileWithPresignedURL(
 			ctx,
@@ -237,5 +182,5 @@ func (ctrl *Controller) GetPresignedURLContents( //nolint: ireturn
 		return nil, apiErr
 	}
 
-	return ctrl.getPresignedURLContentsResponse(processedFile, logger), nil
+	return ctrl.getFileWithPresignedURLResponseObject(processedFile, logger), nil
 }

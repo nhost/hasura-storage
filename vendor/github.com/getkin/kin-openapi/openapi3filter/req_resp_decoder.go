@@ -1246,17 +1246,8 @@ func decodeBody(body io.Reader, header http.Header, schema *openapi3.SchemaRef, 
 			contentType = "text/plain"
 		}
 	}
-
 	mediaType := parseMediaType(contentType)
-	var decoder BodyDecoder
-	var ok bool
-	if schema.Value.Format == "binary" {
-		ok = true
-		decoder = FileBodyDecoder
-	} else {
-		decoder, ok = bodyDecoders[mediaType]
-	}
-
+	decoder, ok := bodyDecoders[mediaType]
 	if !ok {
 		return "", nil, &ParseError{
 			Kind:   KindUnsupportedFormat,

@@ -194,12 +194,12 @@ func TestUpdateFile(t *testing.T) {
 
 			assert(t, 200, responseRecorder.Code)
 
-			resp := &controller.UpdateFileResponse{}
+			resp := &controller.ReplaceFileResponse{}
 			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
 				t.Fatal(err)
 			}
 
-			assert(t, &controller.UpdateFileResponse{
+			assert(t, &controller.ReplaceFileResponse{
 				&api.FileMetadata{
 					Id:               "38288c85-02af-416b-b075-11c4dae9",
 					Name:             "a_file.txt",

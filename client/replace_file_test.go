@@ -282,11 +282,7 @@ func TestReplaceFile(t *testing.T) { //nolint:cyclop,maintidx
 				resp.HTTPResponse.Header,
 				tc.expectedHeader,
 				compareContentLength(),
-				cmp.Options{
-					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-						return key == "Date"
-					}),
-				},
+				IgnoreResponseHeaders(),
 			); diff != "" {
 				t.Errorf("unexpected headers: %s", diff)
 			}

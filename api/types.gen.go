@@ -225,8 +225,8 @@ type ReplaceFileMultipartBody struct {
 	Metadata *UpdateFileMetadata `json:"metadata,omitempty"`
 }
 
-// GetPresignedURLContentsParams defines parameters for GetPresignedURLContents.
-type GetPresignedURLContentsParams struct {
+// GetFileWithPresignedURLParams defines parameters for GetFileWithPresignedURL.
+type GetFileWithPresignedURLParams struct {
 	// XAmzAlgorithm Use presignedurl endpoint to generate this automatically
 	XAmzAlgorithm string `form:"X-Amz-Algorithm" json:"X-Amz-Algorithm"`
 

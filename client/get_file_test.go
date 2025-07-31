@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nhost/hasura-storage/client"
 )
@@ -447,12 +446,7 @@ func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
 			if diff := cmp.Diff(
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
-				cmp.Options{
-					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-						return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
-							strings.HasPrefix(key, "X-B3-")
-					}),
-				},
+				IgnoreResponseHeaders(),
 			); diff != "" {
 				t.Errorf("unexpected response headers: %s", diff)
 			}

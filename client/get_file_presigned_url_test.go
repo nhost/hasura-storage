@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nhost/hasura-storage/client"
 )
@@ -165,11 +164,7 @@ func TestGetFilePresignedURL(t *testing.T) {
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
 				compareContentLength(),
-				cmp.Options{
-					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-						return key == "Date"
-					}),
-				},
+				IgnoreResponseHeaders(),
 			); diff != "" {
 				t.Errorf("unexpected headers: %s", diff)
 			}

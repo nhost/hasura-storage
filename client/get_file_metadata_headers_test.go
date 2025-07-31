@@ -3,12 +3,10 @@ package client_test
 import (
 	"context"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nhost/hasura-storage/client"
 )
@@ -326,10 +324,7 @@ func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 			if diff := cmp.Diff(
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
-				cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-					return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
-						strings.HasPrefix(key, "X-B3-")
-				}),
+				IgnoreResponseHeaders(),
 			); diff != "" {
 				t.Errorf("unexpected response headers: %s", diff)
 			}

@@ -86,7 +86,7 @@ paths:
       responses:
         "204":
           description: "File successfully deleted"
-        "400":
+        default:
           description: "Error occurred during file deletion"
           content:
             application/json:
@@ -512,7 +512,7 @@ paths:
   /files/{id}/presignedurl/contents:
     get:
       summary: Retrieve contents of file
-      operationId: getPresignedURLContents
+      operationId: getFileWithPresignedURL
       description: Retrieve contents of file
       tags:
         - storage

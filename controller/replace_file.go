@@ -9,18 +9,18 @@ import (
 	"github.com/nhost/hasura-storage/middleware"
 )
 
-type updateFileMetadata struct {
+type replaceFileMetadata struct {
 	Name     string         `json:"name"`
 	Metadata map[string]any `json:"metadata"`
 }
 
-type UpdateFileResponse struct {
+type ReplaceFileResponse struct {
 	*api.FileMetadata
 
 	Error *ErrorResponse `json:"error,omitempty"`
 }
 
-func updateFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *APIError) {
+func replaceFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *APIError) {
 	res := fileData{
 		ID: request.Id,
 	}
@@ -46,7 +46,7 @@ func updateFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *AP
 			return fileData{}, ErrMetadataLength
 		}
 
-		d := updateFileMetadata{}
+		d := replaceFileMetadata{}
 		if err := json.Unmarshal([]byte(metadata[0]), &d); err != nil {
 			return fileData{}, WrongMetadataFormatError(err)
 		}
@@ -65,7 +65,7 @@ func (ctrl *Controller) ReplaceFile(
 	logger := middleware.LoggerFromContext(ctx)
 	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
 
-	file, apiErr := updateFileParseRequest(request)
+	file, apiErr := replaceFileParseRequest(request)
 	if apiErr != nil {
 		logger.WithError(apiErr).Error("problem parsing request")
 		return apiErr, nil

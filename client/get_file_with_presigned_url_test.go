@@ -4,17 +4,15 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nhost/hasura-storage/client"
 )
 
-func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
+func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 	t.Parallel()
 
 	cl, err := client.NewClientWithResponses(testBaseURL)
@@ -39,8 +37,8 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		t.Fatalf("failed to parse presigned URL: %v", err)
 	}
 
-	params1 := func() *client.GetPresignedURLContentsParams {
-		return &client.GetPresignedURLContentsParams{
+	params1 := func() *client.GetFileWithPresignedURLParams {
+		return &client.GetFileWithPresignedURLParams{
 			XAmzAlgorithm:     presignedURL1.Query().Get("X-Amz-Algorithm"),
 			XAmzChecksumMode:  presignedURL1.Query().Get("X-Amz-Checksum-Mode"),
 			XAmzCredential:    presignedURL1.Query().Get("X-Amz-Credential"),
@@ -64,8 +62,8 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		t.Fatalf("failed to parse presigned URL: %v", err)
 	}
 
-	params2 := func() *client.GetPresignedURLContentsParams {
-		return &client.GetPresignedURLContentsParams{
+	params2 := func() *client.GetFileWithPresignedURLParams {
+		return &client.GetFileWithPresignedURLParams{
 			XAmzAlgorithm:     presignedURL2.Query().Get("X-Amz-Algorithm"),
 			XAmzChecksumMode:  presignedURL2.Query().Get("X-Amz-Checksum-Mode"),
 			XAmzCredential:    presignedURL2.Query().Get("X-Amz-Credential"),
@@ -80,7 +78,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 	cases := []struct {
 		name               string
 		id                 string
-		requestParams      func() *client.GetPresignedURLContentsParams
+		requestParams      func() *client.GetFileWithPresignedURLParams
 		interceptor        func(ctx context.Context, req *http.Request) error
 		expectedStatusCode int
 		expectedBody       string
@@ -91,7 +89,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 			name:        "simple get",
 			id:          id1,
 			interceptor: WithAccessToken(accessTokenValidUser),
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				return params1()
 			},
 			expectedStatusCode: http.StatusOK,
@@ -113,7 +111,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 			name:        "IfMatch matches",
 			id:          id1,
 			interceptor: WithAccessToken(accessTokenValidUser),
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfMatch = ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -136,7 +134,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfMatch does not match",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfMatch = ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -157,7 +155,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfNoneMatch matches",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfNoneMatch = ptr(`"65a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -177,7 +175,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfNoneMatch does not match",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfNoneMatch = ptr(`"85a8e27d8879283831b664bd8b7f0ad4"`)
 				return req
@@ -201,7 +199,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfModifiedSince matches",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfModifiedSince = ptr(time.Now().Add(-time.Hour))
 				return req
@@ -225,7 +223,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfModifiedSince does not match",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfModifiedSince = ptr(time.Now().Add(time.Hour))
 				return req
@@ -245,7 +243,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfUnmodifiedSince matches",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfUnmodifiedSince = ptr(time.Now().Add(-time.Hour))
 				return req
@@ -266,7 +264,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "IfUnmodifiedSince does not match",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.IfUnmodifiedSince = ptr(time.Now().Add(time.Hour))
 				return req
@@ -290,7 +288,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "x-hasura-admin-secret",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				return req
 			},
@@ -315,7 +313,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "x-hasura-role",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				return req
 			},
@@ -341,7 +339,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "unauthenticated request",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				return params1()
 			},
 			interceptor:        nil,
@@ -363,7 +361,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "range",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.Range = ptr("bytes=0-4")
 				return req
@@ -387,7 +385,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "range middle",
 			id:   id1,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
 				req.Range = ptr("bytes=2-8")
 				return req
@@ -411,7 +409,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "image",
 			id:   id2,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				return params2()
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
@@ -433,7 +431,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 		{
 			name: "image manipulation",
 			id:   id2,
-			requestParams: func() *client.GetPresignedURLContentsParams {
+			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params2()
 				req.Q = ptr(80)
 				req.H = ptr(100)
@@ -470,7 +468,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 				}
 			}
 
-			resp, err := cl.GetPresignedURLContentsWithResponse(
+			resp, err := cl.GetFileWithPresignedURLWithResponse(
 				t.Context(),
 				tc.id,
 				tc.requestParams(),
@@ -495,12 +493,7 @@ func TestGetPresignedURLContents(t *testing.T) { //nolint:cyclop,maintidx
 			if diff := cmp.Diff(
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
-				cmp.Options{
-					cmpopts.IgnoreMapEntries(func(key string, _ []string) bool {
-						return key == "Date" || key == "Surrogate-Key" || key == "Last-Modified" ||
-							strings.HasPrefix(key, "X-B3-")
-					}),
-				},
+				IgnoreResponseHeaders(),
 			); diff != "" {
 				t.Errorf("unexpected response headers: %s", diff)
 			}
