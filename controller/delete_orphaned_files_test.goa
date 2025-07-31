@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/controller/mock"
 	"github.com/sirupsen/logrus"
@@ -17,12 +18,12 @@ func TestDeleteOrphans(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		expected controller.ListOrphansResponse
+		expected api.DeleteOrphanedFiles200JSONResponse
 	}{
 		{
 			name: "successful",
-			expected: controller.ListOrphansResponse{
-				Files: []string{"default/garbage"},
+			expected: api.DeleteOrphanedFiles200JSONResponse{
+				Files: ptr([]string{"default/garbage"}),
 			},
 		},
 	}
@@ -95,7 +96,7 @@ func TestDeleteOrphans(t *testing.T) {
 
 			assert(t, 200, responseRecorder.Code)
 
-			resp := &controller.ListOrphansResponse{}
+			resp := &api.DeleteOrphanedFiles200JSONResponse{}
 			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
 				t.Fatal(err)
 			}

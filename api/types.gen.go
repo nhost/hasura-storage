@@ -90,16 +90,16 @@ type FileMetadata struct {
 // FileSummary Basic information about a file in storage.
 type FileSummary struct {
 	// BucketId ID of the bucket containing the file.
-	BucketId *string `json:"bucketId,omitempty"`
+	BucketId string `json:"bucketId"`
 
 	// Id Unique identifier for the file.
-	Id *string `json:"id,omitempty"`
+	Id string `json:"id"`
 
 	// IsUploaded Whether the file has been successfully uploaded.
-	IsUploaded *bool `json:"isUploaded,omitempty"`
+	IsUploaded bool `json:"isUploaded"`
 
 	// Name Name of the file including extension.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 }
 
 // OutputImageFormat Output format for image files. Use 'auto' for content negotiation based on Accept header

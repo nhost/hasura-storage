@@ -46,12 +46,13 @@ func fileListSummary(files []FileSummary) *[]api.FileSummary {
 	apiFiles := make([]api.FileSummary, len(files))
 	for i, f := range files {
 		apiFiles[i] = api.FileSummary{
-			Id:         &f.ID,
-			Name:       &f.Name,
-			IsUploaded: &f.IsUploaded,
-			BucketId:   &f.BucketID,
+			Id:         f.ID,
+			Name:       f.Name,
+			IsUploaded: f.IsUploaded,
+			BucketId:   f.BucketID,
 		}
 	}
+
 	return &apiFiles
 }
 

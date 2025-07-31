@@ -1063,6 +1063,11 @@ components:
           description: "Whether the file has been successfully uploaded."
           example: true
       additionalProperties: false
+      required:
+        - id
+        - name
+        - bucketId
+        - isUploaded
 
     PresignedURLResponse:
       type: object

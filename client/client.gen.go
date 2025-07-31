@@ -100,16 +100,16 @@ type FileMetadata struct {
 // FileSummary Basic information about a file in storage.
 type FileSummary struct {
 	// BucketId ID of the bucket containing the file.
-	BucketId *string `json:"bucketId,omitempty"`
+	BucketId string `json:"bucketId"`
 
 	// Id Unique identifier for the file.
-	Id *string `json:"id,omitempty"`
+	Id string `json:"id"`
 
 	// IsUploaded Whether the file has been successfully uploaded.
-	IsUploaded *bool `json:"isUploaded,omitempty"`
+	IsUploaded bool `json:"isUploaded"`
 
 	// Name Name of the file including extension.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 }
 
 // OutputImageFormat Output format for image files. Use 'auto' for content negotiation based on Accept header
@@ -1797,7 +1797,7 @@ type DeleteBrokenMetadataR struct {
 	JSON200      *struct {
 		Metadata *[]FileSummary `json:"metadata,omitempty"`
 	}
-	JSON400 *ErrorResponse
+	JSONDefault *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1822,7 +1822,7 @@ type DeleteOrphanedFilesR struct {
 	JSON200      *struct {
 		Files *[]string `json:"files,omitempty"`
 	}
-	JSON400 *ErrorResponse
+	JSONDefault *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1847,7 +1847,7 @@ type ListBrokenMetadataR struct {
 	JSON200      *struct {
 		Metadata *[]FileSummary `json:"metadata,omitempty"`
 	}
-	JSON400 *ErrorResponse
+	JSONDefault *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1872,7 +1872,7 @@ type ListFilesNotUploadedR struct {
 	JSON200      *struct {
 		Metadata *[]FileSummary `json:"metadata,omitempty"`
 	}
-	JSON400 *ErrorResponse
+	JSONDefault *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1897,7 +1897,7 @@ type ListOrphanedFilesR struct {
 	JSON200      *struct {
 		Files *[]string `json:"files,omitempty"`
 	}
-	JSON400 *ErrorResponse
+	JSONDefault *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -2289,12 +2289,12 @@ func ParseDeleteBrokenMetadataR(rsp *http.Response) (*DeleteBrokenMetadataR, err
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 
@@ -2324,12 +2324,12 @@ func ParseDeleteOrphanedFilesR(rsp *http.Response) (*DeleteOrphanedFilesR, error
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 
@@ -2359,12 +2359,12 @@ func ParseListBrokenMetadataR(rsp *http.Response) (*ListBrokenMetadataR, error) 
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 
@@ -2394,12 +2394,12 @@ func ParseListFilesNotUploadedR(rsp *http.Response) (*ListFilesNotUploadedR, err
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 
@@ -2429,12 +2429,12 @@ func ParseListOrphanedFilesR(rsp *http.Response) (*ListOrphanedFilesR, error) {
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON400 = &dest
+		response.JSONDefault = &dest
 
 	}
 

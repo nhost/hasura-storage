@@ -135,6 +135,7 @@ func corsConfig(allowedOrigins []string) cors.Config {
 	}
 }
 
+// TODO
 func (ctrl *Controller) SetupRouter(
 	trustedProxies []string,
 	apiRootPrefix string,
