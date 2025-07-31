@@ -29,6 +29,7 @@ func WithHeaders(headers http.Header) func(ctx context.Context, req *http.Reques
 				req.Header.Add(key, value)
 			}
 		}
+
 		return nil
 	}
 }

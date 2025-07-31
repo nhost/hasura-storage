@@ -245,6 +245,7 @@ func TestReplaceFile(t *testing.T) { //nolint:cyclop,maintidx
 			}
 
 			body, contentType := tc.requestBody(t)
+
 			resp, err := cl.ReplaceFileWithBodyWithResponse(
 				t.Context(),
 				tc.id,

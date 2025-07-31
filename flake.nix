@@ -6,9 +6,10 @@
     nixpkgs.follows = "nixops/nixpkgs";
     flake-utils.follows = "nixops/flake-utils";
     nix-filter.follows = "nixops/nix-filter";
+    nix2container.follows = "nixops/nix2container";
   };
 
-  outputs = { self, nixops, nixpkgs, flake-utils, nix-filter }:
+  outputs = { self, nixops, nixpkgs, flake-utils, nix-filter, nix2container }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         localOverlay = import ./nix/overlay.nix;
@@ -54,7 +55,8 @@
           ];
         };
 
-        nixops-lib = nixops.lib { inherit pkgs; };
+        nix2containerPkgs = nix2container.packages.${system};
+        nixops-lib = nixops.lib { inherit pkgs nix2containerPkgs; };
 
         buildInputs = with pkgs; [
           vips
@@ -75,6 +77,7 @@
 
         name = "hasura-storage";
         version = "0.0.0-dev";
+        created = "1970-01-01T00:00:00Z";
         module = "github.com/nhost/hasura-storage";
         tags = [ "integration" ];
 
@@ -102,6 +105,7 @@
           default = nixops-lib.go.devShell {
             buildInputs = with pkgs; [
               go-migrate
+              skopeo
               ccls
             ] ++ buildInputs ++ nativeBuildInputs ++ checkDeps;
           };
@@ -115,7 +119,7 @@
           };
 
           docker-image = nixops-lib.go.docker-image {
-            inherit name version buildInputs;
+            inherit name created version buildInputs;
 
             package = hasuraStorage;
 

@@ -32,12 +32,14 @@ func (ctrl *Controller) listOrphans(ctx *gin.Context) ([]string, *APIError) {
 
 	for _, fileS3 := range filesInS3 {
 		found := false
+
 		for _, fileHasura := range filesInHasura {
 			if path.Base(fileS3) == fileHasura.ID {
 				found = true
 				break
 			}
 		}
+
 		if !found {
 			missing = append(missing, fileS3)
 		}

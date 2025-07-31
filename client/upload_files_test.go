@@ -384,6 +384,7 @@ func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
 			}
 
 			body, contentType := tc.requestBody(t)
+
 			resp, err := cl.UploadFilesWithBodyWithResponse(
 				t.Context(),
 				contentType,

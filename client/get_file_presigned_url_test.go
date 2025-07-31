@@ -20,6 +20,7 @@ func compareURLWithRegexp() cmp.Option {
 		cmp.Comparer(func(a, b string) bool {
 			reg1 := regexp.MustCompile(a)
 			reg2 := regexp.MustCompile(b)
+
 			return reg1.MatchString(b) || reg2.MatchString(a)
 		}),
 	)

@@ -57,6 +57,7 @@ func AuthenticationFunc(adminSecret string) openapi3filter.AuthenticationFunc {
 
 		c := ginmiddleware.GetGinContext(ctx)
 		c.Set(HeadersContextKey, input.RequestValidationInput.Request.Header)
+
 		return nil
 	}
 }

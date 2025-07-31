@@ -35,10 +35,11 @@ func (ctrl *Controller) GetFilePresignedURL( //nolint:ireturn
 	}
 
 	if !bucketMetadata.PresignedURLsEnabled {
-		err := errors.New( //nolint: goerr113
+		err := errors.New( //nolint: err113
 			"presigned URLs are not enabled on the bucket where this file is located in",
 		)
 		logger.WithError(err).Error("presigned URLs not enabled for bucket")
+
 		return ForbiddenError(err, err.Error()), nil
 	}
 

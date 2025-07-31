@@ -20,7 +20,7 @@ func NewClient(addr string) (*Client, error) {
 	}
 
 	if url.Scheme != "tcp" {
-		return nil, fmt.Errorf("invalid scheme: %s", url.Scheme) //nolint:goerr113
+		return nil, fmt.Errorf("invalid scheme: %s", url.Scheme) //nolint:err113
 	}
 
 	return &Client{url.Host}, nil
@@ -40,25 +40,28 @@ func (c *Client) Dial() (net.Conn, error) {
 }
 
 func sendCommand(conn net.Conn, command string) error {
-	if _, err := conn.Write(
-		[]byte(fmt.Sprintf("n%s\n", command)),
-	); err != nil {
+	if _, err := fmt.Fprintf(conn,
+		"n%s\n", command); err != nil {
 		return fmt.Errorf("failed to write command: %w", err)
 	}
+
 	return nil
 }
 
 func readResponse(conn net.Conn) ([]byte, error) {
 	buf := make([]byte, 1024) //nolint:mnd
+
 	n, err := conn.Read(buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
+
 	return buf[:n], nil
 }
 
 func sendChunk(conn net.Conn, data []byte) error {
 	var buf [4]byte
+
 	lenData := len(data)
 	buf[0] = byte(lenData >> 24) //nolint:mnd
 	buf[1] = byte(lenData >> 16) //nolint:mnd

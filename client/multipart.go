@@ -55,6 +55,7 @@ func createMultiForm(
 		} else {
 			h.Set("Content-Disposition", `form-data; name="metadata"`)
 		}
+
 		h.Set("Content-Type", "application/json")
 
 		formWriter, err = writer.CreatePart(h)
@@ -87,6 +88,7 @@ func CreateUploadMultiForm(
 	if err != nil {
 		return nil, "", fmt.Errorf("problem creating form field for bucket-id: %w", err)
 	}
+
 	_, err = io.Copy(formWriter, strings.NewReader(bucketID))
 	if err != nil {
 		return nil, "", fmt.Errorf("problem writing bucket-id: %w", err)
@@ -97,6 +99,7 @@ func CreateUploadMultiForm(
 			return nil, "", fmt.Errorf("problem creating form for file %s: %w", file.name, err)
 		}
 	}
+
 	writer.Close()
 
 	return bytes.NewReader(body.Bytes()), writer.FormDataContentType(), nil

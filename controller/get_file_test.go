@@ -99,6 +99,7 @@ func TestGetFile(t *testing.T) {
 			)
 
 			req.Header.Add("X-Hasura-User-Id", "some-valid-uuid")
+
 			for k, v := range tc.requestHeaders {
 				for _, vv := range v {
 					req.Header.Add(k, vv)

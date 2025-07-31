@@ -33,6 +33,7 @@ func (f fakeFileMetadata) encode() string {
 	if err != nil {
 		panic(err)
 	}
+
 	return string(b)
 }
 
@@ -52,6 +53,7 @@ func createMultiForm(t *testing.T, files ...fakeFile) (io.Reader, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_, err = io.Copy(formWriter, strings.NewReader("blah"))
 	if err != nil {
 		t.Fatal(err)
@@ -63,10 +65,12 @@ func createMultiForm(t *testing.T, files ...fakeFile) (io.Reader, string) {
 			fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
 				"file[]", file.md.Name))
 		h.Set("Content-Type", file.contentType)
+
 		formWriter, err := writer.CreatePart(h)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		_, err = io.Copy(formWriter, strings.NewReader(file.contents))
 		if err != nil {
 			t.Fatal(err)
@@ -76,6 +80,7 @@ func createMultiForm(t *testing.T, files ...fakeFile) (io.Reader, string) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		_, err = io.Copy(formWriter, strings.NewReader(file.md.encode()))
 		if err != nil {
 			t.Fatal(err)
@@ -283,6 +288,7 @@ func TestUploadFile(t *testing.T) {
 			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
 				t.Fatal(err)
 			}
+
 			assert(t, &controller.UploadFileResponse{
 				ProcessedFiles: []api.FileMetadata{
 					{

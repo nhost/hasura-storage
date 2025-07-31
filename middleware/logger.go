@@ -26,6 +26,7 @@ func LoggerFromContext(ctx context.Context) logrus.FieldLogger { //nolint:contex
 	if !ok {
 		return logrus.New()
 	}
+
 	return logger
 }
 

@@ -20,6 +20,7 @@ type ClamavWrapper struct {
 
 func (c *ClamavWrapper) ScanReader(r io.ReaderAt) *controller.APIError {
 	err := c.clamav.InStream(r)
+
 	virusFoundErr := &clamd.VirusFoundError{}
 	switch {
 	case errors.As(err, &virusFoundErr):
@@ -28,6 +29,7 @@ func (c *ClamavWrapper) ScanReader(r io.ReaderAt) *controller.APIError {
 			err.Error(),
 		)
 		err.SetData("virus", virusFoundErr.Name)
+
 		return err
 	case err != nil:
 		return controller.InternalServerError(err)

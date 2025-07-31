@@ -169,6 +169,7 @@ func (ctrl *Controller) SetupRouter(
 		apiRoot.GET("/openapi.yaml", ctrl.OpenAPI)
 		apiRoot.GET("/version", ctrl.Version)
 	}
+
 	files := apiRoot.Group("/files")
 	{
 		// files.POST("", ctrl.UploadFilesGin) // To delete
@@ -189,6 +190,7 @@ func (ctrl *Controller) SetupRouter(
 		ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadataGin)
 		ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
 	}
+
 	return router, nil
 }
 

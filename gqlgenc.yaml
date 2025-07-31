@@ -22,4 +22,3 @@ query:
   - "./metadata/*.graphql"
 generate:
   clientV2: true
-  omitEmptyTypes: true

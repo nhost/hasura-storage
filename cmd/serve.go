@@ -74,10 +74,12 @@ func getGin(
 	}
 
 	loader := openapi3.NewLoader()
+
 	doc, err := loader.LoadFromData(controller.OpenAPISchema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load OpenAPI schema: %w", err)
 	}
+
 	doc.AddServer(&openapi3.Server{ //nolint:exhaustruct
 		URL: apiRootPrefix,
 	})
@@ -170,10 +172,14 @@ func getContentStorage(
 	disableHTTPS bool,
 	logger *logrus.Logger,
 ) *storage.S3 {
-	var cfg aws.Config
-	var err error
+	var (
+		cfg aws.Config
+		err error
+	)
+
 	if s3AccessKey != "" && s3SecretKey != "" {
 		logger.Info("Using static aws credentials")
+
 		cfg, err = config.LoadDefaultConfig(
 			ctx,
 			config.WithRegion(region),
@@ -183,11 +189,14 @@ func getContentStorage(
 		)
 	} else {
 		logger.Info("Using default configuration for aws credentials")
+
 		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	}
+
 	if err != nil {
 		panic(err)
 	}
+
 	client := s3.NewFromConfig(
 		cfg,
 		func(o *s3.Options) {
@@ -215,7 +224,9 @@ func applymigrations(
 			logger.Error("you need to specify " + postgresMigrationsSourceFlag)
 			os.Exit(1)
 		}
+
 		logger.Info("applying postgres migrations")
+
 		if err := migrations.ApplyPostgresMigration(postgresSource); err != nil {
 			logger.Errorf("problem applying postgres migrations: %s", err.Error())
 			os.Exit(1)
@@ -224,6 +235,7 @@ func applymigrations(
 
 	if hasuraMetadata {
 		logger.Info("applying hasura metadata")
+
 		if err := migrations.ApplyHasuraMetadata(hasuraEndpoint, hasuraSecret, hasuraDBName); err != nil {
 			logger.Errorf("problem applying hasura metadata: %s", err.Error())
 			os.Exit(1)

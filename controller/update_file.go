@@ -16,6 +16,7 @@ type updateFileMetadata struct {
 
 type UpdateFileResponse struct {
 	*api.FileMetadata
+
 	Error *ErrorResponse `json:"error,omitempty"`
 }
 
@@ -83,6 +84,7 @@ func (ctrl *Controller) ReplaceFile(
 	); apiErr != nil {
 		apiErr := fmt.Errorf("problem checking file size %s: %w", file.Name, apiErr)
 		logger.WithError(apiErr).Errorf("problem checking file size %s", file.Name)
+
 		return InternalServerError(apiErr), nil
 	}
 
@@ -112,6 +114,7 @@ func (ctrl *Controller) ReplaceFile(
 		// let's revert the change to isUploaded
 		_ = ctrl.metadataStorage.SetIsUploaded(ctx, file.ID, true, sessionHeaders)
 		logger.WithError(apiErr).Errorf("problem uploading file %s to storage", file.Name)
+
 		return apiErr, nil
 	}
 

@@ -22,6 +22,7 @@ func deptr[T any](v *T) T { //nolint:ireturn
 		var zero T
 		return zero
 	}
+
 	return *v
 }
 
@@ -37,7 +38,7 @@ func mimeTypeToImageType(mimeType string) (image.ImageType, *APIError) {
 		return image.ImageTypeAVIF, nil
 	default:
 		return 0, BadDataError(
-			fmt.Errorf( //nolint: goerr113
+			fmt.Errorf( //nolint: err113
 				"image manipulation features are not supported for '%s'", mimeType,
 			),
 			fmt.Sprintf("image manipulation features are not supported for '%s'", mimeType),
@@ -85,10 +86,11 @@ func chooseImageFormat( //nolint: cyclop
 				return originalFormat, image.ImageTypePNG, nil
 			}
 		}
+
 		return originalFormat, originalFormat, nil
 	default:
 		return 0, 0, BadDataError(
-			//nolint: goerr113
+			//nolint: err113
 			fmt.Errorf("format must be one of: same, webp, png, jpeg, avif, auto. Got: %s", format),
 			"format must be one of: same, webp, png, jpeg, avif, auto. Got: "+string(format),
 		)
@@ -120,6 +122,7 @@ func getImageManipulationOptions(
 		orig, format, err := chooseImageFormat(params, mimeType, acceptHeader)
 		opts.Format = format
 		opts.OriginalFormat = orig
+
 		if err != nil {
 			return image.Options{}, err
 		}
@@ -302,6 +305,7 @@ func (ctrl *Controller) getFileResponse( //nolint: ireturn,funlen,dupl
 	default:
 		logger.WithField("statusCode", file.statusCode).
 			Error("unexpected status code from download")
+
 		return ErrUnexpectedStatusCode
 	}
 }

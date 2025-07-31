@@ -26,8 +26,9 @@ func (ctrl *Controller) getFileMetadata(
 
 	if checkIsUploaded && !fileMetadata.IsUploaded {
 		msg := "file is not uploaded"
+
 		return api.FileMetadata{}, BucketMetadata{},
-			ForbiddenError(errors.New(msg), msg) //nolint:goerr113
+			ForbiddenError(errors.New(msg), msg) //nolint:err113
 	}
 
 	bucketMetadata, apiErr := ctrl.metadataStorage.GetBucketByID(
@@ -81,6 +82,7 @@ func checkConditionals( //nolint: cyclop
 		if err != nil {
 			return 0, err
 		}
+
 		if !b {
 			return http.StatusNotModified, nil
 		}
@@ -91,6 +93,7 @@ func checkConditionals( //nolint: cyclop
 		if err != nil {
 			return 0, err
 		}
+
 		if b {
 			return http.StatusPreconditionFailed, nil
 		}
@@ -134,6 +137,7 @@ func (ctrl *Controller) getFileMetadataHeaders(
 		defer download.Body.Close()
 
 		var object io.ReadCloser
+
 		object, fileMetadata.Size, apiErr = ctrl.manipulateImage(
 			download.Body, uint64(fileMetadata.Size), opts, //nolint:gosec
 		)

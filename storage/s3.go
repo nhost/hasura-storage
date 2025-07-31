@@ -22,6 +22,7 @@ func deptr[T any](p *T) T { //nolint:ireturn
 	if p == nil {
 		return *new(T)
 	}
+
 	return *p
 }
 
@@ -39,18 +40,20 @@ func parseS3Error(resp *http.Response) *controller.APIError {
 				fmt.Errorf("problem reading S3 error, status code %d: %w", resp.StatusCode, err),
 			)
 		}
+
 		return controller.InternalServerError(
-			fmt.Errorf( //nolint: goerr113
+			fmt.Errorf( //nolint: err113
 				"problem parsing S3 error, status code %d: %s",
 				resp.StatusCode,
 				b,
 			),
 		)
 	}
+
 	return controller.NewAPIError(
 		resp.StatusCode,
 		s3Error.Message,
-		errors.New(s3Error.Message), //nolint: goerr113
+		errors.New(s3Error.Message), //nolint: err113
 		nil,
 	)
 }
@@ -169,6 +172,7 @@ func (s *S3) CreatePresignedURL(
 	}
 
 	presignClient := s3.NewPresignClient(s.client)
+
 	request, err := presignClient.PresignGetObject(ctx,
 		&s3.GetObjectInput{ //nolint:exhaustivestruct
 			Bucket: s.bucket,
@@ -200,27 +204,33 @@ func (s *S3) GetFileWithPresignedURL(
 	if s.rootFolder != "" {
 		filepath = s.rootFolder + "/" + filepath
 	}
+
 	url := fmt.Sprintf("%s/%s/%s?%s", s.url, *s.bucket, filepath, signature)
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem creating request: %w", err))
 	}
+
 	req.Header = headers
 
 	client := http.Client{}
+
 	resp, err := client.Do(req) //nolint:bodyclose //we are actually returning the body
 	if err != nil {
 		return nil, controller.InternalServerError(fmt.Errorf("problem getting file: %w", err))
 	}
 
-	if !(resp.StatusCode == http.StatusOK ||
-		resp.StatusCode == http.StatusPartialContent ||
-		resp.StatusCode == http.StatusNotModified) {
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusPartialContent &&
+		resp.StatusCode != http.StatusNotModified {
 		return nil, parseS3Error(resp)
 	}
 
 	respHeaders := make(http.Header)
+
 	var length int64
+
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusPartialContent:
 		respHeaders = http.Header{

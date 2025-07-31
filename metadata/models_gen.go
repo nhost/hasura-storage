@@ -3,6 +3,7 @@
 package metadata
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -991,6 +992,20 @@ func (e BucketsConstraint) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *BucketsConstraint) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e BucketsConstraint) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // select columns of table "storage.buckets"
 type BucketsSelectColumn string
 
@@ -1051,6 +1066,20 @@ func (e *BucketsSelectColumn) UnmarshalGQL(v any) error {
 
 func (e BucketsSelectColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *BucketsSelectColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e BucketsSelectColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // update columns of table "storage.buckets"
@@ -1115,6 +1144,20 @@ func (e BucketsUpdateColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *BucketsUpdateColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e BucketsUpdateColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // ordering argument of a cursor
 type CursorOrdering string
 
@@ -1159,6 +1202,20 @@ func (e CursorOrdering) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *CursorOrdering) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CursorOrdering) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // unique or primary key constraints on table "storage.files"
 type FilesConstraint string
 
@@ -1198,6 +1255,20 @@ func (e *FilesConstraint) UnmarshalGQL(v any) error {
 
 func (e FilesConstraint) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *FilesConstraint) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FilesConstraint) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // select columns of table "storage.files"
@@ -1271,6 +1342,20 @@ func (e FilesSelectColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *FilesSelectColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FilesSelectColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // select "files_aggregate_bool_exp_bool_and_arguments_columns" columns of table "storage.files"
 type FilesSelectColumnFilesAggregateBoolExpBoolAndArgumentsColumns string
 
@@ -1312,6 +1397,20 @@ func (e FilesSelectColumnFilesAggregateBoolExpBoolAndArgumentsColumns) MarshalGQ
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *FilesSelectColumnFilesAggregateBoolExpBoolAndArgumentsColumns) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FilesSelectColumnFilesAggregateBoolExpBoolAndArgumentsColumns) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // select "files_aggregate_bool_exp_bool_or_arguments_columns" columns of table "storage.files"
 type FilesSelectColumnFilesAggregateBoolExpBoolOrArgumentsColumns string
 
@@ -1351,6 +1450,20 @@ func (e *FilesSelectColumnFilesAggregateBoolExpBoolOrArgumentsColumns) Unmarshal
 
 func (e FilesSelectColumnFilesAggregateBoolExpBoolOrArgumentsColumns) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *FilesSelectColumnFilesAggregateBoolExpBoolOrArgumentsColumns) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FilesSelectColumnFilesAggregateBoolExpBoolOrArgumentsColumns) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // update columns of table "storage.files"
@@ -1424,6 +1537,20 @@ func (e FilesUpdateColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *FilesUpdateColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FilesUpdateColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // column ordering options
 type OrderBy string
 
@@ -1480,6 +1607,20 @@ func (e OrderBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *OrderBy) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderBy) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // unique or primary key constraints on table "storage.virus"
 type VirusConstraint string
 
@@ -1519,6 +1660,20 @@ func (e *VirusConstraint) UnmarshalGQL(v any) error {
 
 func (e VirusConstraint) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *VirusConstraint) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e VirusConstraint) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // select columns of table "storage.virus"
@@ -1580,6 +1735,20 @@ func (e VirusSelectColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *VirusSelectColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e VirusSelectColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // update columns of table "storage.virus"
 type VirusUpdateColumn string
 
@@ -1637,4 +1806,18 @@ func (e *VirusUpdateColumn) UnmarshalGQL(v any) error {
 
 func (e VirusUpdateColumn) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *VirusUpdateColumn) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e VirusUpdateColumn) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

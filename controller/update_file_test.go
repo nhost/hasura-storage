@@ -30,6 +30,7 @@ func createUpdateMultiForm(t *testing.T, file fakeFile) (io.Reader, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_, err = io.Copy(formWriter, strings.NewReader(file.contents))
 	if err != nil {
 		t.Fatal(err)
@@ -39,6 +40,7 @@ func createUpdateMultiForm(t *testing.T, file fakeFile) (io.Reader, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_, err = io.Copy(formWriter, strings.NewReader(file.md.encode()))
 	if err != nil {
 		t.Fatal(err)
@@ -196,6 +198,7 @@ func TestUpdateFile(t *testing.T) {
 			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
 				t.Fatal(err)
 			}
+
 			assert(t, &controller.UpdateFileResponse{
 				&api.FileMetadata{
 					Id:               "38288c85-02af-416b-b075-11c4dae9",

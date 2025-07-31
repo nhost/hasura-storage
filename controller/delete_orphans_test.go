@@ -99,6 +99,7 @@ func TestDeleteOrphans(t *testing.T) {
 			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
 				t.Fatal(err)
 			}
+
 			assert(t, &tc.expected, resp)
 		})
 	}

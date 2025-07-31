@@ -130,6 +130,7 @@ func (ctrl *Controller) processFile(
 			file.ID,
 			http.Header{"x-hasura-admin-secret": []string{ctrl.hasuraAdminSecret}},
 		)
+
 		return api.FileMetadata{}, apiErr.ExtendError("problem uploading file to storage")
 	}
 
@@ -181,6 +182,7 @@ func fileDataFromFormValue(
 	i int,
 ) (fileData, *APIError) {
 	formValue := []byte("{}")
+
 	userSpecified, ok := md["metadata[]"]
 	if ok {
 		formValue = []byte(userSpecified[i])
@@ -191,6 +193,7 @@ func fileDataFromFormValue(
 	if err := json.Unmarshal(formValue, &data); err != nil {
 		return fileData{}, WrongMetadataFormatError(err)
 	}
+
 	data.header = fileHedaer
 
 	return data, nil
@@ -201,6 +204,7 @@ func getBucketIDFromFormValue(md map[string][]string) string {
 	if ok {
 		return bucketID[0]
 	}
+
 	return "default"
 }
 
@@ -216,6 +220,7 @@ func parseUploadRequest(form *multipart.Form) (uploadFileRequest, *APIError) {
 			return uploadFileRequest{}, ErrMetadataLength
 		}
 	}
+
 	processedFiles := make([]fileData, len(files))
 
 	for idx, fileHeader := range files {
@@ -223,12 +228,15 @@ func parseUploadRequest(form *multipart.Form) (uploadFileRequest, *APIError) {
 		if err != nil {
 			return uploadFileRequest{}, err
 		}
+
 		if fileReq.Name == "" {
 			fileReq.Name = fileHeader.Filename
 		}
+
 		if fileReq.ID == "" {
 			fileReq.ID = uuid.New().String()
 		}
+
 		processedFiles[idx] = fileReq
 	}
 
@@ -259,6 +267,7 @@ func (ctrl *Controller) UploadFiles( //nolint:ireturn
 	fm, apiErr := ctrl.upload(ctx, uploadFilesRequest, sessionHeaders)
 	if apiErr != nil {
 		logger.WithError(apiErr).Error("problem uploading files")
+
 		return api.UploadFilesdefaultJSONResponse{
 			Body: api.ErrorResponseWithProcessedFiles{
 				Error: &struct {

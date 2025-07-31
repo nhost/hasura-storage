@@ -43,7 +43,7 @@ func expiresIn(xAmzExpires string, datestr string) (int, *APIError) {
 
 	if expires <= 0 {
 		return 0, BadDataError(
-			errors.New("signature already expired"), //nolint: goerr113
+			errors.New("signature already expired"), //nolint: err113
 			"signature already expired",
 		)
 	}
@@ -178,6 +178,7 @@ func (ctrl *Controller) getPresignedURLContentsResponse( //nolint: ireturn,funle
 	default:
 		logger.WithField("statusCode", file.statusCode).
 			Error("unexpected status code from download")
+
 		return ErrUnexpectedStatusCode
 	}
 }

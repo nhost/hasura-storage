@@ -22,6 +22,7 @@ func parseGraphqlError(err error) *controller.APIError {
 		if !ok {
 			return controller.InternalServerError(err)
 		}
+
 		switch code {
 		case "access-denied", "validation-failed", "permission-error":
 			return controller.ForbiddenError(ghErr, "you are not authorized")
@@ -85,6 +86,7 @@ func WithHeaders(header http.Header) clientv2.RequestInterceptor {
 				req.Header.Add(k, vv)
 			}
 		}
+
 		return next(ctx, req, gqlInfo, res)
 	}
 }

@@ -19,7 +19,7 @@ func (c *Client) Reload() error {
 	}
 
 	if string(response) != "RELOADING\n" {
-		return fmt.Errorf("unknown response: %s", string(response)) //nolint:goerr113
+		return fmt.Errorf("unknown response: %s", string(response)) //nolint:err113
 	}
 
 	return nil

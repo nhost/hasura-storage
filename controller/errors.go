@@ -206,6 +206,7 @@ func (a *APIError) StatusCode() int {
 	if a == nil {
 		return 0
 	}
+
 	return a.statusCode
 }
 
@@ -213,6 +214,7 @@ func (a *APIError) PublicMessage() string {
 	if a == nil {
 		return ""
 	}
+
 	return a.publicMessage
 }
 
@@ -241,6 +243,7 @@ func (a *APIError) GetDataString(k string) string {
 	if !ok {
 		return ""
 	}
+
 	return s
 }
 
@@ -248,5 +251,6 @@ func (a *APIError) SetData(k string, v any) {
 	if a.data == nil {
 		a.data = make(map[string]any)
 	}
+
 	a.data[k] = v
 }
