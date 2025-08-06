@@ -299,15 +299,15 @@ func (m *MockAntivirus) EXPECT() *MockAntivirusMockRecorder {
 }
 
 // ScanReader mocks base method.
-func (m *MockAntivirus) ScanReader(r io.ReaderAt) *controller.APIError {
+func (m *MockAntivirus) ScanReader(ctx context.Context, r io.ReaderAt) *controller.APIError {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanReader", r)
+	ret := m.ctrl.Call(m, "ScanReader", ctx, r)
 	ret0, _ := ret[0].(*controller.APIError)
 	return ret0
 }
 
 // ScanReader indicates an expected call of ScanReader.
-func (mr *MockAntivirusMockRecorder) ScanReader(r any) *gomock.Call {
+func (mr *MockAntivirusMockRecorder) ScanReader(ctx, r any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReader", reflect.TypeOf((*MockAntivirus)(nil).ScanReader), r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReader", reflect.TypeOf((*MockAntivirus)(nil).ScanReader), ctx, r)
 }

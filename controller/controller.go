@@ -83,7 +83,7 @@ type ContentStorage interface {
 }
 
 type Antivirus interface {
-	ScanReader(r io.ReaderAt) *APIError
+	ScanReader(ctx context.Context, r io.ReaderAt) *APIError
 }
 
 type Controller struct {

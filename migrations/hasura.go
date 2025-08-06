@@ -65,7 +65,7 @@ func postMetadata(baseURL, hasuraSecret string, data interface{}) error {
 			return nil
 		}
 
-		return fmt.Errorf("status_code: %d\nresponse: %s", resp.StatusCode, b) //nolint: goerr113
+		return fmt.Errorf("status_code: %d\nresponse: %s", resp.StatusCode, b) //nolint: err113
 	}
 
 	return nil

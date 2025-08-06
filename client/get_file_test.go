@@ -62,7 +62,7 @@ func uploadInitialFile(t *testing.T, cl client.ClientWithResponsesInterface, id1
 	}
 }
 
-func TestGetFile(t *testing.T) { //nolint:cyclop,maintidx
+func TestGetFile(t *testing.T) { //nolint:maintidx
 	t.Parallel()
 
 	cl, err := client.NewClientWithResponses(testBaseURL)

@@ -74,7 +74,7 @@ func (ctrl *Controller) scanAndReportVirus(
 	filename string,
 	headers http.Header,
 ) *APIError {
-	if err := ctrl.av.ScanReader(fileContent); err != nil {
+	if err := ctrl.av.ScanReader(ctx, fileContent); err != nil {
 		err.SetData("file", filename)
 
 		userSession := GetUserSession(headers)

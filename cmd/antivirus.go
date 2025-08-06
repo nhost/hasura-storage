@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"io"
 
@@ -10,7 +11,7 @@ import (
 
 type DummyAntivirus struct{}
 
-func (d *DummyAntivirus) ScanReader(_ io.ReaderAt) *controller.APIError {
+func (d *DummyAntivirus) ScanReader(_ context.Context, _ io.ReaderAt) *controller.APIError {
 	return nil
 }
 
@@ -18,8 +19,8 @@ type ClamavWrapper struct {
 	clamav *clamd.Client
 }
 
-func (c *ClamavWrapper) ScanReader(r io.ReaderAt) *controller.APIError {
-	err := c.clamav.InStream(r)
+func (c *ClamavWrapper) ScanReader(ctx context.Context, r io.ReaderAt) *controller.APIError {
+	err := c.clamav.InStream(ctx, r)
 
 	virusFoundErr := &clamd.VirusFoundError{}
 	switch {

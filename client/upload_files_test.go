@@ -41,7 +41,7 @@ func compareContentLength() cmp.Option {
 	)
 }
 
-func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx
+func TestUploadFiles(t *testing.T) { //nolint:cyclop,maintidx,gocognit
 	t.Parallel()
 
 	cl, err := client.NewClientWithResponses(testBaseURL)

@@ -15,7 +15,7 @@ import (
 	"github.com/nhost/hasura-storage/client"
 )
 
-func TestReplaceFile(t *testing.T) { //nolint:cyclop,maintidx
+func TestReplaceFile(t *testing.T) { //nolint:cyclop,maintidx,gocognit
 	t.Parallel()
 
 	cl, err := client.NewClientWithResponses(testBaseURL)

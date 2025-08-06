@@ -1,9 +1,6 @@
 package controller_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/nhost/hasura-storage/api"
@@ -23,7 +20,7 @@ func TestDeleteOrphans(t *testing.T) {
 		{
 			name: "successful",
 			expected: api.DeleteOrphanedFiles200JSONResponse{
-				Files: ptr([]string{"default/garbage"}),
+				Files: &[]string{"default/garbage"},
 			},
 		},
 	}
@@ -81,27 +78,15 @@ func TestDeleteOrphans(t *testing.T) {
 				logger,
 			)
 
-			router, _ := ctrl.SetupRouter(nil, "/v1", []string{"*"}, false, ginLogger(logger))
-
-			responseRecorder := httptest.NewRecorder()
-
-			req, _ := http.NewRequestWithContext(
+			resp, err := ctrl.DeleteOrphanedFiles(
 				t.Context(),
-				"POST",
-				"/v1/ops/delete-orphans",
-				nil,
+				api.DeleteOrphanedFilesRequestObject{},
 			)
-
-			router.ServeHTTP(responseRecorder, req)
-
-			assert(t, 200, responseRecorder.Code)
-
-			resp := &api.DeleteOrphanedFiles200JSONResponse{}
-			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
-				t.Fatal(err)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
-			assert(t, &tc.expected, resp)
+			assert(t, tc.expected, resp)
 		})
 	}
 }

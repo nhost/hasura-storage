@@ -1,28 +1,39 @@
 package controller_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/controller/mock"
 	"github.com/sirupsen/logrus"
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestListOrphans(t *testing.T) {
+func TestListBrokenMetadata(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
 		name     string
-		expected controller.ListOrphansResponse
+		expected api.ListBrokenMetadata200JSONResponse
 	}{
 		{
 			name: "successful",
-			expected: controller.ListOrphansResponse{
-				Files: []string{"app_id/garbage"},
+			expected: api.ListBrokenMetadata200JSONResponse{
+				Metadata: &[]api.FileSummary{
+					{
+						Id:         "b3b4e653-ca59-412c-a165-92d251c3fe86",
+						Name:       "file-1.txt",
+						IsUploaded: true,
+						BucketId:   "default",
+					},
+					{
+						Id:         "e6aad336-ad79-4df7-a09b-5782f71948f4",
+						Name:       "file-1.txt",
+						IsUploaded: true,
+						BucketId:   "default",
+					},
+				},
 			},
 		},
 	}
@@ -51,9 +62,21 @@ func TestListOrphans(t *testing.T) {
 						BucketID:   "default",
 					},
 					{
+						ID:         "e6aad336-ad79-4df7-a09b-5782f71948f4",
+						Name:       "file-1.txt",
+						IsUploaded: true,
+						BucketID:   "default",
+					},
+					{
 						ID:         "7dc0b0d0-b100-4667-89f1-0434942d9c15",
 						Name:       "file-two.txt",
 						IsUploaded: true,
+						BucketID:   "default",
+					},
+					{
+						ID:         "a184ad10-58e2-4619-9a22-04a90b9c4b5f",
+						Name:       "file-three.txt",
+						IsUploaded: false,
 						BucketID:   "default",
 					},
 				}, nil,
@@ -61,9 +84,7 @@ func TestListOrphans(t *testing.T) {
 
 			contentStorage.EXPECT().ListFiles(gomock.Any()).Return(
 				[]string{
-					"app_id/b3b4e653-ca59-412c-a165-92d251c3fe86",
 					"app_id/7dc0b0d0-b100-4667-89f1-0434942d9c15",
-					"app_id/garbage",
 				}, nil,
 			)
 
@@ -78,27 +99,15 @@ func TestListOrphans(t *testing.T) {
 				logger,
 			)
 
-			router, _ := ctrl.SetupRouter(nil, "/v1", []string{"*"}, false, ginLogger(logger))
-
-			responseRecorder := httptest.NewRecorder()
-
-			req, _ := http.NewRequestWithContext(
+			resp, err := ctrl.ListBrokenMetadata(
 				t.Context(),
-				"POST",
-				"/v1/ops/list-orphans",
-				nil,
+				api.ListBrokenMetadataRequestObject{},
 			)
-
-			router.ServeHTTP(responseRecorder, req)
-
-			assert(t, 200, responseRecorder.Code)
-
-			resp := &controller.ListOrphansResponse{}
-			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
-				t.Fatal(err)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
-			assert(t, &tc.expected, resp)
+			assert(t, tc.expected, resp)
 		})
 	}
 }

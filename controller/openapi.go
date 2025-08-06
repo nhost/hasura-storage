@@ -25,9 +25,12 @@ func (ctrl *Controller) OpenAPI(ctx *gin.Context) {
 	)
 }
 
-func (ctrl *Controller) GetOpenAPISpec(
-	ctx context.Context,
-	request api.GetOpenAPISpecRequestObject,
+func (ctrl *Controller) GetOpenAPISpec( //nolint:ireturn
+	_ context.Context,
+	_ api.GetOpenAPISpecRequestObject,
 ) (api.GetOpenAPISpecResponseObject, error) {
-	return nil, nil
+	return api.GetOpenAPISpec200ApplicationxYamlResponse{
+		Body:          bytes.NewReader(OpenAPISchema),
+		ContentLength: int64(len(OpenAPISchema)),
+	}, nil
 }

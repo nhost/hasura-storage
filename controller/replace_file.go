@@ -58,7 +58,7 @@ func replaceFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *A
 	return res, nil
 }
 
-func (ctrl *Controller) ReplaceFile(
+func (ctrl *Controller) ReplaceFile( //nolint:funlen,ireturn
 	ctx context.Context,
 	request api.ReplaceFileRequestObject,
 ) (api.ReplaceFileResponseObject, error) {

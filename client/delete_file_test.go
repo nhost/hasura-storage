@@ -11,7 +11,7 @@ import (
 	"github.com/nhost/hasura-storage/client"
 )
 
-func TestDeleteFile(t *testing.T) { //nolint:cyclop
+func TestDeleteFile(t *testing.T) {
 	t.Parallel()
 
 	cl, err := client.NewClientWithResponses(testBaseURL)

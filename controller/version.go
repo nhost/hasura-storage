@@ -27,9 +27,9 @@ func (ctrl *Controller) Version(ctx *gin.Context) {
 	)
 }
 
-func (ctrl *Controller) GetVersion(
-	ctx context.Context,
-	request api.GetVersionRequestObject,
+func (ctrl *Controller) GetVersion( //nolint:ireturn
+	_ context.Context,
+	_ api.GetVersionRequestObject,
 ) (api.GetVersionResponseObject, error) {
 	return api.GetVersion200JSONResponse{
 		BuildVersion: buildVersion,

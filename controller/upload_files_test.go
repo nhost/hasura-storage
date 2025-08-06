@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net/http"
-	"net/http/httptest"
 	"net/textproto"
 	"strings"
 	"testing"
@@ -43,11 +41,14 @@ type fakeFile struct {
 	md          fakeFileMetadata
 }
 
-func createMultiForm(t *testing.T, files ...fakeFile) (io.Reader, string) {
+func createMultiForm(t *testing.T, files ...fakeFile) *multipart.Reader {
 	t.Helper()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+
+	// Store the boundary before we close the writer
+	boundary := writer.Boundary()
 
 	formWriter, err := writer.CreateFormField("bucket-id")
 	if err != nil {
@@ -89,7 +90,8 @@ func createMultiForm(t *testing.T, files ...fakeFile) (io.Reader, string) {
 
 	writer.Close()
 
-	return bytes.NewReader(body.Bytes()), writer.FormDataContentType()
+	// Create and return a multipart.Reader
+	return multipart.NewReader(bytes.NewReader(body.Bytes()), boundary)
 }
 
 func TestUploadFile(t *testing.T) {
@@ -256,8 +258,8 @@ func TestUploadFile(t *testing.T) {
 					nil)
 			}
 
-			av.EXPECT().ScanReader(gomock.Any()).Return(nil)
-			av.EXPECT().ScanReader(gomock.Any()).Return(nil)
+			av.EXPECT().ScanReader(gomock.Any(), gomock.Any()).Return(nil)
+			av.EXPECT().ScanReader(gomock.Any(), gomock.Any()).Return(nil)
 
 			ctrl := controller.New(
 				"http://asd",
@@ -270,26 +272,17 @@ func TestUploadFile(t *testing.T) {
 				logger,
 			)
 
-			router, _ := ctrl.SetupRouter(nil, "/v1", []string{"*"}, false, ginLogger(logger))
-
-			body, contentType := createMultiForm(t, files...)
-
-			responseRecorder := httptest.NewRecorder()
-
-			req, _ := http.NewRequestWithContext(t.Context(), "POST", "/v1/files/", body)
-
-			req.Header.Set("Content-Type", contentType)
-
-			router.ServeHTTP(responseRecorder, req)
-
-			assert(t, 201, responseRecorder.Code)
-
-			resp := &controller.UploadFileResponse{}
-			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
+			resp, err := ctrl.UploadFiles(
+				t.Context(),
+				api.UploadFilesRequestObject{
+					Body: createMultiForm(t, files...),
+				},
+			)
+			if err != nil {
 				t.Fatal(err)
 			}
 
-			assert(t, &controller.UploadFileResponse{
+			assert(t, api.UploadFiles201JSONResponse{
 				ProcessedFiles: []api.FileMetadata{
 					{
 						Id:               "38288c85-02af-416b-b075-11c4dae9",
@@ -318,7 +311,6 @@ func TestUploadFile(t *testing.T) {
 						Metadata:         ptr(map[string]any{"some": "metadata"}),
 					},
 				},
-				Error: nil,
 			}, resp,
 				cmpopts.IgnoreFields(api.FileMetadata{}, "Id", "CreatedAt", "UpdatedAt"),
 			)

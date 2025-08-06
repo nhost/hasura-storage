@@ -1,11 +1,9 @@
 package controller_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
 	"github.com/nhost/hasura-storage/controller/mock"
 	"github.com/sirupsen/logrus"
@@ -17,17 +15,17 @@ func TestListNotUploaded(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		expected controller.ListBrokenMetadataResponse
+		expected api.ListFilesNotUploaded200JSONResponse
 	}{
 		{
 			name: "successful",
-			expected: controller.ListBrokenMetadataResponse{
-				Metadata: []controller.FileSummary{
+			expected: api.ListFilesNotUploaded200JSONResponse{
+				Metadata: &[]api.FileSummary{
 					{
-						ID:         "a184ad10-58e2-4619-9a22-04a90b9c4b5f",
+						Id:         "a184ad10-58e2-4619-9a22-04a90b9c4b5f",
 						Name:       "file-three.txt",
 						IsUploaded: false,
-						BucketID:   "default",
+						BucketId:   "default",
 					},
 				},
 			},
@@ -89,27 +87,15 @@ func TestListNotUploaded(t *testing.T) {
 				logger,
 			)
 
-			router, _ := ctrl.SetupRouter(nil, "/v1", []string{"*"}, false, ginLogger(logger))
-
-			responseRecorder := httptest.NewRecorder()
-
-			req, _ := http.NewRequestWithContext(
+			resp, err := ctrl.ListFilesNotUploaded(
 				t.Context(),
-				"POST",
-				"/v1/ops/list-not-uploaded",
-				nil,
+				api.ListFilesNotUploadedRequestObject{},
 			)
-
-			router.ServeHTTP(responseRecorder, req)
-
-			assert(t, 200, responseRecorder.Code)
-
-			resp := &controller.ListBrokenMetadataResponse{}
-			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
-				t.Fatal(err)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
-			assert(t, &tc.expected, resp)
+			assert(t, tc.expected, resp)
 		})
 	}
 }

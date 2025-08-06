@@ -102,7 +102,51 @@ func checkConditionals( //nolint: cyclop
 	return defaultStatusCode, nil
 }
 
-func (ctrl *Controller) getFileMetadataHeaders(
+func (ctrl *Controller) getFileMetadataHeadersResponseObject( //nolint:ireturn
+	statusCode int,
+	bucketMetadata BucketMetadata,
+	fileMetadata api.FileMetadata,
+) (api.GetFileMetadataHeadersResponseObject, *APIError) {
+	switch statusCode {
+	case http.StatusOK:
+		return api.GetFileMetadataHeaders200Response{
+			Headers: api.GetFileMetadataHeaders200ResponseHeaders{
+				AcceptRanges:     "bytes",
+				CacheControl:     bucketMetadata.CacheControl,
+				ContentType:      fileMetadata.MimeType,
+				Etag:             fileMetadata.Etag,
+				LastModified:     fileMetadata.UpdatedAt,
+				SurrogateControl: bucketMetadata.CacheControl,
+				SurrogateKey:     fileMetadata.Id,
+				ContentDisposition: fmt.Sprintf(
+					`inline; filename="%s"`,
+					url.QueryEscape(fileMetadata.Name),
+				),
+				ContentLength: int(fileMetadata.Size),
+			},
+		}, nil
+	case http.StatusNotModified:
+		return api.GetFileMetadataHeaders304Response{
+			Headers: api.GetFileMetadataHeaders304ResponseHeaders{
+				CacheControl:     bucketMetadata.CacheControl,
+				Etag:             fileMetadata.Etag,
+				SurrogateControl: bucketMetadata.CacheControl,
+			},
+		}, nil
+	case http.StatusPreconditionFailed:
+		return api.GetFileMetadataHeaders412Response{
+			Headers: api.GetFileMetadataHeaders412ResponseHeaders{
+				CacheControl:     bucketMetadata.CacheControl,
+				Etag:             fileMetadata.Etag,
+				SurrogateControl: bucketMetadata.CacheControl,
+			},
+		}, nil
+	default:
+		return nil, ErrUnexpectedStatusCode
+	}
+}
+
+func (ctrl *Controller) getFileMetadataHeaders( //nolint:ireturn
 	ctx context.Context, request api.GetFileMetadataHeadersRequestObject,
 ) (api.GetFileMetadataHeadersResponseObject, *APIError) {
 	sessionHeaders := middleware.SessionHeadersFromContext(ctx)
@@ -147,43 +191,7 @@ func (ctrl *Controller) getFileMetadataHeaders(
 		defer object.Close()
 	}
 
-	switch statusCode {
-	case http.StatusOK:
-		return api.GetFileMetadataHeaders200Response{
-			Headers: api.GetFileMetadataHeaders200ResponseHeaders{
-				AcceptRanges:     "bytes",
-				CacheControl:     bucketMetadata.CacheControl,
-				ContentType:      fileMetadata.MimeType,
-				Etag:             fileMetadata.Etag,
-				LastModified:     fileMetadata.UpdatedAt,
-				SurrogateControl: bucketMetadata.CacheControl,
-				SurrogateKey:     fileMetadata.Id,
-				ContentDisposition: fmt.Sprintf(
-					`inline; filename="%s"`,
-					url.QueryEscape(fileMetadata.Name),
-				),
-				ContentLength: int(fileMetadata.Size),
-			},
-		}, nil
-	case http.StatusNotModified:
-		return api.GetFileMetadataHeaders304Response{
-			Headers: api.GetFileMetadataHeaders304ResponseHeaders{
-				CacheControl:     bucketMetadata.CacheControl,
-				Etag:             fileMetadata.Etag,
-				SurrogateControl: bucketMetadata.CacheControl,
-			},
-		}, nil
-	case http.StatusPreconditionFailed:
-		return api.GetFileMetadataHeaders412Response{
-			Headers: api.GetFileMetadataHeaders412ResponseHeaders{
-				CacheControl:     bucketMetadata.CacheControl,
-				Etag:             fileMetadata.Etag,
-				SurrogateControl: bucketMetadata.CacheControl,
-			},
-		}, nil
-	default:
-		return nil, ErrUnexpectedStatusCode
-	}
+	return ctrl.getFileMetadataHeadersResponseObject(statusCode, bucketMetadata, fileMetadata)
 }
 
 func (ctrl *Controller) GetFileMetadataHeaders( //nolint:ireturn

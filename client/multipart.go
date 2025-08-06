@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-type fileOptions func(file *File)
-
 func WithMetadata(metadata UploadFileMetadata) func(file *File) {
 	return func(file *File) {
 		file.md = &metadata
@@ -48,7 +46,7 @@ func createMultiForm(
 		return fmt.Errorf("problem copying file into the form: %w", err)
 	}
 
-	if file.md != nil {
+	if file.md != nil { //nolint:nestif
 		h := make(textproto.MIMEHeader)
 		if multiple {
 			h.Set("Content-Disposition", `form-data; name="metadata[]"`)

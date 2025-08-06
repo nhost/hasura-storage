@@ -1,6 +1,7 @@
 package clamd
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
@@ -26,8 +27,13 @@ func NewClient(addr string) (*Client, error) {
 	return &Client{url.Host}, nil
 }
 
-func (c *Client) Dial() (net.Conn, error) {
-	conn, err := net.Dial("tcp", c.addr)
+func (c *Client) Dial(ctx context.Context) (net.Conn, error) {
+	dialer := net.Dialer{
+		Deadline: time.Now().Add(1 * time.Minute),
+		Timeout:  time.Minute,
+	}
+
+	conn, err := dialer.DialContext(ctx, "tcp", c.addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial: %w", err)
 	}

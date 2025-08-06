@@ -1,9 +1,12 @@
 package clamd
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func (c *Client) Reload() error {
-	conn, err := c.Dial()
+func (c *Client) Reload(ctx context.Context) error {
+	conn, err := c.Dial(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to dial: %w", err)
 	}

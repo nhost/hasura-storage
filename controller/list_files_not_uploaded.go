@@ -48,8 +48,8 @@ func (ctrl *Controller) ListNotUploaded(ctx *gin.Context) {
 	)
 }
 
-func (ctrl *Controller) ListFilesNotUploaded(
-	ctx context.Context, request api.ListFilesNotUploadedRequestObject,
+func (ctrl *Controller) ListFilesNotUploaded( //nolint:ireturn
+	ctx context.Context, _ api.ListFilesNotUploadedRequestObject,
 ) (api.ListFilesNotUploadedResponseObject, error) {
 	logger := middleware.LoggerFromContext(ctx)
 

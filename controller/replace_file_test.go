@@ -2,11 +2,8 @@ package controller_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"mime/multipart"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -20,11 +17,14 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-func createUpdateMultiForm(t *testing.T, file fakeFile) (io.Reader, string) {
+func createReplaceMultiForm(t *testing.T, file fakeFile) *multipart.Reader {
 	t.Helper()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+
+	// Store the boundary before we close the writer
+	boundary := writer.Boundary()
 
 	formWriter, err := writer.CreateFormFile("file", file.md.Name)
 	if err != nil {
@@ -48,10 +48,11 @@ func createUpdateMultiForm(t *testing.T, file fakeFile) (io.Reader, string) {
 
 	writer.Close()
 
-	return bytes.NewReader(body.Bytes()), writer.FormDataContentType()
+	// Create and return a multipart.Reader
+	return multipart.NewReader(bytes.NewReader(body.Bytes()), boundary)
 }
 
-func TestUpdateFile(t *testing.T) {
+func TestReplaceFile(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -160,7 +161,7 @@ func TestUpdateFile(t *testing.T) {
 				},
 				nil)
 
-			av.EXPECT().ScanReader(gomock.Any()).Return(nil)
+			av.EXPECT().ScanReader(gomock.Any(), gomock.Any()).Return(nil)
 
 			ctrl := controller.New(
 				"http://asd",
@@ -173,47 +174,29 @@ func TestUpdateFile(t *testing.T) {
 				logger,
 			)
 
-			router, _ := ctrl.SetupRouter(nil, "/v1", []string{"*"}, false, ginLogger(logger))
-
-			body, contentType := createUpdateMultiForm(t, file)
-
-			responseRecorder := httptest.NewRecorder()
-
-			req, _ := http.NewRequestWithContext(
+			resp, err := ctrl.ReplaceFile(
 				t.Context(),
-				"PUT",
-				"/v1/files/"+file.md.ID,
-				body,
+				api.ReplaceFileRequestObject{
+					Id:   file.md.ID,
+					Body: createReplaceMultiForm(t, file),
+				},
 			)
-
-			req.Header.Add("X-Hasura-User-Id", "some-valid-uuid")
-
-			req.Header.Set("Content-Type", contentType)
-
-			router.ServeHTTP(responseRecorder, req)
-
-			assert(t, 200, responseRecorder.Code)
-
-			resp := &controller.ReplaceFileResponse{}
-			if err := json.Unmarshal(responseRecorder.Body.Bytes(), &resp); err != nil {
-				t.Fatal(err)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 
-			assert(t, &controller.ReplaceFileResponse{
-				&api.FileMetadata{
-					Id:               "38288c85-02af-416b-b075-11c4dae9",
-					Name:             "a_file.txt",
-					Size:             12,
-					BucketId:         "blah",
-					Etag:             "some-etag",
-					CreatedAt:        time.Time{}, // ignored
-					UpdatedAt:        time.Time{}, // ignored
-					IsUploaded:       true,
-					MimeType:         "text/plain; charset=utf-8",
-					UploadedByUserId: ptr("some-valid-uuid"),
-					Metadata:         ptr(map[string]any{"some": "metadata"}),
-				},
-				nil,
+			assert(t, api.ReplaceFile200JSONResponse{
+				Id:               file.md.ID,
+				Name:             "a_file.txt",
+				Size:             12,
+				BucketId:         "blah",
+				Etag:             "some-etag",
+				CreatedAt:        time.Time{}, // ignored
+				UpdatedAt:        time.Time{}, // ignored
+				IsUploaded:       true,
+				MimeType:         "text/plain; charset=utf-8",
+				UploadedByUserId: ptr("some-valid-uuid"),
+				Metadata:         ptr(map[string]any{"some": "metadata"}),
 			}, resp,
 				cmpopts.IgnoreFields(api.FileMetadata{}, "Id", "CreatedAt", "UpdatedAt"),
 			)

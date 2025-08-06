@@ -48,7 +48,7 @@ func (ctrl *Controller) ListOrphanedFiles( //nolint:ireturn
 ) (api.ListOrphanedFilesResponseObject, error) {
 	logger := middleware.LoggerFromContext(ctx)
 
-	files, apiErr := ctrl.deleteOrphans(ctx)
+	files, apiErr := ctrl.listOrphans(ctx)
 	if apiErr != nil {
 		logger.WithError(apiErr).Error("failed to delete orphaned files")
 		return apiErr, nil
