@@ -38,10 +38,6 @@ func (c *Client) Dial(ctx context.Context) (net.Conn, error) {
 		return nil, fmt.Errorf("failed to dial: %w", err)
 	}
 
-	if err := conn.SetDeadline(time.Now().Add(1 * time.Minute)); err != nil {
-		return nil, fmt.Errorf("failed to set deadline: %w", err)
-	}
-
 	return conn, nil
 }
 
