@@ -2,6 +2,8 @@ module github.com/nhost/hasura-storage
 
 go 1.24.2
 
+replace github.com/getkin/kin-openapi => github.com/dbarrosop/kin-openapi v0.0.0-20250807142235-83deafb59120
+
 require (
 	github.com/Yamashou/gqlgenc v0.32.1
 	github.com/aws/aws-sdk-go-v2 v1.36.3
@@ -83,6 +85,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.26 // indirect
+	github.com/woodsbury/decimal128 v1.3.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.17.0 // indirect
