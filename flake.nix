@@ -31,8 +31,8 @@
             ./.golangci.yaml
             ./gqlgenc.yml
             ./controller/openapi.yaml
-            ./image/image.c
-            ./image/image.h
+            ./api/types.cfg.yaml
+            ./api/server.cfg.yaml
             (inDirectory "migrations/postgres")
             ./gqlgenc.yml
             isDirectory
