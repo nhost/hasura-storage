@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/controller"
@@ -32,7 +33,6 @@ const (
 	publicURLFlag                = "public-url"
 	apiRootPrefixFlag            = "api-root-prefix"
 	bindFlag                     = "bind"
-	trustedProxiesFlag           = "trusted-proxies"
 	hasuraEndpointFlag           = "hasura-endpoint"
 	hasuraMetadataFlag           = "hasura-metadata"
 	hasuraAdminSecretFlag        = "hasura-graphql-admin-secret" //nolint: gosec
@@ -53,7 +53,27 @@ const (
 	hasuraDBNameFlag             = "hasura-db-name"
 )
 
-func getGin(
+func getCorsMiddleware(
+	corsAllowOrigins []string,
+	corsAllowCredentials bool,
+) gin.HandlerFunc {
+	return cors.New(cors.Config{
+		AllowOrigins: corsAllowOrigins,
+		AllowMethods: []string{"GET", "PUT", "POST", "HEAD", "DELETE"},
+		AllowHeaders: []string{
+			"Authorization", "Origin", "if-match", "if-none-match", "if-modified-since", "if-unmodified-since",
+			"x-hasura-admin-secret", "x-nhost-bucket-id", "x-nhost-file-name", "x-nhost-file-id",
+			"x-hasura-role",
+		},
+		ExposeHeaders: []string{
+			"Content-Length", "Content-Type", "Cache-Control", "ETag", "Last-Modified", "X-Error",
+		},
+		AllowCredentials: corsAllowCredentials,
+		MaxAge:           12 * time.Hour, //nolint: mnd
+	})
+}
+
+func getGin( //nolint:funlen
 	bind string,
 	publicURL string,
 	apiRootPrefix string,
@@ -61,7 +81,6 @@ func getGin(
 	metadataStorage controller.MetadataStorage,
 	contentStorage controller.ContentStorage,
 	imageTransformer *image.Transformer,
-	trustedProxies []string,
 	logger *logrus.Logger,
 	debug bool,
 	corsAllowOrigins []string,
@@ -86,7 +105,7 @@ func getGin(
 
 	handlers := []gin.HandlerFunc{
 		middleware.Logger(logger),
-		// cors(),
+		getCorsMiddleware(corsAllowOrigins, corsAllowCredentials),
 		gin.Recovery(),
 	}
 
@@ -98,8 +117,6 @@ func getGin(
 			fastly.New(fastlyService, viper.GetString(fastlyKeyFlag), logger),
 		)
 	}
-
-	openapi3filter.RegisterBodyDecoder("*/*", openapi3filter.FileBodyDecoder)
 
 	router.Use(handlers...)
 
@@ -118,20 +135,6 @@ func getGin(
 		av,
 		logger,
 	)
-
-	// opsPath, err := url.JoinPath(apiRootPrefix, "ops")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("problem trying to compute ops prefix path: %w", err)
-	// }
-
-	// middlewares := []gin.HandlerFunc{
-	// 	ginLogger(logger),
-	// 	auth.NeedsAdmin(opsPath, hasuraAdminSecret),
-	// }
-
-	// return ctrl.SetupRouter( //nolint: wrapcheck
-	// 	trustedProxies, apiRootPrefix, corsAllowOrigins, corsAllowCredentials, middlewares...,
-	// )
 
 	handler := api.NewStrictHandler(ctrl, []api.StrictMiddlewareFunc{})
 	mw := api.MiddlewareFunc(ginmiddleware.OapiRequestValidatorWithOptions(
@@ -255,12 +258,6 @@ func init() { //nolint:funlen
 		)
 		addStringFlag(serveCmd.Flags(), apiRootPrefixFlag, "/v1", "API root prefix")
 		addStringFlag(serveCmd.Flags(), bindFlag, ":8000", "bind the service to this address")
-		addStringArrayFlag(
-			serveCmd.Flags(),
-			trustedProxiesFlag,
-			[]string{},
-			"Trust this proxies only. Can be passed many times",
-		)
 	}
 
 	{
@@ -355,7 +352,6 @@ var serveCmd = &cobra.Command{
 			logrus.Fields{
 				debugFlag:              viper.GetBool(debugFlag),
 				bindFlag:               viper.GetString(bindFlag),
-				trustedProxiesFlag:     viper.GetStringSlice(trustedProxiesFlag),
 				hasuraEndpointFlag:     viper.GetString(hasuraEndpointFlag),
 				postgresMigrationsFlag: viper.GetBool(postgresMigrationsFlag),
 				hasuraMetadataFlag:     viper.GetBool(hasuraMetadataFlag),
@@ -401,7 +397,6 @@ var serveCmd = &cobra.Command{
 			metadataStorage,
 			contentStorage,
 			imageTransformer,
-			viper.GetStringSlice(trustedProxiesFlag),
 			logger,
 			viper.GetBool(debugFlag),
 			viper.GetStringSlice(corsAllowOriginsFlag),

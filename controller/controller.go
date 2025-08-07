@@ -3,13 +3,10 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/image"
 	"github.com/sirupsen/logrus"
@@ -117,86 +114,4 @@ func New(
 		av,
 		logger,
 	}
-}
-
-func corsConfig(allowedOrigins []string) cors.Config {
-	return cors.Config{
-		AllowOrigins: allowedOrigins,
-		AllowMethods: []string{"GET", "PUT", "POST", "HEAD", "DELETE"},
-		AllowHeaders: []string{
-			"Authorization", "Origin", "if-match", "if-none-match", "if-modified-since", "if-unmodified-since",
-			"x-hasura-admin-secret", "x-nhost-bucket-id", "x-nhost-file-name", "x-nhost-file-id",
-			"x-hasura-role",
-		},
-		ExposeHeaders: []string{
-			"Content-Length", "Content-Type", "Cache-Control", "ETag", "Last-Modified", "X-Error",
-		},
-		MaxAge: 12 * time.Hour, //nolint: mnd
-	}
-}
-
-// TODO
-func (ctrl *Controller) SetupRouter(
-	trustedProxies []string,
-	apiRootPrefix string,
-	corsOrigins []string,
-	corsAllowCredentials bool,
-	middleware ...gin.HandlerFunc,
-) (*gin.Engine, error) {
-	router := gin.New()
-	if err := router.SetTrustedProxies(trustedProxies); err != nil {
-		return nil, fmt.Errorf("problem setting trusted proxies: %w", err)
-	}
-
-	// lower values make uploads slower but keeps service memory usage low
-	router.MaxMultipartMemory = 1 << 20 //nolint:mnd  // 1 MB
-	router.Use(gin.Recovery())
-
-	for _, mw := range middleware {
-		router.Use(mw)
-	}
-
-	corsConfig := corsConfig(corsOrigins)
-	if corsAllowCredentials {
-		corsConfig.AllowCredentials = true
-	}
-
-	router.Use(cors.New(corsConfig))
-
-	router.GET("/healthz", ctrl.Health)
-
-	apiRoot := router.Group(apiRootPrefix)
-	{
-		apiRoot.GET("/openapi.yaml", ctrl.OpenAPI)
-		apiRoot.GET("/version", ctrl.Version)
-	}
-
-	// files := apiRoot.Group("/files")
-	// {
-	// 	files.POST("", ctrl.UploadFilesGin) // To delete
-	// 	files.POST("/", ctrl.UploadFilesGin)
-	// 	files.GET("/:id", ctrl.GetFileGin)
-	// 	files.HEAD("/:id", ctrl.GetFileInformation)
-	// 	files.PUT("/:id", ctrl.ReplaceFileGin)
-	// 	files.DELETE("/:id", ctrl.DeleteFileGin)
-	// 	files.GET("/:id/presignedurl", ctrl.GetFilePresignedURLGin)
-	// 	files.GET("/:id/presignedurl/content", ctrl.GetFileWithPresignedURL)
-	// }
-
-	// ops := apiRoot.Group("/ops")
-	// {
-	// 	ops.POST("list-orphans", ctrl.ListOrphanedFilesGin)
-	// 	ops.POST("delete-orphans", ctrl.DeleteOrphans)
-	// 	ops.POST("list-broken-metadata", ctrl.ListBrokenMetadataGin)
-	// 	ops.POST("delete-broken-metadata", ctrl.DeleteBrokenMetadataGin)
-	// 	ops.POST("list-not-uploaded", ctrl.ListNotUploaded)
-	// }
-
-	return router, nil
-}
-
-func (ctrl *Controller) Health(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"healthz": "ok",
-	})
 }
