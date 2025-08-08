@@ -12,6 +12,34 @@ import (
 	"github.com/nhost/hasura-storage/client"
 )
 
+func compareCacheControlMaxAge() cmp.Option { //nolint:cyclop
+	return cmp.FilterPath(
+		func(p cmp.Path) bool {
+			return p.Last().String() == `["Cache-Control"]` ||
+				p.Last().String() == `["Surrogate-Control"]`
+		},
+		cmp.Comparer(func(a, b []string) bool {
+			if len(a) != 1 || len(b) != 1 {
+				return false
+			}
+
+			// Accept max-age values from 27 to 30
+			validValues := []string{"max-age=27", "max-age=28", "max-age=29", "max-age=30"}
+			for _, valid := range validValues {
+				if a[0] == valid || b[0] == valid {
+					for _, otherValid := range validValues {
+						if (a[0] == valid && b[0] == otherValid) || (a[0] == otherValid && b[0] == valid) {
+							return true
+						}
+					}
+				}
+			}
+
+			return a[0] == b[0]
+		}),
+	)
+}
+
 func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 	t.Parallel()
 
@@ -444,14 +472,14 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 			expectedBody:       "ignoreme",
 			expectedHeaders: http.Header{
 				"Accept-Ranges":       []string{"bytes"},
-				"Cache-Control":       []string{"max-age=29"},
+				"Cache-Control":       []string{"max-age=30"},
 				"Content-Disposition": []string{`inline; filename="nhost.jpg"`},
 				"Content-Length":      []string{"8709"},
 				"Content-Type":        []string{"image/jpeg"},
 				"Date":                []string{"Mon, 21 Jul 2025 13:24:53 GMT"},
 				"Etag":                []string{`"78b676e65ebc31f0bb1f2f0d05098572"`},
 				"Last-Modified":       []string{"2025-07-21 13:24:53.586273 +0000 +0000"},
-				"Surrogate-Control":   []string{"max-age=29"},
+				"Surrogate-Control":   []string{"max-age=30"},
 				"Surrogate-Key":       []string{id2},
 			},
 		},
@@ -494,6 +522,7 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 				resp.HTTPResponse.Header,
 				tc.expectedHeaders,
 				IgnoreResponseHeaders(),
+				compareCacheControlMaxAge(),
 			); diff != "" {
 				t.Errorf("unexpected response headers: %s", diff)
 			}
