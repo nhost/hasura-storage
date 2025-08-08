@@ -28,7 +28,8 @@ func compareCacheControlMaxAge() cmp.Option { //nolint:cyclop
 			for _, valid := range validValues {
 				if a[0] == valid || b[0] == valid {
 					for _, otherValid := range validValues {
-						if (a[0] == valid && b[0] == otherValid) || (a[0] == otherValid && b[0] == valid) {
+						if (a[0] == valid && b[0] == otherValid) ||
+							(a[0] == otherValid && b[0] == valid) {
 							return true
 						}
 					}
