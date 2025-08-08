@@ -54,6 +54,7 @@
           include = [
             ./controller/openapi.yaml
             ./vacuum.yaml
+            ./vacuum-ignore.yaml
           ];
         };
 
@@ -110,6 +111,7 @@
               vacuum lint \
                 -dqb -n info \
                 --ruleset ${openapi-src}/vacuum.yaml \
+                --ignore-file ${openapi-src}/vacuum-ignore.yaml \
                 ${openapi-src}/controller/openapi.yaml
               mkdir -p $out
             '';

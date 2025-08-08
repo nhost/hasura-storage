@@ -188,8 +188,7 @@ func fileDataFromFormValue(
 		formValue = []byte(userSpecified[i])
 	}
 
-	data := fileData{}
-
+	var data fileData
 	if err := json.Unmarshal(formValue, &data); err != nil {
 		return fileData{}, WrongMetadataFormatError(err)
 	}

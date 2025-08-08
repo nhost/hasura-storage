@@ -101,7 +101,7 @@ func (s *S3) PutFile(
 	}
 
 	object, err := s.client.PutObject(ctx,
-		&s3.PutObjectInput{
+		&s3.PutObjectInput{ //nolint:exhaustruct
 			Body:        content,
 			Bucket:      s.bucket,
 			Key:         aws.String(key),
@@ -126,7 +126,7 @@ func (s *S3) GetFile(
 	}
 
 	object, err := s.client.GetObject(ctx,
-		&s3.GetObjectInput{
+		&s3.GetObjectInput{ //nolint:exhaustruct
 			Bucket: s.bucket,
 			Key:    aws.String(key),
 			// IfMatch:           new(string),
@@ -174,7 +174,7 @@ func (s *S3) CreatePresignedURL(
 	presignClient := s3.NewPresignClient(s.client)
 
 	request, err := presignClient.PresignGetObject(ctx,
-		&s3.GetObjectInput{ //nolint:exhaustivestruct
+		&s3.GetObjectInput{ //nolint:exhaustruct
 			Bucket: s.bucket,
 			Key:    aws.String(key),
 		},
@@ -214,7 +214,7 @@ func (s *S3) GetFileWithPresignedURL(
 
 	req.Header = headers
 
-	client := http.Client{}
+	client := http.Client{} //nolint:exhaustruct
 
 	resp, err := client.Do(req) //nolint:bodyclose //we are actually returning the body
 	if err != nil {
@@ -265,7 +265,7 @@ func (s *S3) DeleteFile(ctx context.Context, filepath string) *controller.APIErr
 	}
 
 	if _, err := s.client.DeleteObject(ctx,
-		&s3.DeleteObjectInput{
+		&s3.DeleteObjectInput{ //nolint:exhaustruct
 			Bucket: s.bucket,
 			Key:    aws.String(key),
 		}); err != nil {
@@ -277,7 +277,7 @@ func (s *S3) DeleteFile(ctx context.Context, filepath string) *controller.APIErr
 
 func (s *S3) ListFiles(ctx context.Context) ([]string, *controller.APIError) {
 	objects, err := s.client.ListObjects(ctx,
-		&s3.ListObjectsInput{
+		&s3.ListObjectsInput{ //nolint:exhaustruct
 			Bucket: s.bucket,
 			Prefix: aws.String(s.rootFolder + "/"),
 		})

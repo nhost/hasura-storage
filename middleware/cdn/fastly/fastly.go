@@ -29,7 +29,7 @@ type fastly struct {
 }
 
 func (fst *fastly) purge(ctx context.Context, key string) error {
-	client := &http.Client{}
+	client := &http.Client{} //nolint:exhaustruct
 
 	req, err := http.NewRequestWithContext(
 		ctx,

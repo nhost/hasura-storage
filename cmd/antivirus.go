@@ -22,7 +22,7 @@ type ClamavWrapper struct {
 func (c *ClamavWrapper) ScanReader(ctx context.Context, r io.ReaderAt) *controller.APIError {
 	err := c.clamav.InStream(ctx, r)
 
-	virusFoundErr := &clamd.VirusFoundError{}
+	virusFoundErr := &clamd.VirusFoundError{} //nolint:exhaustruct
 	switch {
 	case errors.As(err, &virusFoundErr):
 		err := controller.ForbiddenError(

@@ -57,7 +57,7 @@ func getCorsMiddleware(
 	corsAllowOrigins []string,
 	corsAllowCredentials bool,
 ) gin.HandlerFunc {
-	return cors.New(cors.Config{
+	return cors.New(cors.Config{ //nolint:exhaustruct
 		AllowOrigins: corsAllowOrigins,
 		AllowMethods: []string{"GET", "PUT", "POST", "HEAD", "DELETE"},
 		AllowHeaders: []string{
@@ -326,7 +326,7 @@ func init() { //nolint:funlen
 	}
 }
 
-var serveCmd = &cobra.Command{
+var serveCmd = &cobra.Command{ //nolint:exhaustruct
 	Use:   "serve",
 	Short: "Starts hasura-storage server",
 	Run: func(cmd *cobra.Command, _ []string) {

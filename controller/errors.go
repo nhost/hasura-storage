@@ -197,6 +197,7 @@ func WrongMetadataFormatError(err error) *APIError {
 		statusCode:    http.StatusBadRequest,
 		publicMessage: "couldn't decode metadata",
 		err:           err,
+		data:          nil,
 	}
 }
 
@@ -205,6 +206,7 @@ func BadDataError(err error, publicMessage string) *APIError {
 		statusCode:    http.StatusBadRequest,
 		publicMessage: publicMessage,
 		err:           err,
+		data:          nil,
 	}
 }
 

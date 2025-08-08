@@ -11,8 +11,26 @@ info:
     email: "support@nhost.io"
     url: "https://nhost.io"
 
+servers:
+  - url: "https://{subdomain}.storage.{region}.nhost.run/v1"
+    description: "Nhost Storage API Server"
+
+tags:
+  - name: documentation
+    description: API documentation
+  - name: excludeme
+    description: Internal operations excluded from public docs
+  - name: files
+    description: File management operations
+  - name: operations
+    description: Administrative operations
+  - name: storage
+    description: Storage operations and presigned URLs
+  - name: system
+    description: System information
+
 paths:
-  /files/:
+  /files:
     post:
       summary: "Upload files"
       description: "Upload one or more files to a specified bucket. Supports batch uploading with optional custom metadata for each file. If uploading multiple files, either provide metadata for all files or none."
@@ -22,6 +40,7 @@ paths:
       security:
         - Authorization: []
       requestBody:
+        description: "File upload data including files and optional metadata"
         required: true
         content:
           multipart/form-data:
@@ -450,6 +469,7 @@ paths:
           schema:
             type: string
       requestBody:
+        description: "File replacement data including new file content and optional metadata"
         required: true
         content:
           multipart/form-data:
@@ -458,7 +478,6 @@ paths:
               properties:
                 metadata:
                   $ref: "#/components/schemas/UpdateFileMetadata"
-                  description: "Optional metadata to update for the file"
                 file:
                   description: "New file content to replace the existing file"
                   type: string
@@ -492,6 +511,7 @@ paths:
         - name: id
           required: true
           in: path
+          description: "Unique identifier of the file"
           schema:
             type: string
       responses:
@@ -523,6 +543,7 @@ paths:
         - name: id
           required: true
           in: path
+          description: "Unique identifier of the file"
           schema:
             type: string
         - name: X-Amz-Algorithm
@@ -761,6 +782,12 @@ paths:
             application/x-yaml:
               schema:
                 type: object
+        default:
+          description: "Error occurred"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /ops/delete-broken-metadata:
     post:
@@ -916,6 +943,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionInformation"
+        default:
+          description: "Error occurred"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   securitySchemes:

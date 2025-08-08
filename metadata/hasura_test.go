@@ -179,6 +179,10 @@ func TestInitializeFile(t *testing.T) {
 	}
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 func TestPopulateMetadata(t *testing.T) {
 	t.Parallel()
 
@@ -214,6 +218,7 @@ func TestPopulateMetadata(t *testing.T) {
 				IsUploaded:       true,
 				MimeType:         "text",
 				UploadedByUserId: nil,
+				Metadata:         ptr[map[string]any](nil),
 			},
 		},
 		{
@@ -271,15 +276,15 @@ func TestPopulateMetadata(t *testing.T) {
 				)
 			}
 			if err != nil {
-				if !cmp.Equal(err.PublicResponse(), tc.expectedPublicResponse) {
-					t.Error(cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse))
+				if diff := cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse); diff != "" {
+					t.Errorf("unexpected error response: %s", diff)
 				}
 			} else {
 				opts := cmp.Options{
 					cmpopts.IgnoreFields(api.FileMetadata{}, "CreatedAt", "UpdatedAt"),
 				}
-				if !cmp.Equal(got, tc.expected, opts...) {
-					t.Error(cmp.Diff(got, tc.expected, opts...))
+				if diff := cmp.Diff(got, tc.expected, opts...); diff != "" {
+					t.Errorf("unexpected file metadata: %s", diff)
 				}
 			}
 		})
@@ -325,6 +330,7 @@ func TestGetFileByID(t *testing.T) {
 				IsUploaded:       true,
 				MimeType:         "text",
 				UploadedByUserId: nil,
+				Metadata:         ptr[map[string]any](nil),
 			},
 		},
 		{
@@ -595,8 +601,8 @@ func TestListFiles(t *testing.T) {
 			}
 
 			if err != nil {
-				if !cmp.Equal(err.PublicResponse(), tc.expectedPublicResponse) {
-					t.Error(cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse))
+				if diff := cmp.Diff(err.PublicResponse(), tc.expectedPublicResponse); diff != "" {
+					t.Errorf("unexpected error response: %s", diff)
 				}
 			} else {
 				if len(got) == 0 {
@@ -606,9 +612,10 @@ func TestListFiles(t *testing.T) {
 				found1 := false
 				found2 := false
 				for _, f := range got {
-					if f.ID == fileID1 {
+					switch f.ID {
+					case fileID1:
 						found1 = true
-					} else if f.ID == fileID2 {
+					case fileID2:
 						found2 = true
 					}
 				}

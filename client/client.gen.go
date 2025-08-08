@@ -591,7 +591,7 @@ func NewUploadFilesRequestWithBody(server string, contentType string, body io.Re
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/files/")
+	operationPath := fmt.Sprintf("/files")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1773,6 +1773,7 @@ type GetOpenAPISpecR struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	YAML200      *map[string]interface{}
+	JSONDefault  *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -1920,6 +1921,7 @@ type GetVersionR struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *VersionInformation
+	JSONDefault  *ErrorResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -2254,6 +2256,13 @@ func ParseGetOpenAPISpecR(rsp *http.Response) (*GetOpenAPISpecR, error) {
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
 		var dest map[string]interface{}
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
@@ -2461,6 +2470,13 @@ func ParseGetVersionR(rsp *http.Response) (*GetVersionR, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 

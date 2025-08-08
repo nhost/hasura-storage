@@ -113,10 +113,12 @@ func getImageManipulationOptions(
 	outputFormatFound := deptr(params.GetF()) != ""
 
 	opts := image.Options{
-		Height:  deptr(params.GetH()),
-		Width:   deptr(params.GetW()),
-		Blur:    deptr(params.GetB()),
-		Quality: deptr(params.GetQ()),
+		Height:         deptr(params.GetH()),
+		Width:          deptr(params.GetW()),
+		Blur:           deptr(params.GetB()),
+		Quality:        deptr(params.GetQ()),
+		OriginalFormat: 0,
+		Format:         0,
 	}
 	if !opts.IsEmpty() || outputFormatFound {
 		orig, format, err := chooseImageFormat(params, mimeType, acceptHeader)

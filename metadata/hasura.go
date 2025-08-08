@@ -60,16 +60,17 @@ func (md *BucketMetadataFragment) ToControllerType() controller.BucketMetadata {
 
 func (md *FileMetadataFragment) ToControllerType() api.FileMetadata {
 	return api.FileMetadata{
-		Id:         md.GetID(),
-		Name:       *md.GetName(),
-		Size:       *md.GetSize(),
-		BucketId:   md.GetBucketID(),
-		Etag:       *md.GetEtag(),
-		CreatedAt:  *md.GetCreatedAt(),
-		UpdatedAt:  *md.GetUpdatedAt(),
-		IsUploaded: *md.GetIsUploaded(),
-		MimeType:   *md.GetMimeType(),
-		Metadata:   ptr(md.GetMetadata()),
+		Id:               md.GetID(),
+		Name:             *md.GetName(),
+		Size:             *md.GetSize(),
+		BucketId:         md.GetBucketID(),
+		Etag:             *md.GetEtag(),
+		CreatedAt:        *md.GetCreatedAt(),
+		UpdatedAt:        *md.GetUpdatedAt(),
+		IsUploaded:       *md.GetIsUploaded(),
+		MimeType:         *md.GetMimeType(),
+		Metadata:         ptr(md.GetMetadata()),
+		UploadedByUserId: md.GetUploadedByUserID(),
 	}
 }
 
@@ -98,9 +99,9 @@ type Hasura struct {
 func NewHasura(endpoint string) *Hasura {
 	return &Hasura{
 		cl: NewClient(
-			&http.Client{},
+			&http.Client{}, //nolint:exhaustruct
 			endpoint,
-			&clientv2.Options{},
+			&clientv2.Options{}, //nolint:exhaustruct
 		),
 	}
 }
@@ -134,7 +135,7 @@ func (h *Hasura) InitializeFile(
 ) *controller.APIError {
 	_, err := h.cl.InsertFile(
 		ctx,
-		FilesInsertInput{
+		FilesInsertInput{ //nolint:exhaustruct
 			BucketID: ptr(bucketID),
 			ID:       ptr(fileID),
 			MimeType: ptr(mimeType),
@@ -160,7 +161,7 @@ func (h *Hasura) PopulateMetadata(
 	resp, err := h.cl.UpdateFile(
 		ctx,
 		fileID,
-		FilesSetInput{
+		FilesSetInput{ //nolint:exhaustruct
 			BucketID:   ptr(bucketID),
 			Etag:       ptr(etag),
 			IsUploaded: ptr(isUploaded),
@@ -211,7 +212,7 @@ func (h *Hasura) SetIsUploaded(
 	resp, err := h.cl.UpdateFile(
 		ctx,
 		fileID,
-		FilesSetInput{
+		FilesSetInput{ //nolint:exhaustruct
 			IsUploaded: ptr(isUploaded),
 		},
 		WithHeaders(headers),
@@ -279,7 +280,7 @@ func (h *Hasura) InsertVirus(
 ) *controller.APIError {
 	_, err := h.cl.InsertVirus(
 		ctx,
-		VirusInsertInput{
+		VirusInsertInput{ //nolint:exhaustruct
 			FileID:      ptr(fileID),
 			Filename:    ptr(filename),
 			UserSession: userSession,

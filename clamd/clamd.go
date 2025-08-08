@@ -28,7 +28,7 @@ func NewClient(addr string) (*Client, error) {
 }
 
 func (c *Client) Dial(ctx context.Context) (net.Conn, error) {
-	dialer := net.Dialer{
+	dialer := net.Dialer{ //nolint:exhaustruct
 		Deadline: time.Now().Add(1 * time.Minute),
 		Timeout:  time.Minute,
 	}

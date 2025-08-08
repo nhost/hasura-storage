@@ -22,7 +22,10 @@ type ReplaceFileResponse struct {
 
 func replaceFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *APIError) {
 	res := fileData{
-		ID: request.Id,
+		ID:       request.Id,
+		Name:     "",
+		Metadata: nil,
+		header:   nil,
 	}
 
 	form, err := request.Body.ReadForm(maxFormMemory)
@@ -46,7 +49,7 @@ func replaceFileParseRequest(request api.ReplaceFileRequestObject) (fileData, *A
 			return fileData{}, ErrMetadataLength
 		}
 
-		d := replaceFileMetadata{}
+		var d replaceFileMetadata
 		if err := json.Unmarshal([]byte(metadata[0]), &d); err != nil {
 			return fileData{}, WrongMetadataFormatError(err)
 		}
