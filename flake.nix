@@ -34,7 +34,8 @@
             ./api/types.cfg.yaml
             ./api/server.cfg.yaml
             (inDirectory "migrations/postgres")
-            ./gqlgenc.yml
+            ./gqlgenc.yaml
+            ./metadata/metadata.graphql
             isDirectory
             (inDirectory "vendor")
             (inDirectory "clamd/testdata")
@@ -45,6 +46,14 @@
 
           exclude = with nix-filter.lib; [
             (inDirectory "build")
+          ];
+        };
+
+        openapi-src = nix-filter.lib.filter {
+          root = ./.;
+          include = [
+            ./controller/openapi.yaml
+            ./vacuum.yaml
           ];
         };
 
@@ -72,7 +81,7 @@
           mockgen
           oapi-codegen
           gqlgenc
-
+          vacuum-go
         ];
 
         name = "hasura-storage";
@@ -89,6 +98,21 @@
       {
         checks = {
           nixpkgs-fmt = nixops-lib.nix.check { src = nix-src; };
+
+          openapi = pkgs.runCommand "check-openapi"
+            {
+              nativeBuildInputs = with pkgs;
+                [
+                  vacuum-go
+                ];
+            }
+            ''
+              vacuum lint \
+                -dqb -n info \
+                --ruleset ${openapi-src}/vacuum.yaml \
+                ${openapi-src}/controller/openapi.yaml
+              mkdir -p $out
+            '';
 
           go-checks = nixops-lib.go.check {
             inherit src ldflags tags buildInputs nativeBuildInputs checkDeps;

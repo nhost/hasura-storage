@@ -2,8 +2,6 @@ module github.com/nhost/hasura-storage
 
 go 1.24.2
 
-replace github.com/getkin/kin-openapi => github.com/dbarrosop/kin-openapi v0.0.0-20250807142235-83deafb59120
-
 require (
 	github.com/Yamashou/gqlgenc v0.32.1
 	github.com/aws/aws-sdk-go-v2 v1.36.3
@@ -12,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.79.3
 	github.com/davidbyttow/govips/v2 v2.16.0
 	github.com/gabriel-vasile/mimetype v1.4.9
-	github.com/getkin/kin-openapi v0.132.0
+	github.com/getkin/kin-openapi v0.132.1-0.20250807154227-6acf92bcc474
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -56,7 +54,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.26.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
