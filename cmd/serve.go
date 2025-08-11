@@ -88,6 +88,10 @@ func getGin( //nolint:funlen
 ) (*http.Server, error) {
 	router := gin.New()
 
+	router.GET("/healthz", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
+
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
