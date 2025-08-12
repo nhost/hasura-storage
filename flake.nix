@@ -151,8 +151,9 @@
 
             config = {
               Env = [
-                "TMPDIR=/"
                 "MALLOC_ARENA_MAX=2"
+                "TMPDIR=/tmp"
+                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
               ];
             };
           };
