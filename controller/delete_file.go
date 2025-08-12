@@ -5,6 +5,7 @@ import (
 
 	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/middleware"
+	"github.com/nhost/hasura-storage/middleware/cdn/fastly"
 )
 
 func (ctrl *Controller) DeleteFile( //nolint:ireturn
@@ -24,6 +25,8 @@ func (ctrl *Controller) DeleteFile( //nolint:ireturn
 		logger.WithError(apiErr).Error("problem deleting file content")
 		return apiErr, nil
 	}
+
+	fastly.FileChangedToContext(ctx, request.Id)
 
 	return api.DeleteFile204Response{}, nil
 }

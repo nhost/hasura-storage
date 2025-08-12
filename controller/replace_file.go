@@ -7,6 +7,7 @@ import (
 
 	"github.com/nhost/hasura-storage/api"
 	"github.com/nhost/hasura-storage/middleware"
+	"github.com/nhost/hasura-storage/middleware/cdn/fastly"
 )
 
 type replaceFileMetadata struct {
@@ -131,6 +132,8 @@ func (ctrl *Controller) ReplaceFile( //nolint:funlen,ireturn
 		logger.WithError(apiErr).Errorf("problem populating file metadata for file %s", file.Name)
 		return apiErr, nil
 	}
+
+	fastly.FileChangedToContext(ctx, request.Id)
 
 	return api.ReplaceFile200JSONResponse(newMetadata), nil
 }

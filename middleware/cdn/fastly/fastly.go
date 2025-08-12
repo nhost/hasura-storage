@@ -21,11 +21,21 @@ import (
 
 const (
 	headerToRemoveCacheControl = "X-Remove-Cache-Control-If-Not-Modified"
+	fileChangedContextKey      = "middleware.cdn.file_changed"
 )
 
 type fastly struct {
 	serviceID string
 	apiKey    string
+}
+
+func FileChangedToContext(ctx context.Context, id string) {
+	ginCtx, ok := ctx.(*gin.Context)
+	if !ok {
+		return
+	}
+
+	ginCtx.Set(fileChangedContextKey, id)
 }
 
 func (fst *fastly) purge(ctx context.Context, key string) error {
@@ -76,15 +86,10 @@ func New(serviceID string, apiKey string, logger *logrus.Logger) gin.HandlerFunc
 			ctx.Writer.Header().Del("Surrogate-Control")
 		}
 
-		if id, ok := ctx.Get("FileChanged"); ok {
+		if id := ctx.GetString(fileChangedContextKey); id != "" {
 			logger.WithField("key", id).Debug("purging file from cdn")
 
-			ids, ok := id.(string)
-			if !ok {
-				logger.WithField("key", id).Error("failed to cast key to string")
-			}
-
-			if err := fst.purge(ctx, ids); err != nil {
+			if err := fst.purge(ctx, id); err != nil {
 				logger.WithField("key", id).WithError(err).Error("failed to purge file from cdn")
 			}
 		}
