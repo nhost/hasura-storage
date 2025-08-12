@@ -30,7 +30,7 @@ tags:
     description: System information
 
 paths:
-  /files/:
+  /files:
     post:
       summary: "Upload files"
       description: "Upload one or more files to a specified bucket. Supports batch uploading with optional custom metadata for each file. If uploading multiple files, either provide metadata for all files or none."

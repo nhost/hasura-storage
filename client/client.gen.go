@@ -591,7 +591,7 @@ func NewUploadFilesRequestWithBody(server string, contentType string, body io.Re
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/files/")
+	operationPath := fmt.Sprintf("/files")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}

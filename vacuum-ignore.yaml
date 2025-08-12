@@ -1,5 +1,3 @@
-path-keys-no-trailing-slash:
-- $.paths['/files/']
 operation-dont-include-error-responses:
 - $.paths['/files/{id}'].get.responses
 - $.paths['/files/{id}'].head.responses
