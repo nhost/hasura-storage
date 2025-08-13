@@ -258,6 +258,9 @@ type GetFileWithPresignedURLParams struct {
 	// XAmzChecksumMode Use presignedurl endpoint to generate this automatically
 	XAmzChecksumMode string `form:"X-Amz-Checksum-Mode" json:"X-Amz-Checksum-Mode"`
 
+	// XAmzSecurityToken Use presignedurl endpoint to generate this automatically
+	XAmzSecurityToken string `form:"X-Amz-Security-Token" json:"X-Amz-Security-Token"`
+
 	// XId Use presignedurl endpoint to generate this automatically
 	XId string `form:"x-id" json:"x-id"`
 
@@ -1164,6 +1167,18 @@ func NewGetFileWithPresignedURLRequest(server string, id string, params *GetFile
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "X-Amz-Checksum-Mode", runtime.ParamLocationQuery, params.XAmzChecksumMode); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "X-Amz-Security-Token", runtime.ParamLocationQuery, params.XAmzSecurityToken); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

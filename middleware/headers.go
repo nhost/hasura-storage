@@ -30,7 +30,7 @@ func SessionHeadersFromContext(ctx context.Context) http.Header {
 		}
 	}
 
-	return headers
+	return sessionHeaders
 }
 
 func AcceptHeaderFromContext(ctx context.Context) []string {

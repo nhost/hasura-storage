@@ -53,15 +53,16 @@ func expiresIn(xAmzExpires string, datestr string) (int, *APIError) {
 
 func getAmazonSignature(request api.GetFileWithPresignedURLRequestObject) string {
 	return fmt.Sprintf(
-		"X-Amz-Algorithm=%s&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-Signature=%s&X-Amz-SignedHeaders=%s&X-Amz-Checksum-Mode=%s&x-id=%s", //nolint:lll
-		request.Params.XAmzAlgorithm,
-		request.Params.XAmzCredential,
-		request.Params.XAmzDate,
-		request.Params.XAmzExpires,
-		request.Params.XAmzSignature,
-		request.Params.XAmzSignedHeaders,
-		request.Params.XAmzChecksumMode,
-		request.Params.XId,
+		"X-Amz-Algorithm=%s&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-Signature=%s&X-Amz-SignedHeaders=%s&X-Amz-Security-Token=%s&X-Amz-Checksum-Mode=%s&x-id=%s", //nolint:lll
+		url.QueryEscape(request.Params.XAmzAlgorithm),
+		url.QueryEscape(request.Params.XAmzCredential),
+		url.QueryEscape(request.Params.XAmzDate),
+		url.QueryEscape(request.Params.XAmzExpires),
+		url.QueryEscape(request.Params.XAmzSignature),
+		url.QueryEscape(request.Params.XAmzSignedHeaders),
+		url.QueryEscape(request.Params.XAmzSecurityToken),
+		url.QueryEscape(request.Params.XAmzChecksumMode),
+		url.QueryEscape(request.Params.XId),
 	)
 }
 

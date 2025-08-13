@@ -248,6 +248,9 @@ type GetFileWithPresignedURLParams struct {
 	// XAmzChecksumMode Use presignedurl endpoint to generate this automatically
 	XAmzChecksumMode string `form:"X-Amz-Checksum-Mode" json:"X-Amz-Checksum-Mode"`
 
+	// XAmzSecurityToken Use presignedurl endpoint to generate this automatically
+	XAmzSecurityToken string `form:"X-Amz-Security-Token" json:"X-Amz-Security-Token"`
+
 	// XId Use presignedurl endpoint to generate this automatically
 	XId string `form:"x-id" json:"x-id"`
 

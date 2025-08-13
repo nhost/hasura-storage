@@ -588,6 +588,12 @@ paths:
           in: query
           schema:
             type: string
+        - name: X-Amz-Security-Token
+          description: Use presignedurl endpoint to generate this automatically
+          required: true
+          in: query
+          schema:
+            type: string
         - name: x-id
           description: Use presignedurl endpoint to generate this automatically
           required: true
