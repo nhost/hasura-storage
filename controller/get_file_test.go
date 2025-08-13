@@ -127,7 +127,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			request: api.GetFileRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileParams{
-					IfModifiedSince: ptr(time.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
+					IfModifiedSince: ptr(api.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFile200ApplicationoctetStreamResponse{
@@ -149,7 +149,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			request: api.GetFileRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileParams{
-					IfModifiedSince: ptr(time.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
+					IfModifiedSince: ptr(api.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFile304Response{
@@ -165,7 +165,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			request: api.GetFileRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileParams{
-					IfUnmodifiedSince: ptr(time.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
+					IfUnmodifiedSince: ptr(api.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFile200ApplicationoctetStreamResponse{
@@ -187,7 +187,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			request: api.GetFileRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileParams{
-					IfUnmodifiedSince: ptr(time.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
+					IfUnmodifiedSince: ptr(api.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFile412Response{

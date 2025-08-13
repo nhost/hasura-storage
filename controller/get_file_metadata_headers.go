@@ -47,20 +47,20 @@ func etagFound(etag string, candidate string) bool {
 	return etag == candidate
 }
 
-func modifiedSince(updatedAt string, wants time.Time) (bool, *APIError) {
+func modifiedSince(updatedAt string, wants api.Time) (bool, *APIError) {
 	modtime, err := time.Parse(time.RFC1123, updatedAt)
 	if err != nil {
 		return false, InternalServerError(err)
 	}
 
-	return modtime.After(wants), nil
+	return modtime.After(time.Time(wants)), nil
 }
 
 type ConditionalChecksGetter interface {
 	GetIfMatch() *string
 	GetIfNoneMatch() *string
-	GetIfModifiedSince() *time.Time
-	GetIfUnmodifiedSince() *time.Time
+	GetIfModifiedSince() *api.Time
+	GetIfUnmodifiedSince() *api.Time
 }
 
 func checkConditionals( //nolint: cyclop

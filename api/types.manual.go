@@ -1,7 +1,5 @@
 package api
 
-import "time"
-
 // GetQ returns the Q field value.
 func (g GetFileParams) GetQ() *int {
 	return g.Q
@@ -27,6 +25,10 @@ func (g GetFileParams) GetF() *OutputImageFormat {
 	return g.F
 }
 
+func (g GetFileParams) HasImageManipulationOptions() bool {
+	return g.Q != nil || g.H != nil || g.W != nil || g.B != nil || g.F != nil
+}
+
 // GetIfMatch returns the IfMatch field value.
 func (g GetFileParams) GetIfMatch() *string {
 	return g.IfMatch
@@ -38,12 +40,12 @@ func (g GetFileParams) GetIfNoneMatch() *string {
 }
 
 // GetIfModifiedSince returns the IfModifiedSince field value.
-func (g GetFileParams) GetIfModifiedSince() *time.Time {
+func (g GetFileParams) GetIfModifiedSince() *Time {
 	return g.IfModifiedSince
 }
 
 // GetIfUnmodifiedSince returns the IfUnmodifiedSince field value.
-func (g GetFileParams) GetIfUnmodifiedSince() *time.Time {
+func (g GetFileParams) GetIfUnmodifiedSince() *Time {
 	return g.IfUnmodifiedSince
 }
 
@@ -72,6 +74,10 @@ func (g GetFileMetadataHeadersParams) GetF() *OutputImageFormat {
 	return g.F
 }
 
+func (g GetFileMetadataHeadersParams) HasImageManipulationOptions() bool {
+	return g.Q != nil || g.H != nil || g.W != nil || g.B != nil || g.F != nil
+}
+
 // GetIfMatch returns the IfMatch field value.
 func (g GetFileMetadataHeadersParams) GetIfMatch() *string {
 	return g.IfMatch
@@ -83,12 +89,12 @@ func (g GetFileMetadataHeadersParams) GetIfNoneMatch() *string {
 }
 
 // GetIfModifiedSince returns the IfModifiedSince field value.
-func (g GetFileMetadataHeadersParams) GetIfModifiedSince() *time.Time {
+func (g GetFileMetadataHeadersParams) GetIfModifiedSince() *Time {
 	return g.IfModifiedSince
 }
 
 // GetIfUnmodifiedSince returns the IfUnmodifiedSince field value.
-func (g GetFileMetadataHeadersParams) GetIfUnmodifiedSince() *time.Time {
+func (g GetFileMetadataHeadersParams) GetIfUnmodifiedSince() *Time {
 	return g.IfUnmodifiedSince
 }
 
@@ -117,6 +123,10 @@ func (g GetFileWithPresignedURLParams) GetF() *OutputImageFormat {
 	return g.F
 }
 
+func (g GetFileWithPresignedURLParams) HasImageManipulationOptions() bool {
+	return g.Q != nil || g.H != nil || g.W != nil || g.B != nil || g.F != nil
+}
+
 // GetIfMatch returns the IfMatch field value.
 func (g GetFileWithPresignedURLParams) GetIfMatch() *string {
 	return g.IfMatch
@@ -128,11 +138,11 @@ func (g GetFileWithPresignedURLParams) GetIfNoneMatch() *string {
 }
 
 // GetIfModifiedSince returns the IfModifiedSince field value.
-func (g GetFileWithPresignedURLParams) GetIfModifiedSince() *time.Time {
+func (g GetFileWithPresignedURLParams) GetIfModifiedSince() *Time {
 	return g.IfModifiedSince
 }
 
 // GetIfUnmodifiedSince returns the IfUnmodifiedSince field value.
-func (g GetFileWithPresignedURLParams) GetIfUnmodifiedSince() *time.Time {
+func (g GetFileWithPresignedURLParams) GetIfUnmodifiedSince() *Time {
 	return g.IfUnmodifiedSince
 }

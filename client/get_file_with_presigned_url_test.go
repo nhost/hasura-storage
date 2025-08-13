@@ -230,7 +230,7 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 			id:   id1,
 			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
-				req.IfModifiedSince = ptr(time.Now().Add(-time.Hour))
+				req.IfModifiedSince = ptr(client.NewTime(time.Now().Add(-time.Hour)))
 				return req
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
@@ -254,7 +254,7 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 			id:   id1,
 			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
-				req.IfModifiedSince = ptr(time.Now().Add(time.Hour))
+				req.IfModifiedSince = ptr(client.NewTime(time.Now().Add(time.Hour)))
 				return req
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
@@ -274,7 +274,7 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 			id:   id1,
 			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
-				req.IfUnmodifiedSince = ptr(time.Now().Add(-time.Hour))
+				req.IfUnmodifiedSince = ptr(client.NewTime(time.Now().Add(-time.Hour)))
 				return req
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
@@ -295,7 +295,7 @@ func TestGetFileWithPresignedURL(t *testing.T) { //nolint:cyclop,maintidx
 			id:   id1,
 			requestParams: func() *client.GetFileWithPresignedURLParams {
 				req := params1()
-				req.IfUnmodifiedSince = ptr(time.Now().Add(time.Hour))
+				req.IfUnmodifiedSince = ptr(client.NewTime(time.Now().Add(time.Hour)))
 				return req
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),

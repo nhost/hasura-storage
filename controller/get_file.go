@@ -205,6 +205,12 @@ func (ctrl *Controller) processFileToDownload(
 		return nil, apiErr
 	}
 
+	if download.ContentLength == fileMetadata.Size {
+		// we force this in case they included a Content-Range header
+		// but the file is not actually partial
+		download.StatusCode = http.StatusOK
+	}
+
 	updateAt := fileMetadata.UpdatedAt.Format(time.RFC1123)
 
 	body := download.Body
@@ -329,6 +335,10 @@ func (ctrl *Controller) GetFile( //nolint:ireturn
 	}
 
 	downloadFunc := func() (*File, *APIError) {
+		if request.Params.HasImageManipulationOptions() {
+			return ctrl.contentStorage.GetFile(ctx, fileMetadata.Id, nil)
+		}
+
 		return ctrl.contentStorage.GetFile(ctx, fileMetadata.Id, request.Params.Range)
 	}
 

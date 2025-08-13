@@ -114,6 +114,9 @@ type PresignedURLResponse struct {
 	Url string `json:"url"`
 }
 
+// RFC2822Date Date in RFC 2822 format
+type RFC2822Date = Time
+
 // UpdateFileMetadata Metadata that can be updated for an existing file.
 type UpdateFileMetadata struct {
 	// Metadata Updated custom metadata to associate with the file.
@@ -177,10 +180,10 @@ type GetFileParams struct {
 	IfNoneMatch *string `json:"if-none-match,omitempty"`
 
 	// IfModifiedSince Only return the file if it has been modified after the given date
-	IfModifiedSince *time.Time `json:"if-modified-since,omitempty"`
+	IfModifiedSince *RFC2822Date `json:"if-modified-since,omitempty"`
 
 	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
-	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
+	IfUnmodifiedSince *RFC2822Date `json:"if-unmodified-since,omitempty"`
 
 	// Range Range of bytes to retrieve from the file. Format: bytes=start-end
 	Range *string `json:"Range,omitempty"`
@@ -210,10 +213,10 @@ type GetFileMetadataHeadersParams struct {
 	IfNoneMatch *string `json:"if-none-match,omitempty"`
 
 	// IfModifiedSince Only return the file if it has been modified after the given date
-	IfModifiedSince *time.Time `json:"if-modified-since,omitempty"`
+	IfModifiedSince *RFC2822Date `json:"if-modified-since,omitempty"`
 
 	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
-	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
+	IfUnmodifiedSince *RFC2822Date `json:"if-unmodified-since,omitempty"`
 }
 
 // ReplaceFileMultipartBody defines parameters for ReplaceFile.
@@ -249,7 +252,7 @@ type GetFileWithPresignedURLParams struct {
 	XAmzChecksumMode string `form:"X-Amz-Checksum-Mode" json:"X-Amz-Checksum-Mode"`
 
 	// XAmzSecurityToken Use presignedurl endpoint to generate this automatically
-	XAmzSecurityToken string `form:"X-Amz-Security-Token" json:"X-Amz-Security-Token"`
+	XAmzSecurityToken *string `form:"X-Amz-Security-Token,omitempty" json:"X-Amz-Security-Token,omitempty"`
 
 	// XId Use presignedurl endpoint to generate this automatically
 	XId string `form:"x-id" json:"x-id"`
@@ -276,10 +279,10 @@ type GetFileWithPresignedURLParams struct {
 	IfNoneMatch *string `json:"if-none-match,omitempty"`
 
 	// IfModifiedSince Only return the file if it has been modified after the given date
-	IfModifiedSince *time.Time `json:"if-modified-since,omitempty"`
+	IfModifiedSince *RFC2822Date `json:"if-modified-since,omitempty"`
 
 	// IfUnmodifiedSince Only return the file if it has not been modified after the given date
-	IfUnmodifiedSince *time.Time `json:"if-unmodified-since,omitempty"`
+	IfUnmodifiedSince *RFC2822Date `json:"if-unmodified-since,omitempty"`
 
 	// Range Range of bytes to retrieve from the file. Format: bytes=start-end
 	Range *string `json:"Range,omitempty"`

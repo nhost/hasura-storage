@@ -121,7 +121,7 @@ func TestGetFileInfo(t *testing.T) {
 			request: api.GetFileMetadataHeadersRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileMetadataHeadersParams{
-					IfModifiedSince: ptr(time.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
+					IfModifiedSince: ptr(api.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFileMetadataHeaders200Response{
@@ -143,7 +143,7 @@ func TestGetFileInfo(t *testing.T) {
 			request: api.GetFileMetadataHeadersRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileMetadataHeadersParams{
-					IfModifiedSince: ptr(time.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
+					IfModifiedSince: ptr(api.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFileMetadataHeaders304Response{
@@ -159,7 +159,7 @@ func TestGetFileInfo(t *testing.T) {
 			request: api.GetFileMetadataHeadersRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileMetadataHeadersParams{
-					IfUnmodifiedSince: ptr(time.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
+					IfUnmodifiedSince: ptr(api.Date(2024, 1, 25, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFileMetadataHeaders200Response{
@@ -181,7 +181,7 @@ func TestGetFileInfo(t *testing.T) {
 			request: api.GetFileMetadataHeadersRequestObject{
 				Id: "55af1e60-0f28-454e-885e-ea6aab2bb288",
 				Params: api.GetFileMetadataHeadersParams{
-					IfUnmodifiedSince: ptr(time.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
+					IfUnmodifiedSince: ptr(api.Date(2020, 1, 15, 10, 0, 0, 0, time.UTC)),
 				},
 			},
 			expected: api.GetFileMetadataHeaders412Response{

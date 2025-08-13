@@ -189,7 +189,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			name: "IfModifiedSince matches",
 			id:   id1,
 			params: &client.GetFileParams{
-				IfModifiedSince: ptr(time.Now().Add(-time.Hour)),
+				IfModifiedSince: ptr(client.NewTime(time.Now().Add(-time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
@@ -211,7 +211,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			name: "IfModifiedSince does not match",
 			id:   id1,
 			params: &client.GetFileParams{
-				IfModifiedSince: ptr(time.Now().Add(time.Hour)),
+				IfModifiedSince: ptr(client.NewTime(time.Now().Add(time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusNotModified,
@@ -229,7 +229,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			name: "IfUnmodifiedSince matches",
 			id:   id1,
 			params: &client.GetFileParams{
-				IfUnmodifiedSince: ptr(time.Now().Add(-time.Hour)),
+				IfUnmodifiedSince: ptr(client.NewTime(time.Now().Add(-time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusPreconditionFailed,
@@ -248,7 +248,7 @@ func TestGetFile(t *testing.T) { //nolint:maintidx
 			name: "IfUnmodifiedSince does not match",
 			id:   id1,
 			params: &client.GetFileParams{
-				IfUnmodifiedSince: ptr(time.Now().Add(time.Hour)),
+				IfUnmodifiedSince: ptr(client.NewTime(time.Now().Add(time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,

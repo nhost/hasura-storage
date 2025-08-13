@@ -131,7 +131,7 @@ func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 			name: "IfModifiedSince matches",
 			id:   id1,
 			params: &client.GetFileMetadataHeadersParams{
-				IfModifiedSince: ptr(time.Now().Add(-time.Hour)),
+				IfModifiedSince: ptr(client.NewTime(time.Now().Add(-time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,
@@ -152,7 +152,7 @@ func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 			name: "IfModifiedSince does not match",
 			id:   id1,
 			params: &client.GetFileMetadataHeadersParams{
-				IfModifiedSince: ptr(time.Now().Add(time.Hour)),
+				IfModifiedSince: ptr(client.NewTime(time.Now().Add(time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusNotModified,
@@ -169,7 +169,7 @@ func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 			name: "IfUnmodifiedSince matches",
 			id:   id1,
 			params: &client.GetFileMetadataHeadersParams{
-				IfUnmodifiedSince: ptr(time.Now().Add(-time.Hour)),
+				IfUnmodifiedSince: ptr(client.NewTime(time.Now().Add(-time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusPreconditionFailed,
@@ -186,7 +186,7 @@ func TestGetFileMetadataHeaders(t *testing.T) { //nolint:maintidx
 			name: "IfUnmodifiedSince does not match",
 			id:   id1,
 			params: &client.GetFileMetadataHeadersParams{
-				IfUnmodifiedSince: ptr(time.Now().Add(time.Hour)),
+				IfUnmodifiedSince: ptr(client.NewTime(time.Now().Add(time.Hour))),
 			},
 			interceptor:        WithAccessToken(accessTokenValidUser),
 			expectedStatusCode: http.StatusOK,

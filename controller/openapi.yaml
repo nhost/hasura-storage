@@ -141,14 +141,12 @@ paths:
           description: "Only return the file if it has been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: if-unmodified-since
           description: "Only return the file if it has not been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: q
           description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
@@ -329,14 +327,12 @@ paths:
           description: "Only return the file if it has been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: if-unmodified-since
           description: "Only return the file if it has not been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: q
           description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
@@ -590,7 +586,7 @@ paths:
             type: string
         - name: X-Amz-Security-Token
           description: Use presignedurl endpoint to generate this automatically
-          required: true
+          required: false
           in: query
           schema:
             type: string
@@ -614,14 +610,12 @@ paths:
           description: "Only return the file if it has been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: if-unmodified-since
           description: "Only return the file if it has not been modified after the given date"
           in: header
           schema:
-            type: string
-            format: date-time
+            $ref: '#/components/schemas/RFC2822Date'
         - name: q
           description: "Image quality (1-100). Only applies to JPEG, WebP and PNG files"
           in: query
@@ -970,6 +964,13 @@ components:
       description: "Hasura admin secret key for backend/administrative operations."
 
   schemas:
+    RFC2822Date:
+      type: string
+      description: "Date in RFC 2822 format"
+      pattern: '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} \w+$'
+      example: "Tue, 12 Aug 2025 12:03:50 GMT"
+      x-go-type: Time
+
     ErrorResponse:
       type: object
       description: "Error information returned by the API."
