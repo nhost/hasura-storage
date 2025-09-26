@@ -1,3 +1,5 @@
+NOTE: This repository is deprecated. All development has moved to https://github.com/nhost/nhost
+
 # Hasura Storage
 
 Hasura storage is a service that adds a storage service on top of hasura and any s3-compatible storage service. The goal is to be able to leverage the cloud storage service while also leveraging hasura features like its graphql API, permissions, actions, presets, etc...
